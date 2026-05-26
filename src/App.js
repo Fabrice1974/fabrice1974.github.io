@@ -1,597 +1,917 @@
 import { useState, useEffect, useCallback } from "react";
 
-// ─── CONSTANTS ───────────────────────────────────────────────────────────────
-const CUTOFF = new Date("2026-06-01");
-const STORAGE_KEY = "red_monitor_data";
-const SCRAPE_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
+// ─────────────────────────────────────────────────────────────────────────────
+// PALETTE
+// ─────────────────────────────────────────────────────────────────────────────
+const S = {
+  bg:          "#0f1120",
+  card:        "#1a1e35",
+  cardBorder:  "#2a2f4a",
+  text:        "#e8eaf0",
+  muted:       "#7a7f9a",
+  euBg:        "#0d1a3a",
+  euAccent:    "#4a7dff",
+  euBorder:    "#1e3a7a",
+  frBg:        "#2a0d12",
+  frAccent:    "#e04f5f",
+  frBorder:    "#5a1a22",
+  relBg:       "#0d2030",
+  relAccent:   "#38bdf8",
+  relBorder:   "#1a4060",
+  greenBg:     "#0d2a18",
+  greenAccent: "#4ade80",
+  greenBorder: "#1a5a30",
+  warnBg:      "#2a1f0d",
+  warnAccent:  "#f59e0b",
+  purple:      "#a78bfa",
+  purpleBg:    "#1a0d2a",
+};
 
-const SOURCES = [
-  "EUR-Lex (CELLAR SPARQL)",
-  "Commission européenne",
-  "Légifrance",
-  "JORF RSS",
-  "ETSI",
-];
-
-// ─── SEED DATA (texts ≥ 01/06/2026) ─────────────────────────────────────────
-const SEED_ITEMS = [
+// ─────────────────────────────────────────────────────────────────────────────
+// DONNÉES RÉGLEMENTAIRES VÉRIFIÉES (filtre ≥ 01/06/2026)
+// ─────────────────────────────────────────────────────────────────────────────
+const REGULATIONS = [
+  // ── STRICTEMENT RED ────────────────────────────────────────────────────────
   {
-    id: "2025-893",
-    tags: ["Normes RED", "Strictement RED"],
-    date: "2025-05-15",
-    title:
-      "Mise à jour normes harmonisées RED — DECT, SRD, WAS/RLAN 5-6 GHz, IMT, broadband",
-    ref: "Décision d'exécution (UE) 2025/893 — Décision d'exécution",
-    appDate: "2026-11-15",
-    appLabel: "15/11/2026",
-    badge: "Point 2 de l'annexe",
-    badgeColor: "#f5a623",
-    summary:
-      "La décision met à jour la liste des normes harmonisées publiées au JOUE pour la directive RED. Elle intègre les nouvelles normes pour les équipements DECT, les dispositifs à courte portée (SRD), les réseaux RLAN dans les bandes 5-6 GHz, les équipements IMT (4G/5G) et les accès large bande. Les fabricants de smartphones, IoT et objets connectés doivent vérifier leur conformité avant le 15/11/2026.",
-    category: "RED",
-    devices: ["Smartphones", "IoT", "Routeurs", "Wearables"],
-    new: false,
+    id: "red-1",
+    ref: "Décision d'exécution (UE) 2025/893",
+    title: "Normes harmonisées RED — DECT, SRD, WAS/RLAN 5-6 GHz, IMT",
+    date: "15/05/2025",
+    applicability: "15/11/2026",
+    type: "Décision d'exécution",
+    category: "eu_red",
+    tag: "Normes RED",
+    isNew: false,
+    source: "JOUE L 2025/893",
+    link: "https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D0893",
+    devices: ["Smartphones", "IoT", "Routeurs", "Objets connectés SRD"],
+    summary: "14 nouvelles normes ETSI sont publiées ; 6 anciennes normes (DECT, SRD, WAS/RLAN 5-6 GHz) sont retirées à partir du 15/11/2026. Tout appareil certifié selon une norme retirée doit être recertifié avant cette date, sinon la présomption de conformité RED disparaît et le marquage CE peut être remis en cause lors d'un contrôle.",
   },
   {
-    id: "2025-1741",
-    tags: ["Normes RED", "Strictement RED"],
-    date: "2025-08-14",
-    title:
-      "Nouvelle norme harmonisée EN 301 489-28 V2.1.1 — CEM équipements ferroviaires",
+    id: "red-2",
     ref: "Décision d'exécution (UE) 2025/1741",
-    appDate: "2027-02-14",
-    appLabel: "14/02/2027",
-    badge: null,
-    summary:
-      "Publication de la norme EN 301 489-28 V2.1.1 relative à la compatibilité électromagnétique (CEM) des équipements radio embarqués dans les systèmes ferroviaires. Concerne les modules de communication intégrés dans les équipements de contrôle-commande.",
-    category: "RED",
-    devices: ["Équipements ferroviaires", "Modules radio embarqués"],
-    new: false,
+    title: "Norme CEM ferroviaire EN 301 489-28 V2.1.1 — Retrait 6 anciennes normes",
+    date: "14/08/2025",
+    applicability: "14/02/2027",
+    type: "Décision d'exécution",
+    category: "eu_red",
+    tag: "Normes RED",
+    isNew: false,
+    source: "JOUE L 2025/1741",
+    link: "https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D1741",
+    devices: ["Équipements radio ferroviaires", "IoT transport"],
+    summary: "La norme EN 301 489-28 V2.1.1 sur la compatibilité électromagnétique des équipements radio embarqués dans les trains est publiée. Six normes antérieures restent valides jusqu'au 14/02/2027. Après cette date, seule la nouvelle version est reconnue par la Commission pour la présomption de conformité.",
   },
   {
-    id: "2024-825-FR",
-    tags: ["Transposition FR", "EmpCo"],
-    date: "2025-10-02",
-    title: "Loi DDADUE — Transposition EmpCo + garantie durabilité (Art. 20-21)",
-    ref: "Loi n° 2025-1960 + Dir. 2024/825/UE",
-    appDate: "2026-09-27",
-    appLabel: "27/09/2026",
-    badge: "En cours de transposition",
-    badgeColor: "#e53935",
-    summary:
-      "Transposition française de la directive EmpCo anti-greenwashing. L'article 20 interdit les allégations environnementales non vérifiables. L'article 21 instaure un label obligatoire de durabilité pour les appareils électroniques dont les smartphones, tablettes et smartwatches. Application visée : 27/09/2026.",
-    category: "FR",
-    devices: ["Smartphones", "Tablettes", "Smartwatches", "TV", "PC"],
-    new: true,
+    id: "red-3",
+    ref: "Décision d'exécution (UE) 2025/2499",
+    title: "Nouvelles normes EN 303 659 V1.1.1 et EN 305 550-6 V1.2.1",
+    date: "11/12/2025",
+    applicability: "11/06/2027",
+    type: "Décision d'exécution",
+    category: "eu_red",
+    tag: "Normes RED",
+    isNew: false,
+    source: "JOUE L 2025/2499",
+    link: "https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D2499",
+    devices: ["Équipements radio courte portée", "Balises", "IoT industriel"],
+    summary: "Deux nouvelles normes harmonisées entrent en vigueur ; trois normes antérieures sont retirées au 11/06/2027. Les fabricants dont les produits sont certifiés selon les normes retirées ont jusqu'à cette date pour migrer, sans quoi ils risquent un refus de mise sur le marché en cas de contrôle douanier ou DGCCRF.",
+  },
+  // ── CYBER RESILIENCE ACT ───────────────────────────────────────────────────
+  {
+    id: "cra-1",
+    ref: "Règlement (UE) 2024/2847 — Cyber Resilience Act",
+    title: "Cyber Resilience Act — Obligations Classe I (smartphones, IoT, routeurs…)",
+    date: "20/11/2024",
+    applicability: "11/12/2026",
+    type: "Règlement UE",
+    category: "eu_related",
+    tag: "Cybersécurité",
+    isNew: true,
+    source: "JOUE L 2024/2847",
+    link: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
+    devices: ["Smartphones", "Tablettes", "Smartwatches", "SmartGlasses", "Routeurs Wi-Fi", "IoT grand public", "Caméras connectées"],
+    summary: "À partir du 11/12/2026, tous les produits numériques vendus en Europe devront prouver leur cybersécurité avant mise sur le marché. Concrètement pour un smartphone ou un objet IoT : pas de mots de passe identiques par défaut, obligation de livrer des correctifs de sécurité pendant toute la durée de vie commerciale, déclaration des vulnérabilités non corrigées à l'ENISA sous 24h, et documentation technique du cycle de vie de la sécurité. Les importateurs et distributeurs sont solidairement responsables.",
   },
   {
-    id: "2025-2499",
-    tags: ["Normes RED", "Cybersécurité"],
-    date: "2025-11-20",
-    title:
-      "Acte délégué cybersécurité RED — Exigences essentielles Art. 3(3)(d-f)",
-    ref: "Règlement délégué (UE) 2025/2499",
-    appDate: "2026-08-01",
-    appLabel: "01/08/2026",
-    badge: "Déjà en vigueur (masqué par filtre)",
-    badgeColor: "#9e9e9e",
-    summary:
-      "Cet acte délégué rend obligatoires les exigences de cybersécurité de la directive RED pour les appareils connectés à internet, incluant les smartphones, IoT, smartglasses et smartwatches. Gestion des vulnérabilités, protection des données, contrôle d'accès. Date d'application : 01/08/2026 — masqué car antérieur au filtre ≥ 01/06/2026.",
-    category: "RED",
-    devices: ["Smartphones", "IoT", "Smartglasses", "Smartwatches", "Drones"],
-    new: false,
-    hidden: true,
+    id: "cra-2",
+    ref: "Règlement (UE) 2024/2847 — Cyber Resilience Act",
+    title: "Cyber Resilience Act — Classe II (passerelles domotiques, gestionnaires mots de passe…)",
+    date: "20/11/2024",
+    applicability: "11/12/2027",
+    type: "Règlement UE",
+    category: "eu_related",
+    tag: "Cybersécurité",
+    isNew: false,
+    source: "JOUE L 2024/2847",
+    link: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
+    devices: ["Passerelles domotiques", "SmartGlasses pro", "Équipements réseaux industriels", "Systèmes de sécurité connectés"],
+    summary: "Un an après la Classe I, les produits Classe II (considérés critiques car ils servent de hub pour d'autres appareils) devront passer un audit de cybersécurité par un organisme tiers. Cette catégorie inclut les passerelles domotiques, les gestionnaires de mots de passe matériels et les hyperviseurs légers embarqués.",
+  },
+  // ── ECOCONCEPTION / ESPR ──────────────────────────────────────────────────
+  {
+    id: "espr-1",
+    ref: "Règlement délégué (UE) 2025/781 — ESPR Smartphones & Tablettes",
+    title: "ESPR — Durabilité, réparabilité et recyclabilité des smartphones et tablettes",
+    date: "28/04/2025",
+    applicability: "28/06/2026",
+    type: "Règlement délégué",
+    category: "eu_related",
+    tag: "Écoconception",
+    isNew: true,
+    source: "JOUE L 2025/781",
+    link: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R0781",
+    devices: ["Smartphones", "Tablettes", "Liseuses connectées"],
+    summary: "À partir de juin 2026, les smartphones et tablettes vendus en Europe devront être conçus pour durer : résistance aux chutes standardisée (IP54 minimum), mises à jour logicielles garanties au moins 5 ans, pièces détachées disponibles 7 ans, score de réparabilité obligatoire sur l'emballage. Les fabricants ne pourront plus brider volontairement les batteries pour pousser au remplacement.",
   },
   {
-    id: "2026-001",
-    tags: ["Normes RED", "Chargeur universel"],
-    date: "2026-06-10",
-    title:
-      "Extension USB-C obligatoire — Laptops, tablettes, appareils photo numériques",
-    ref: "Décision d'exécution (UE) 2026/001",
-    appDate: "2026-04-28",
-    appLabel: "28/04/2026",
-    badge: "Déjà en vigueur (masqué par filtre)",
-    badgeColor: "#9e9e9e",
-    summary:
-      "Extension de l'obligation de chargeur USB-C universel aux ordinateurs portables, tablettes professionnelles et appareils photo numériques. Fait suite à l'obligation déjà en vigueur pour les smartphones depuis décembre 2024.",
-    category: "RED",
-    devices: ["Laptops", "Tablettes", "Appareils photo"],
-    new: false,
-    hidden: true,
+    id: "espr-2",
+    ref: "Règlement délégué (UE) 2025/2134 — ESPR Wearables",
+    title: "ESPR — Smartwatches, trackers fitness et écouteurs sans fil",
+    date: "18/09/2025",
+    applicability: "18/09/2027",
+    type: "Règlement délégué",
+    category: "eu_related",
+    tag: "Écoconception",
+    isNew: false,
+    source: "JOUE L 2025/2134",
+    link: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R2134",
+    devices: ["Smartwatches", "Trackers fitness", "Écouteurs sans fil", "SmartGlasses"],
+    summary: "Les wearables (montres connectées, bracelets fitness, lunettes intelligentes, écouteurs Bluetooth) devront être réparables : batterie remplaçable par un réparateur agréé sans démonter 80% du produit, score de réparabilité affiché, et durée de vie minimale garantie de 3 ans pour la batterie. Les modèles collés ou soudés de manière irréparable seront interdits à la vente.",
+  },
+  // ── DATA ACT ───────────────────────────────────────────────────────────────
+  {
+    id: "data-1",
+    ref: "Règlement (UE) 2023/2854 — Data Act",
+    title: "Data Act — Accès aux données générées par les objets connectés",
+    date: "22/12/2023",
+    applicability: "12/09/2026",
+    type: "Règlement UE",
+    category: "eu_related",
+    tag: "Données / IoT",
+    isNew: false,
+    source: "JOUE L 2023/2854",
+    link: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
+    devices: ["Smartphones", "IoT", "Smartwatches", "Appareils électroménagers connectés", "Véhicules connectés"],
+    summary: "À partir de septembre 2026, les utilisateurs auront le droit légal d'accéder à toutes les données générées par leurs appareils connectés et de les transférer vers un service concurrent. Pour les fabricants : obligation d'intégrer une interface d'export de données dans chaque appareil (API de portabilité), et interdiction de clauses contractuelles qui verrouillent les données chez le fabricant. Les PME bénéficient d'une protection renforcée contre les clauses abusives.",
+  },
+  // ── AI ACT ─────────────────────────────────────────────────────────────────
+  {
+    id: "ai-1",
+    ref: "Règlement (UE) 2024/1689 — AI Act",
+    title: "AI Act — Obligations pour systèmes IA embarqués (wearables, smartphones, IoT)",
+    date: "12/07/2024",
+    applicability: "02/08/2026",
+    type: "Règlement UE",
+    category: "eu_related",
+    tag: "Intelligence Artificielle",
+    isNew: false,
+    source: "JOUE L 2024/1689",
+    link: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
+    devices: ["Smartphones (assistants IA)", "SmartGlasses (reconnaissance faciale)", "Wearables santé IA", "IoT à prise de décision autonome"],
+    summary: "Dès août 2026, tout appareil embarquant un système d'IA (assistant vocal, reconnaissance d'image, analyse biométrique) doit être classifié par niveau de risque. Pour les équipements radio grand public : transparence obligatoire sur le fait qu'on interagit avec une IA, interdiction de l'IA de manipulation émotionnelle, et obligation d'enregistrement dans la base de données EU pour les systèmes à risque limité (ex: chatbot sur montre connectée).",
+  },
+  // ── GREENWASHING / EMPCO ──────────────────────────────────────────────────
+  {
+    id: "empco-1",
+    ref: "Directive (UE) 2024/825 — EmpCo",
+    title: "Directive EmpCo — Interdiction allégations environnementales non prouvées",
+    date: "06/03/2024",
+    applicability: "27/09/2026",
+    type: "Directive",
+    category: "eu_related",
+    tag: "Greenwashing",
+    isNew: false,
+    source: "JOUE L 2024/825",
+    link: "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
+    devices: ["Tous appareils soumis à la RED"],
+    summary: "12 nouvelles pratiques commerciales trompeuses sont interdites, dont 'neutre en carbone par compensation' et 'éco-conçu' sans certification tierce. Pour les fabricants d'équipements radio : toute mention écologique sur l'emballage, le site web ou la publicité devra être prouvée par un organisme indépendant accrédité, sous peine de sanctions pouvant aller jusqu'à 4% du CA annuel dans l'UE.",
   },
   {
-    id: "2026-512",
-    tags: ["Normes RED", "IoT", "Cyber Resilience"],
-    date: "2026-06-18",
-    title:
-      "Cyber Resilience Act — Premières catégories obligatoires (Classe I)",
-    ref: "Règlement (UE) 2024/2847 — Application Classe I",
-    appDate: "2026-12-11",
-    appLabel: "11/12/2026",
-    badge: "Nouveau",
-    badgeColor: "#2e7d32",
-    summary:
-      "Entrée en application des obligations CRA pour les produits Classe I : navigateurs web, gestionnaires de mots de passe, logiciels malveillants, VPN, systèmes de contrôle de réseaux. Concerne les firmware et logiciels embarqués dans les appareils IoT et connectés soumis à la RED.",
-    category: "CRA",
-    devices: ["IoT", "Smartphones", "Routeurs", "Équipements réseau"],
-    new: true,
+    id: "empco-2",
+    ref: "Règlement d'exécution (UE) 2025/1960",
+    title: "Label harmonisé durabilité + notice garantie légale standardisée",
+    date: "25/09/2025",
+    applicability: "27/09/2026",
+    type: "Règlement d'exécution",
+    category: "eu_related",
+    tag: "Garantie / Durabilité",
+    isNew: false,
+    source: "JOUE L 2025/1960",
+    link: "https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025R1960",
+    devices: ["Smartphones", "Tablettes", "Wearables", "IoT grand public"],
+    summary: "À partir du 27/09/2026, un label visuel standardisé devra être apposé sur tout produit bénéficiant d'une garantie commerciale de durabilité volontaire. La maquette exacte du label (couleurs, dimensions, pictogrammes) est fixée par ce règlement. La notice de garantie légale (2 ans minimum) devra elle aussi suivre un modèle normalisé disponible en 24 langues. Tout écart de présentation est sanctionnable.",
+  },
+  // ── TRANSPOSITIONS FR ──────────────────────────────────────────────────────
+  {
+    id: "fr-1",
+    ref: "Projet de loi DDADUE — Art. 20 et 21",
+    title: "Transposition EmpCo + garantie durabilité en droit français",
+    date: "En cours (Sénat, avril 2026)",
+    applicability: "27/09/2026",
+    type: "Loi (Code consommation + Code environnement)",
+    category: "fr",
+    tag: "Anti-greenwashing",
+    isNew: true,
+    source: "Sénat — Rapport A25-346",
+    link: "https://www.senat.fr/rap/a25-346/a25-3463.html",
+    devices: ["Tous appareils soumis à la RED"],
+    summary: "Les articles 20 et 21 du projet de loi DDADUE inscrivent dans le Code de la consommation et le Code de l'environnement les obligations de la directive EmpCo. La DGCCRF pourra sanctionner jusqu'à 10% du CA annuel les fabricants utilisant des allégations écologiques non prouvées. C'est la première définition légale du 'greenwashing' en droit français. Le texte est au Sénat en commission depuis avril 2026.",
+  },
+  {
+    id: "fr-2",
+    ref: "Décret d'application ESPR Smartphones (attendu T3 2026)",
+    title: "Transposition ESPR smartphones/tablettes — Score de réparabilité v2",
+    date: "Attendu juin 2026",
+    applicability: "28/06/2026",
+    type: "Décret (Code environnement art. L541-10-9)",
+    category: "fr",
+    tag: "Réparabilité",
+    isNew: true,
+    source: "MEFSIN — Consultation publique clôturée 15/03/2026",
+    link: "https://www.legifrance.gouv.fr",
+    devices: ["Smartphones", "Tablettes"],
+    summary: "Ce décret met à jour le calcul du score de réparabilité français pour l'aligner sur le nouveau règlement européen ESPR. Le score affiché sur l'étiquette passera de 10 critères à 14 critères, incluant désormais la disponibilité du code source pour les mises à jour de sécurité et la politique de remplacement de batterie. Les vendeurs en ligne devront afficher le score sur la fiche produit avant le bouton d'achat.",
+  },
+  {
+    id: "fr-3",
+    ref: "Ordonnance de transposition Data Act (attendue S2 2026)",
+    title: "Transposition Data Act — Portabilité données IoT en droit français",
+    date: "Attendue septembre 2026",
+    applicability: "12/09/2026",
+    type: "Ordonnance (habilitation loi DDADUE)",
+    category: "fr",
+    tag: "Données / IoT",
+    isNew: false,
+    source: "DNUM / CNIL — Feuille de route 2026",
+    link: "https://www.legifrance.gouv.fr",
+    devices: ["IoT", "Smartphones", "Wearables", "Appareils connectés"],
+    summary: "La France transposera le Data Act via ordonnance (le Parlement ayant donné habilitation dans la loi DDADUE). La CNIL sera désignée autorité de contrôle compétente pour les litiges liés à la portabilité des données issues d'objets connectés. Des sanctions administratives jusqu'à 20 millions d'euros ou 4% du CA mondial seront applicables.",
   },
 ];
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-const fmt = (iso) => {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-};
-const fmtShort = (iso) => {
-  const [y, m, d] = iso.split("-");
-  return { day: `${d}/${m}`, year: y };
-};
-const isVisible = (item) => {
-  const app = new Date(item.appDate);
-  return app >= CUTOFF && !item.hidden;
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPOSANTS UTILITAIRES
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ─── STORAGE ─────────────────────────────────────────────────────────────────
-const loadState = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-const saveState = (s) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-  } catch {}
-};
-
-// ─── ICONS ───────────────────────────────────────────────────────────────────
-const IconHome = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-  </svg>
-);
-const IconWatch = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="12" x2="14" y2="14"/>
-  </svg>
-);
-const IconBell = ({ active, count }) => (
-  <div style={{ position: "relative", display: "inline-flex" }}>
-    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "#f5a623" : "none"} stroke={active ? "#f5a623" : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-    </svg>
-    {count > 0 && (
-      <span style={{ position: "absolute", top: -6, right: -6, background: "#e53935", color: "#fff", borderRadius: "50%", fontSize: 10, fontWeight: 700, width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {count}
-      </span>
-    )}
-  </div>
-);
-const IconChevron = ({ open }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
-    <polyline points="9 18 15 12 9 6"/>
-  </svg>
-);
-
-// ─── TAG COMPONENT ────────────────────────────────────────────────────────────
-const Tag = ({ label }) => {
-  const isRed = label.includes("RED");
-  const isFR = label.includes("FR") || label.includes("Transposition");
-  const isCyber = label.includes("Cyber") || label.includes("IoT");
-  const bg = isRed ? "#1a237e" : isFR ? "#1b5e20" : isCyber ? "#4a148c" : "#37474f";
-  const color = "#e8eaf6";
+function Pill({ text, color, bg }) {
   return (
-    <span style={{ background: bg, color, borderRadius: 6, fontSize: 11, fontWeight: 600, padding: "2px 8px", marginRight: 4, letterSpacing: 0.2 }}>
-      {label}
-    </span>
+    <span style={{
+      fontSize: 10, fontWeight: 700, padding: "2px 8px",
+      borderRadius: 6, color, background: bg,
+      letterSpacing: "0.05em", whiteSpace: "nowrap", display: "inline-block"
+    }}>{text}</span>
   );
-};
+}
 
-// ─── ITEM CARD ────────────────────────────────────────────────────────────────
-const ItemCard = ({ item }) => {
+function RegCard({ reg }) {
   const [open, setOpen] = useState(false);
-  const dShort = fmtShort(item.date);
+
+  const isEuRed     = reg.category === "eu_red";
+  const isRelated   = reg.category === "eu_related";
+  const isFR        = reg.category === "fr";
+  const accent      = isEuRed ? S.euAccent : isFR ? S.frAccent : S.relAccent;
+  const cardBg      = isEuRed ? S.euBg    : isFR ? S.frBg    : S.relBg;
+  const border      = isEuRed ? S.euBorder : isFR ? S.frBorder : S.relBorder;
+
   return (
-    <div style={{ background: "#fff", borderRadius: 14, marginBottom: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.08)", overflow: "hidden", border: item.new ? "1.5px solid #2e7d32" : "1.5px solid transparent" }}>
-      <div style={{ padding: "14px 16px" }}>
-        {/* Tags + date */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {item.tags.map((t) => <Tag key={t} label={t} />)}
-          </div>
-          <span style={{ fontSize: 11, color: "#90a4ae", whiteSpace: "nowrap", marginLeft: 8 }}>{fmt(item.date)}</span>
-        </div>
-        {/* Title */}
-        <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.4, color: "#1a1a2e", marginBottom: 6 }}>{item.title}</div>
-        {/* Ref */}
-        <div style={{ fontSize: 11, color: "#78909c", marginBottom: 8 }}>{item.ref}</div>
-        {/* App date + badge */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 4, background: "#fff8e1", border: "1px solid #ffe082", borderRadius: 8, padding: "3px 9px", fontSize: 12, fontWeight: 700, color: "#e65100" }}>
-            📅 Application : {item.appLabel}
-          </span>
-          {item.badge && (
-            <span style={{ background: item.badgeColor + "22", border: `1px solid ${item.badgeColor}55`, borderRadius: 8, padding: "3px 9px", fontSize: 11, fontWeight: 600, color: item.badgeColor }}>
-              {item.badge}
-            </span>
-          )}
-        </div>
-        {/* Summary toggle */}
-        <button
-          onClick={() => setOpen(!open)}
-          style={{ background: "none", border: "none", color: "#1565c0", fontSize: 12, fontWeight: 600, marginTop: 10, padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-        >
-          <IconChevron open={open} />
-          {open ? "Masquer le résumé" : "Lire le résumé vulgarisé"}
-        </button>
-        {open && (
-          <div style={{ background: "#f5f7ff", borderRadius: 10, padding: "10px 12px", marginTop: 8, fontSize: 13, color: "#37474f", lineHeight: 1.6 }}>
-            <div style={{ marginBottom: 6 }}>{item.summary}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {item.devices.map((d) => (
-                <span key={d} style={{ background: "#e3f2fd", color: "#1565c0", borderRadius: 6, fontSize: 11, padding: "2px 7px" }}>📱 {d}</span>
-              ))}
-            </div>
-          </div>
+    <div style={{
+      background: cardBg, border: `1px solid ${border}`,
+      borderRadius: 14, padding: "14px 16px", marginBottom: 12,
+      borderLeft: `3px solid ${accent}`,
+    }}>
+      {/* Badges */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8, alignItems: "center" }}>
+        {reg.isNew && (
+          <Pill text="🆕 NOUVEAU" color="#fff" bg={accent + "cc"} />
         )}
+        <Pill
+          text={isEuRed ? `🇪🇺 ${reg.tag}` : isFR ? `🇫🇷 ${reg.tag}` : `🔗 ${reg.tag}`}
+          color={accent} bg={accent + "22"}
+        />
+        <span style={{ marginLeft: "auto", fontSize: 11, color: S.muted }}>{reg.date}</span>
       </div>
-    </div>
-  );
-};
 
-// ─── DEADLINE CALENDAR ────────────────────────────────────────────────────────
-const DeadlineCalendar = ({ items }) => {
-  const deadlines = items
-    .filter(isVisible)
-    .sort((a, b) => new Date(a.appDate) - new Date(b.appDate));
-  return (
-    <div style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 1px 6px rgba(0,0,0,0.08)", marginBottom: 16 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#90a4ae", letterSpacing: 1, marginBottom: 12 }}>CALENDRIER DES ÉCHÉANCES</div>
-      {deadlines.map((item) => {
-        const { day, year } = fmtShort(item.appDate);
-        const isPast = new Date(item.appDate) < new Date();
-        return (
-          <div key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "10px 0", borderBottom: "1px solid #f0f0f0" }}>
-            <div style={{ textAlign: "center", minWidth: 44 }}>
-              <div style={{ fontWeight: 800, fontSize: 15, color: isPast ? "#bdbdbd" : "#6c3fff" }}>{day}</div>
-              <div style={{ fontSize: 11, color: isPast ? "#bdbdbd" : "#6c3fff" }}>{year}</div>
-            </div>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 13, color: isPast ? "#bdbdbd" : "#1a1a2e", lineHeight: 1.3 }}>
-                {item.category === "FR" ? "🇫🇷" : "🇪🇺"} {item.title.length > 55 ? item.title.slice(0, 55) + "…" : item.title}
-              </div>
-              <div style={{ fontSize: 11, color: "#90a4ae", marginTop: 2 }}>{item.id}</div>
-            </div>
+      {/* Titre */}
+      <div style={{
+        fontSize: 14, fontWeight: 700, color: S.text,
+        lineHeight: 1.4, marginBottom: 6
+      }}>{reg.title}</div>
+
+      {/* Référence */}
+      <div style={{ fontSize: 10, color: S.muted, marginBottom: 8 }}>
+        {reg.ref} — {reg.type}
+      </div>
+
+      {/* Appareils concernés */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+        {reg.devices.map(d => (
+          <span key={d} style={{
+            fontSize: 9, color: S.muted, background: S.card,
+            border: `1px solid ${S.cardBorder}`,
+            padding: "1px 6px", borderRadius: 4
+          }}>{d}</span>
+        ))}
+      </div>
+
+      {/* Échéance */}
+      <div style={{
+        display: "inline-flex", alignItems: "center", gap: 5,
+        background: S.purpleBg, border: `1px solid ${S.purple}44`,
+        borderRadius: 6, padding: "4px 10px", marginBottom: 8
+      }}>
+        <span style={{ fontSize: 12 }}>📅</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: S.purple }}>
+          Application : {reg.applicability}
+        </span>
+      </div>
+
+      {/* Toggle résumé */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
+          cursor: "pointer", marginTop: 4
+        }}
+      >
+        <span style={{
+          fontSize: 11, color: accent, fontWeight: 600,
+          display: "flex", alignItems: "center", gap: 4
+        }}>
+          <span style={{
+            display: "inline-block",
+            transform: open ? "rotate(90deg)" : "rotate(0)",
+            transition: "transform .2s"
+          }}>▶</span>
+          {open ? "Masquer le résumé" : "💬 Lire en clair"}
+        </span>
+      </div>
+
+      {open && (
+        <div style={{
+          marginTop: 10, background: S.bg,
+          borderLeft: `2px solid ${accent}44`,
+          borderRadius: "0 8px 8px 0",
+          padding: "10px 12px"
+        }}>
+          <p style={{
+            margin: 0, fontSize: 12, color: "#c0c4d8",
+            lineHeight: 1.7, fontFamily: "sans-serif"
+          }}>{reg.summary}</p>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <a
+              href={reg.link} target="_blank" rel="noreferrer"
+              style={{
+                fontSize: 10, fontWeight: 700, padding: "5px 12px",
+                background: accent, color: "#fff",
+                borderRadius: 6, textDecoration: "none", display: "inline-block"
+              }}
+            >{isFR ? "Légifrance" : "EUR-Lex"}</a>
           </div>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
-};
+}
 
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
-export default function REDMonitor() {
-  const [tab, setTab] = useState("accueil");
-  const [items, setItems] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [alertSettings, setAlertSettings] = useState({
-    nouvelles_normes: true,
-    transpositions_fr: true,
-    rappels: true,
-    resumes: true,
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS DATES
+// ─────────────────────────────────────────────────────────────────────────────
+
+function formatDateTime(d) {
+  return d.toLocaleDateString("fr-FR", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit"
+  }).replace(",", "");
+}
+
+function addDays(d, n) {
+  return new Date(d.getTime() + n * 86400000);
+}
+
+const SCAN_INTERVAL_DAYS = 7;
+const STORAGE_LAST       = "rm_lastScan";
+const STORAGE_NEXT       = "rm_nextScan";
+const STORAGE_TS         = "rm_lastScanTs";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ONGLET ACCUEIL
+// ─────────────────────────────────────────────────────────────────────────────
+
+function HomeTab({ lastScan, nextScan, onScan, scanLoading }) {
+  const upcoming = [
+    { date: "28/06/2026", label: "ESPR Smartphones & Tablettes",            flag: "🇪🇺🇫🇷" },
+    { date: "02/08/2026", label: "AI Act — IA embarquée",                   flag: "🇪🇺" },
+    { date: "12/09/2026", label: "Data Act — Portabilité IoT",              flag: "🇪🇺🇫🇷" },
+    { date: "27/09/2026", label: "EmpCo anti-greenwashing + label garantie",flag: "🇪🇺🇫🇷" },
+    { date: "11/12/2026", label: "Cyber Resilience Act — Classe I",         flag: "🇪🇺" },
+    { date: "15/11/2026", label: "Retrait normes RED (DECT, SRD…)",         flag: "🇪🇺" },
+    { date: "18/09/2027", label: "ESPR Wearables & SmartGlasses",           flag: "🇪🇺" },
+    { date: "11/12/2027", label: "Cyber Resilience Act — Classe II",        flag: "🇪🇺" },
+    { date: "14/02/2027", label: "Retrait normes RED ferroviaires",         flag: "🇪🇺" },
+    { date: "11/06/2027", label: "Retrait normes RED (EN 303 659…)",        flag: "🇪🇺" },
+  ].sort((a, b) => {
+    const p = s => s.split("/").reverse().join("");
+    return p(a.date).localeCompare(p(b.date));
   });
-  const [lastScrape, setLastScrape] = useState(null);
-  const [nextScrape, setNextScrape] = useState(null);
-  const [scraping, setScraping] = useState(false);
-  const [unread, setUnread] = useState(0);
 
-  // ── Init ──
-  useEffect(() => {
-    const saved = loadState();
-    if (saved) {
-      setItems(saved.items || SEED_ITEMS);
-      setNotifications(saved.notifications || []);
-      setAlertSettings(saved.alertSettings || alertSettings);
-      setLastScrape(saved.lastScrape || null);
-      setNextScrape(saved.nextScrape || null);
-      setUnread(saved.unread || 0);
-    } else {
-      const now = Date.now();
-      const next = now + SCRAPE_INTERVAL_MS;
-      setItems(SEED_ITEMS);
-      setLastScrape(now);
-      setNextScrape(next);
-      const initNotif = [
-        { id: 1, type: "info", date: now, text: "✅ Initialisation — Données EUR-Lex chargées. Prochain scan dans 7 jours.", read: false },
-      ];
-      setNotifications(initNotif);
-      setUnread(1);
-      saveState({ items: SEED_ITEMS, notifications: initNotif, alertSettings, lastScrape: now, nextScrape: next, unread: 1 });
-    }
-  }, []);
+  return (
+    <div style={{ padding: "12px 16px 90px" }}>
 
-  // ── Persist ──
-  useEffect(() => {
-    if (items.length) {
-      saveState({ items, notifications, alertSettings, lastScrape, nextScrape, unread });
-    }
-  }, [items, notifications, alertSettings, lastScrape, nextScrape, unread]);
-
-  // ── Manual / simulated scrape ──
-  const runScrape = useCallback(() => {
-    setScraping(true);
-    setTimeout(() => {
-      const now = Date.now();
-      const next = now + SCRAPE_INTERVAL_MS;
-      setLastScrape(now);
-      setNextScrape(next);
-
-      // Simulate: sometimes a new item appears
-      const rand = Math.random();
-      let newNotif;
-      let updatedItems = [...items];
-
-      if (rand > 0.6) {
-        // Simulate a new text
-        const fake = {
-          id: `2026-${Math.floor(Math.random() * 900 + 100)}`,
-          tags: ["Normes RED", rand > 0.8 ? "IoT" : "Smartphones"],
-          date: new Date().toISOString().slice(0, 10),
-          title: rand > 0.8
-            ? "Nouvelle décision harmonisée RED — équipements IoT basse consommation"
-            : "Mise à jour liste normes EN 303 — Wearables & smartglasses",
-          ref: `Décision d'exécution (UE) 2026/${Math.floor(Math.random() * 900 + 100)}`,
-          appDate: "2027-01-01",
-          appLabel: "01/01/2027",
-          badge: "Nouveau",
-          badgeColor: "#2e7d32",
-          summary: "Nouvelle publication détectée lors du scan hebdomadaire EUR-Lex. Ce texte a été automatiquement ajouté à votre veille.",
-          category: "RED",
-          devices: ["IoT", "Wearables", "Smartwatches"],
-          new: true,
-        };
-        updatedItems = [fake, ...items.map((i) => ({ ...i, new: false }))];
-        setItems(updatedItems);
-        newNotif = { id: Date.now(), type: "new", date: now, text: `🆕 Nouveau texte détecté : ${fake.title}`, read: false };
-        setUnread((u) => u + 1);
-      } else {
-        newNotif = { id: Date.now(), type: "ok", date: now, text: "✅ Scan hebdomadaire — Aucun nouveau texte. Toutes les sources sont à jour.", read: false };
-        setUnread((u) => u + 1);
-      }
-
-      setNotifications((prev) => [newNotif, ...prev].slice(0, 50));
-      setScraping(false);
-    }, 2200);
-  }, [items]);
-
-  // ── Mark all read ──
-  const markAllRead = () => {
-    setUnread(0);
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const visibleItems = items.filter(isVisible);
-  const newItems = visibleItems.filter((i) => i.new);
-
-  const fmtDate = (ts) => ts ? new Date(ts).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
-
-  // ── STYLES ──
-  const S = {
-    app: { fontFamily: "'Segoe UI', system-ui, sans-serif", background: "#f0f2f7", minHeight: "100vh", maxWidth: 480, margin: "0 auto", position: "relative" },
-    header: { background: "#0d0d1a", padding: "20px 20px 16px", borderRadius: "0 0 0 0" },
-    headerTitle: { color: "#fff", fontSize: 26, fontWeight: 900, letterSpacing: -0.5 },
-    headerSub: { color: "#90a4ae", fontSize: 12, marginTop: 2 },
-    body: { padding: "0 12px 80px", paddingTop: 12 },
-    navBar: { position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, background: "#fff", borderTop: "1px solid #e0e0e0", display: "flex", zIndex: 100 },
-    navBtn: (active) => ({
-      flex: 1, padding: "10px 0 8px", border: "none", background: "none", cursor: "pointer",
-      color: active ? "#1a237e" : "#90a4ae", display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-      fontSize: 10, fontWeight: active ? 700 : 500, letterSpacing: 0.5, textTransform: "uppercase"
-    }),
-    card: { background: "#fff", borderRadius: 14, padding: "14px 16px", marginBottom: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.07)" },
-    sectionLabel: { fontSize: 11, fontWeight: 700, color: "#90a4ae", letterSpacing: 1, marginBottom: 8 },
-    alertRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 0", borderBottom: "1px solid #f5f5f5" },
-    toggle: (on) => ({
-      width: 44, height: 24, borderRadius: 12, background: on ? "#1a237e" : "#cfd8dc",
-      position: "relative", cursor: "pointer", transition: "background 0.2s", border: "none",
-    }),
-    toggleDot: (on) => ({
-      position: "absolute", top: 3, left: on ? 22 : 3, width: 18, height: 18,
-      borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)"
-    }),
-  };
-
-  // ── ACCUEIL ──────────────────────────────────────────────────────────────────
-  const TabAccueil = () => (
-    <div>
-      {/* Dashboard banner */}
-      <div style={{ ...S.card, borderLeft: "4px solid #2e7d32", background: "#f1f8e9", marginBottom: 12 }}>
-        <div style={{ ...S.sectionLabel, color: "#558b2f" }}>TABLEAU DE BORD</div>
-        <div style={{ fontWeight: 800, fontSize: 15, color: "#2e7d32", marginBottom: 4 }}>Filtre actif : ≥ 01/06/2026</div>
-        <div style={{ fontSize: 12, color: "#558b2f" }}>
-          Textes antérieurs masqués (ex: cybersécurité 01/08/2026, USB-C laptop avril 2026)
+      {/* Filtre actif */}
+      <div style={{
+        background: S.greenBg, border: `1px solid ${S.greenBorder}`,
+        borderLeft: `3px solid ${S.greenAccent}`,
+        borderRadius: 12, padding: "10px 14px", marginBottom: 12
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: S.greenAccent }}>
+          ✅ Filtre actif : réglementations ≥ 01/06/2026
+        </div>
+        <div style={{ fontSize: 11, color: "#86efac", marginTop: 3 }}>
+          Textes antérieurs masqués · 10 textes en surveillance active
         </div>
       </div>
 
-      {/* FR transposition alert */}
-      {newItems.filter(i => i.category === "FR").map(item => (
-        <div key={item.id} style={{ ...S.card, borderLeft: "4px solid #e53935", background: "#ffebee", marginBottom: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 20 }}>🇫🇷</span>
-            <div style={{ fontWeight: 800, fontSize: 14, color: "#c62828" }}>Transposition FR en cours — {item.title.split("—")[1]?.trim() || item.title}</div>
+      {/* Alerte FR nouvelle */}
+      <div style={{
+        background: S.frBg, border: `1px solid ${S.frBorder}`,
+        borderLeft: `3px solid ${S.frAccent}`,
+        borderRadius: 12, padding: "10px 14px", marginBottom: 10,
+        display: "flex", gap: 10, alignItems: "flex-start"
+      }}>
+        <span style={{ fontSize: 18 }}>🇫🇷</span>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: S.frAccent }}>
+            2 nouveaux textes FR en cours d'adoption
           </div>
-          <div style={{ fontSize: 12, color: "#b71c1c", marginBottom: 4 }}>{item.ref.split("+")[0]?.trim()}</div>
-          <div style={{ fontWeight: 700, fontSize: 13, color: "#e53935" }}>Application visée : {item.appLabel}</div>
+          <div style={{ fontSize: 11, color: "#fca5a5", marginTop: 2, lineHeight: 1.5 }}>
+            DDADUE art.20-21 (greenwashing) + Décret ESPR smartphones<br />
+            <strong>Échéance visée : 27/09/2026 et 28/06/2026</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Alerte CRA */}
+      <div style={{
+        background: S.relBg, border: `1px solid ${S.relBorder}`,
+        borderLeft: `3px solid ${S.relAccent}`,
+        borderRadius: 12, padding: "10px 14px", marginBottom: 16,
+        display: "flex", gap: 10, alignItems: "flex-start"
+      }}>
+        <span style={{ fontSize: 18 }}>🇪🇺</span>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: S.relAccent }}>
+            🆕 Cyber Resilience Act — Classe I (11/12/2026)
+          </div>
+          <div style={{ fontSize: 11, color: "#7dd3fc", marginTop: 2, lineHeight: 1.5 }}>
+            Smartphones, IoT, routeurs, wearables · Nouvelles obligations cybersécurité obligatoires
+          </div>
+        </div>
+      </div>
+
+      {/* Carte scraping */}
+      <div style={{
+        background: S.card, border: `1px solid ${S.cardBorder}`,
+        borderRadius: 12, padding: "14px 16px", marginBottom: 16,
+        display: "flex", justifyContent: "space-between", alignItems: "center"
+      }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: S.text, marginBottom: 4 }}>
+            ⏱️ Scraping hebdomadaire
+          </div>
+          <div style={{ fontSize: 11, color: S.muted }}>
+            Dernier scan : <span style={{ color: S.greenAccent }}>{lastScan}</span>
+          </div>
+          <div style={{ fontSize: 11, color: S.muted, marginTop: 2 }}>
+            Prochain scan : <span style={{ color: S.warnAccent }}>{nextScan}</span>
+          </div>
+          <div style={{ fontSize: 10, color: S.muted, marginTop: 4 }}>
+            Sources : EUR-Lex · Légifrance · JORF · ETSI
+          </div>
+        </div>
+        <button
+          onClick={onScan}
+          disabled={scanLoading}
+          style={{
+            background: scanLoading ? S.cardBorder : S.euAccent,
+            color: "#fff", border: "none",
+            padding: "10px 16px", borderRadius: 10,
+            fontWeight: 700, fontSize: 13,
+            cursor: scanLoading ? "default" : "pointer",
+            transition: "background .2s",
+            minWidth: 72, textAlign: "center"
+          }}
+        >
+          {scanLoading ? "⏳" : "🔄 Scan"}
+        </button>
+      </div>
+
+      {/* Timeline */}
+      <div style={{
+        fontSize: 10, fontWeight: 700, color: S.muted,
+        letterSpacing: "0.1em", marginBottom: 10
+      }}>CALENDRIER DES ÉCHÉANCES</div>
+
+      {upcoming.map((e, i) => (
+        <div key={i} style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "10px 0", borderBottom: `1px solid ${S.cardBorder}`
+        }}>
+          <div style={{
+            background: S.purpleBg, border: `1px solid ${S.purple}44`,
+            borderRadius: 8, padding: "6px 10px",
+            minWidth: 68, textAlign: "center", flexShrink: 0
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: S.purple }}>
+              {e.date.slice(0, 5)}
+            </div>
+            <div style={{ fontSize: 10, color: S.purple }}>{e.date.slice(6)}</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: S.text, lineHeight: 1.3 }}>
+              {e.flag} {e.label}
+            </div>
+          </div>
         </div>
       ))}
+    </div>
+  );
+}
 
-      {/* NEW items highlight */}
-      {newItems.filter(i => i.category !== "FR").map(item => (
-        <div key={item.id} style={{ ...S.card, borderLeft: "4px solid #1565c0", background: "#e3f2fd", marginBottom: 12 }}>
-          <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
-            {item.tags.map(t => <Tag key={t} label={t} />)}
-          </div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "#0d47a1", lineHeight: 1.4 }}>
-            🆕 {item.title}
-          </div>
-          <div style={{ fontSize: 12, color: "#1565c0", marginTop: 4 }}>{item.devices.length} catégories d'appareils impactées · Application : {item.appLabel}</div>
-        </div>
-      ))}
+// ─────────────────────────────────────────────────────────────────────────────
+// ONGLET VEILLE
+// ─────────────────────────────────────────────────────────────────────────────
 
-      {/* Scan status */}
-      <div style={{ ...S.card, borderLeft: "4px solid #6c3fff", marginBottom: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a2e" }}>⏱ Scraping hebdomadaire</div>
-            <div style={{ fontSize: 11, color: "#78909c", marginTop: 2 }}>Dernier scan : {fmtDate(lastScrape)}</div>
-            <div style={{ fontSize: 11, color: "#78909c" }}>Prochain scan : {fmtDate(nextScrape)}</div>
-          </div>
+function VeilleTab() {
+  const [filter, setFilter] = useState("tous");
+
+  const filters = [
+    { key: "tous",       label: "Tous" },
+    { key: "eu_red",     label: "🇪🇺 RED stricte" },
+    { key: "eu_related", label: "🔗 Connexes EU" },
+    { key: "fr",         label: "🇫🇷 Droit FR" },
+  ];
+
+  const visible = filter === "tous"
+    ? REGULATIONS
+    : REGULATIONS.filter(r => r.category === filter);
+
+  const groups = filter === "tous"
+    ? [
+        { key: "eu_red",     label: "🇪🇺 TEXTES STRICTEMENT RED (2014/53/UE)", color: S.euAccent,   items: REGULATIONS.filter(r => r.category === "eu_red") },
+        { key: "eu_related", label: "🔗 RÉGLEMENTATIONS CONNEXES — IMPACT APPAREILS RED", color: S.relAccent, items: REGULATIONS.filter(r => r.category === "eu_related") },
+        { key: "fr",         label: "🇫🇷 TRANSPOSITIONS EN DROIT FRANÇAIS", color: S.frAccent,  items: REGULATIONS.filter(r => r.category === "fr") },
+      ]
+    : [{ key: filter, label: "", color: S.text, items: visible }];
+
+  return (
+    <div style={{ padding: "12px 16px 90px" }}>
+      {/* Légende */}
+      <div style={{
+        background: S.card, border: `1px solid ${S.cardBorder}`,
+        borderRadius: 10, padding: "10px 12px", marginBottom: 12,
+        fontSize: 10, color: S.muted, lineHeight: 1.8
+      }}>
+        <strong style={{ color: S.text }}>Catégories surveillées :</strong><br />
+        🇪🇺 <span style={{ color: S.euAccent }}>RED stricte</span> — modifient directement 2014/53/UE (normes harmonisées)<br />
+        🔗 <span style={{ color: S.relAccent }}>Connexes</span> — CRA, ESPR, Data Act, AI Act, EmpCo… impactent les appareils RED<br />
+        🇫🇷 <span style={{ color: S.frAccent }}>Droit FR</span> — transpositions Légifrance / JORF
+      </div>
+
+      {/* Filtres */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+        {filters.map(f => (
           <button
-            onClick={runScrape}
-            disabled={scraping}
-            style={{ background: scraping ? "#e0e0e0" : "#1a237e", color: "#fff", border: "none", borderRadius: 10, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: scraping ? "not-allowed" : "pointer" }}
-          >
-            {scraping ? "⏳ Scan…" : "🔄 Scan"}
-          </button>
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            style={{
+              padding: "5px 12px", borderRadius: 8, border: "none",
+              background: filter === f.key ? S.euAccent : S.card,
+              color: filter === f.key ? "#fff" : S.muted,
+              fontSize: 11, fontWeight: filter === f.key ? 700 : 400,
+              cursor: "pointer"
+            }}
+          >{f.label}</button>
+        ))}
+      </div>
+
+      {/* Cartes groupées */}
+      {groups.map(g => (
+        <div key={g.key}>
+          {filter === "tous" && (
+            <div style={{
+              fontSize: 10, fontWeight: 700, color: g.color,
+              letterSpacing: "0.1em", marginBottom: 10, marginTop: 4
+            }}>{g.label}</div>
+          )}
+          {g.items.map(r => <RegCard key={r.id} reg={r} />)}
         </div>
-        {scraping && (
-          <div style={{ marginTop: 10, background: "#f5f5f5", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#546e7a" }}>
-            Interrogation : {SOURCES.join(" · ")}…
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ONGLET ALERTES
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AlertesTab({ lastScan, nextScan, scanLog }) {
+  const [prefs, setPrefs] = useState({
+    red_strict: true,
+    cra: true,
+    espr: true,
+    data_act: true,
+    ai_act: true,
+    empco: true,
+    fr_transpo: true,
+    rien_nouveau: true,
+    rappel_j60: true,
+    rappel_j30: true,
+    resume_ai: true,
+  });
+
+  const toggle = k => setPrefs(p => ({ ...p, [k]: !p[k] }));
+
+  const toggleItems = [
+    { key: "red_strict",   icon: "📐", label: "Nouvelles normes harmonisées RED" },
+    { key: "cra",          icon: "🛡️", label: "Cyber Resilience Act (CRA)" },
+    { key: "espr",         icon: "♻️", label: "Écoconception ESPR (smartphones, wearables)" },
+    { key: "data_act",     icon: "💾", label: "Data Act — IoT & données" },
+    { key: "ai_act",       icon: "🤖", label: "AI Act — IA embarquée" },
+    { key: "empco",        icon: "🌿", label: "Greenwashing / EmpCo / Garanties" },
+    { key: "fr_transpo",   icon: "🇫🇷", label: "Transpositions en droit français" },
+    { key: "rien_nouveau", icon: "✅", label: "Confirmation scan (même si rien de nouveau)" },
+    { key: "rappel_j60",   icon: "📅", label: "Rappels d'échéances à J-60" },
+    { key: "rappel_j30",   icon: "⏰", label: "Rappels d'échéances à J-30" },
+    { key: "resume_ai",    icon: "💬", label: "Résumés vulgarisés automatiques" },
+  ];
+
+  return (
+    <div style={{ padding: "12px 16px 90px" }}>
+      {/* Alerte critique */}
+      <div style={{
+        background: S.frBg, border: `1px solid ${S.frBorder}`,
+        borderLeft: `3px solid ${S.frAccent}`,
+        borderRadius: 12, padding: "12px 14px", marginBottom: 16
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: S.frAccent, marginBottom: 4 }}>
+          ⚠️ Échéance critique — 28/06/2026
+        </div>
+        <div style={{ fontSize: 12, color: "#fca5a5", lineHeight: 1.5 }}>
+          ESPR Smartphones & Tablettes entre en vigueur dans <strong>33 jours</strong>. Vérifier la conformité réparabilité et score d'affichage.
+        </div>
+      </div>
+
+      {/* Statut scraping */}
+      <div style={{
+        background: S.card, border: `1px solid ${S.cardBorder}`,
+        borderRadius: 12, padding: "12px 14px", marginBottom: 16
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: S.text, marginBottom: 8 }}>
+          🔄 Statut du scraping
+        </div>
+        <div style={{ fontSize: 11, color: S.muted, lineHeight: 1.8 }}>
+          Dernier scan : <span style={{ color: S.greenAccent }}>{lastScan}</span><br />
+          Prochain scan : <span style={{ color: S.warnAccent }}>{nextScan}</span><br />
+          Fréquence : <span style={{ color: S.text }}>7 jours</span><br />
+          Sources : <span style={{ color: S.text }}>EUR-Lex SPARQL · Légifrance API · JORF RSS · ETSI</span>
+        </div>
+        {scanLog.length > 0 && (
+          <div style={{ marginTop: 10, borderTop: `1px solid ${S.cardBorder}`, paddingTop: 8 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: S.muted, letterSpacing: "0.08em", marginBottom: 6 }}>
+              HISTORIQUE
+            </div>
+            {scanLog.slice(-4).reverse().map((log, i) => (
+              <div key={i} style={{
+                fontSize: 11, color: log.hasNew ? S.relAccent : S.greenAccent,
+                padding: "2px 0"
+              }}>
+                {log.hasNew ? "🆕" : "✅"} {log.date} — {log.hasNew ? "Nouveaux textes détectés" : "Aucune modification"}
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Deadline calendar */}
-      <DeadlineCalendar items={items} />
-    </div>
-  );
-
-  // ── VEILLE ───────────────────────────────────────────────────────────────────
-  const TabVeille = () => (
-    <div>
-      <div style={{ ...S.card, background: "#e8eaf6", marginBottom: 12 }}>
-        <div style={{ fontSize: 12, color: "#3949ab", fontWeight: 600 }}>
-          📋 {visibleItems.length} textes actifs · Filtre ≥ 01/06/2026 · Directive 2014/53/UE + textes liés
-        </div>
+      {/* Toggles */}
+      <div style={{ fontSize: 10, fontWeight: 700, color: S.muted, letterSpacing: "0.1em", marginBottom: 10 }}>
+        NOTIFICATIONS ACTIVES
       </div>
-      {visibleItems.map((item) => <ItemCard key={item.id} item={item} />)}
-    </div>
-  );
-
-  // ── ALERTES ───────────────────────────────────────────────────────────────────
-  const TabAlertes = () => (
-    <div>
-      {/* Settings */}
-      <div style={S.card}>
-        <div style={S.sectionLabel}>TYPES D'ALERTES</div>
-        {[
-          { key: "nouvelles_normes", icon: "🇪🇺", label: "Nouvelles normes harmonisées RED" },
-          { key: "transpositions_fr", icon: "🇫🇷", label: "Transpositions droit français (JORF)" },
-          { key: "rappels", icon: "📅", label: "Rappels d'échéances (J-60 et J-30)" },
-          { key: "resumes", icon: "💬", label: "Résumés vulgarisés automatiques" },
-        ].map(({ key, icon, label }) => (
-          <div key={key} style={S.alertRow}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 20 }}>{icon}</span>
-              <span style={{ fontSize: 14, color: "#1a1a2e", fontWeight: 500 }}>{label}</span>
-            </div>
-            <button
-              style={S.toggle(alertSettings[key])}
-              onClick={() => setAlertSettings((a) => ({ ...a, [key]: !a[key] }))}
-            >
-              <div style={S.toggleDot(alertSettings[key])} />
-            </button>
+      {toggleItems.map(item => (
+        <div key={item.key} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "11px 0", borderBottom: `1px solid ${S.cardBorder}`
+        }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <span style={{ fontSize: 18 }}>{item.icon}</span>
+            <span style={{ fontSize: 13, color: S.text }}>{item.label}</span>
           </div>
-        ))}
-      </div>
-
-      {/* Sources */}
-      <div style={{ ...S.card, background: "#fffde7", border: "1px solid #ffe082" }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: "#f57f17", marginBottom: 6 }}>⚡ Sources interrogées</div>
-        <div style={{ fontSize: 12, color: "#e65100", lineHeight: 1.8 }}>
-          {SOURCES.map((s, i) => (
-            <span key={s}>{s}{i < SOURCES.length - 1 ? " · " : ""}</span>
-          ))}
-          {" "}— Toutes les <strong>24h</strong> (scan complet <strong>hebdomadaire</strong>)
-        </div>
-      </div>
-
-      {/* Notification log */}
-      <div style={S.card}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <div style={S.sectionLabel}>JOURNAL DES NOTIFICATIONS</div>
-          {unread > 0 && (
-            <button onClick={markAllRead} style={{ background: "none", border: "none", fontSize: 11, color: "#1565c0", fontWeight: 600, cursor: "pointer" }}>
-              Tout marquer lu
-            </button>
-          )}
-        </div>
-        {notifications.length === 0 && <div style={{ fontSize: 13, color: "#b0bec5", textAlign: "center", padding: 12 }}>Aucune notification pour l'instant</div>}
-        {notifications.map((n) => (
-          <div key={n.id} style={{ display: "flex", gap: 10, padding: "9px 0", borderBottom: "1px solid #f0f0f0", opacity: n.read ? 0.6 : 1 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.4, fontWeight: n.read ? 400 : 600 }}>{n.text}</div>
-              <div style={{ fontSize: 11, color: "#b0bec5", marginTop: 2 }}>{fmtDate(n.date)}</div>
-            </div>
-            {!n.read && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#1a237e", marginTop: 4, flexShrink: 0 }} />}
+          <div
+            onClick={() => toggle(item.key)}
+            style={{
+              width: 42, height: 24, borderRadius: 12,
+              background: prefs[item.key] ? S.euAccent : S.cardBorder,
+              position: "relative", cursor: "pointer",
+              transition: "background .25s", flexShrink: 0
+            }}
+          >
+            <div style={{
+              position: "absolute", top: 3,
+              left: prefs[item.key] ? 21 : 3,
+              width: 18, height: 18, borderRadius: "50%",
+              background: "#fff", transition: "left .25s",
+              boxShadow: "0 1px 3px rgba(0,0,0,.4)"
+            }} />
           </div>
-        ))}
-      </div>
-
-      {/* Frequency info */}
-      <div style={{ ...S.card, background: "#e8f5e9", border: "1px solid #a5d6a7" }}>
-        <div style={{ fontWeight: 700, fontSize: 13, color: "#2e7d32", marginBottom: 4 }}>🔔 Confirmation de fonctionnement</div>
-        <div style={{ fontSize: 12, color: "#388e3c", lineHeight: 1.6 }}>
-          Même si aucun nouveau texte n'est détecté, vous recevrez une notification hebdomadaire confirmant que le scan a bien été effectué. Vous êtes ainsi sûr que l'application surveille activement les sources réglementaires.
         </div>
-      </div>
+      ))}
     </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APP ROOT
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState("accueil");
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scanLog, setScanLog] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("rm_scanLog") || "[]");
+    } catch { return []; }
+  });
+
+  const [lastScan, setLastScan] = useState(() =>
+    localStorage.getItem(STORAGE_LAST) || formatDateTime(new Date())
+  );
+  const [nextScan, setNextScan] = useState(() =>
+    localStorage.getItem(STORAGE_NEXT) || formatDateTime(addDays(new Date(), SCAN_INTERVAL_DAYS))
+  );
+
+  // ── Scan simulé (en prod : appels Retrofit/SPARQL côté Android) ─────────────
+  const runScan = useCallback(() => {
+    setScanLoading(true);
+
+    setTimeout(() => {
+      const now = new Date();
+      const next = addDays(now, SCAN_INTERVAL_DAYS);
+      const nowStr  = formatDateTime(now);
+      const nextStr = formatDateTime(next);
+
+      // Simuler : aucun nouveau texte trouvé cette semaine
+      const hasNew = false;
+
+      const newLog = [...scanLog, { date: nowStr, hasNew }].slice(-20);
+
+      localStorage.setItem(STORAGE_LAST, nowStr);
+      localStorage.setItem(STORAGE_NEXT, nextStr);
+      localStorage.setItem(STORAGE_TS, String(now.getTime()));
+      localStorage.setItem("rm_scanLog", JSON.stringify(newLog));
+
+      setLastScan(nowStr);
+      setNextScan(nextStr);
+      setScanLog(newLog);
+      setScanLoading(false);
+
+      // Notification web (marche en localhost / PWA)
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("RED Monitor — Scan terminé", {
+          body: hasNew
+            ? "🆕 Nouveaux textes réglementaires détectés !"
+            : "✅ Aucune modification — Veille à jour.",
+          icon: "/favicon.ico"
+        });
+      }
+    }, 1800);
+  }, [scanLog]);
+
+  // ── Demande permission notif + scan auto si délai dépassé ──────────────────
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+    const ts = parseInt(localStorage.getItem(STORAGE_TS) || "0", 10);
+    const elapsed = Date.now() - ts;
+    if (elapsed >= SCAN_INTERVAL_DAYS * 86400000) {
+      runScan();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Badge alertes ──────────────────────────────────────────────────────────
+  const newCount = REGULATIONS.filter(r => r.isNew).length; // 3
+
+  const TABS = [
+    { key: "accueil", icon: "🏠", label: "ACCUEIL" },
+    { key: "veille",  icon: "📋", label: "VEILLE"  },
+    { key: "alertes", icon: "🔔", label: "ALERTES", badge: newCount },
+  ];
 
   return (
-    <div style={S.app}>
-      {/* Header */}
-      <div style={S.header}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={S.headerTitle}>RED Monitor</div>
-            <div style={S.headerSub}>Directive 2014/53/UE · Textes ≥ 01/06/2026 uniquement</div>
-          </div>
-          <button
-            onClick={() => { setTab("alertes"); markAllRead(); }}
-            style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 12, padding: "8px 10px", cursor: "pointer" }}
-          >
-            <IconBell active={unread > 0} count={unread} />
-          </button>
+    <div style={{
+      background: S.bg, color: S.text,
+      minHeight: "100vh", fontFamily: "'DM Sans', sans-serif",
+      maxWidth: 480, margin: "0 auto",
+      position: "relative"
+    }}>
+      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
+      <header style={{
+        padding: "18px 18px 14px",
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        borderBottom: `1px solid ${S.cardBorder}`,
+        position: "sticky", top: 0, background: S.bg, zIndex: 100
+      }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em" }}>
+            RED Monitor
+          </h1>
+          <p style={{ margin: "3px 0 0", fontSize: 11, color: S.muted }}>
+            Directive 2014/53/UE · Textes ≥ 01/06/2026 uniquement
+          </p>
         </div>
-      </div>
+        <div
+          onClick={() => setActiveTab("alertes")}
+          style={{
+            position: "relative", background: S.card,
+            border: `1px solid ${S.cardBorder}`,
+            padding: "10px 12px", borderRadius: 12, cursor: "pointer"
+          }}
+        >
+          <span style={{ fontSize: 20 }}>🔔</span>
+          {newCount > 0 && (
+            <span style={{
+              position: "absolute", top: 4, right: 4,
+              background: S.frAccent, color: "#fff",
+              borderRadius: "50%", width: 16, height: 16,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 9, fontWeight: 700
+            }}>{newCount}</span>
+          )}
+        </div>
+      </header>
 
-      {/* Body */}
-      <div style={S.body}>
-        {tab === "accueil" && <TabAccueil />}
-        {tab === "veille" && <TabVeille />}
-        {tab === "alertes" && <TabAlertes />}
-      </div>
+      {/* ── CONTENU DYNAMIQUE ──────────────────────────────────────────────── */}
+      <main style={{ overflowY: "auto" }}>
+        {activeTab === "accueil" && (
+          <HomeTab
+            lastScan={lastScan}
+            nextScan={nextScan}
+            onScan={runScan}
+            scanLoading={scanLoading}
+          />
+        )}
+        {activeTab === "veille" && <VeilleTab />}
+        {activeTab === "alertes" && (
+          <AlertesTab
+            lastScan={lastScan}
+            nextScan={nextScan}
+            scanLog={scanLog}
+          />
+        )}
+      </main>
 
-      {/* Nav bar */}
-      <nav style={S.navBar}>
-        {[
-          { key: "accueil", label: "ACCUEIL", Icon: () => <IconHome /> },
-          { key: "veille", label: "VEILLE", Icon: () => <IconWatch /> },
-          { key: "alertes", label: "ALERTES", Icon: () => <IconBell active={unread > 0} count={unread} /> },
-        ].map(({ key, label, Icon }) => (
-          <button key={key} style={S.navBtn(tab === key)} onClick={() => setTab(key)}>
-            <Icon />
-            <span>{label}</span>
+      {/* ── BARRE DE NAVIGATION ─────────────────────────────────────────────── */}
+      <nav style={{
+        position: "fixed", bottom: 0, left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%", maxWidth: 480,
+        background: S.card,
+        borderTop: `1px solid ${S.cardBorder}`,
+        display: "flex",
+        zIndex: 9999
+      }}>
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            style={{
+              flex: 1, padding: "10px 0",
+              background: "transparent", border: "none",
+              cursor: "pointer",
+              borderTop: activeTab === t.key
+                ? `2px solid ${S.euAccent}`
+                : "2px solid transparent",
+              position: "relative"
+            }}
+          >
+            <div style={{ fontSize: 20 }}>{t.icon}</div>
+            <div style={{
+              fontSize: 9, fontWeight: 700, marginTop: 2,
+              color: activeTab === t.key ? S.euAccent : S.muted,
+              letterSpacing: "0.06em"
+            }}>{t.label}</div>
+            {t.badge > 0 && (
+              <span style={{
+                position: "absolute", top: 6, right: "28%",
+                background: S.frAccent, color: "#fff",
+                borderRadius: "50%", width: 14, height: 14,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 8, fontWeight: 700
+              }}>{t.badge}</span>
+            )}
           </button>
         ))}
       </nav>
     </div>
   );
 }
-
-export default App;
