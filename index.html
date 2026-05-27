@@ -104,7 +104,7 @@
     </button>
   </nav>
 </div>
- 
+
 <!-- OneSignal SDK -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -135,7 +135,7 @@
       updatePushBtn(e.current.optedIn);
     });
   });
- 
+
   function updatePushBtn(subscribed) {
     var btn = document.getElementById('push-btn');
     if (!btn) return;
@@ -147,7 +147,7 @@
       btn.className = '';
     }
   }
- 
+
   function subscribePush() {
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(function(OneSignal) {
@@ -155,15 +155,15 @@
     });
   }
 </script>
- 
+
 <!-- App JS -->
 <script src="app.js"></script>
- 
+
 <!-- Service Worker -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/red-monitor/OneSignalSDKWorker.js', { scope: '/red-monitor/' })
+      navigator.serviceWorker.register('/OneSignalSDKWorker.js', { scope: '/' })
         .then(function(r) { console.log('SW OK', r.scope); })
         .catch(function(e) { console.warn('SW erreur:', e); });
     });
