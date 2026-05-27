@@ -4,6 +4,12 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="theme-color" content="#0f1120"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="RED Monitor"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <title>RED Monitor</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -25,7 +31,6 @@
     .card-green{background:#0d2a18;border:1px solid #1a5a30;border-left:3px solid #4ade80}
     .card-fr{background:#2a0d12;border:1px solid #5a1a22;border-left:3px solid #e04f5f}
     .card-eu{background:#0d2030;border:1px solid #1a4060;border-left:3px solid #38bdf8}
-    .card-warn{background:#2a1f0d;border:1px solid #f59e0b;border-left:3px solid #f59e0b}
     .card-plain{background:#1a1e35;border:1px solid #2a2f4a;border-radius:12px;padding:12px 14px;margin-bottom:12px}
     .card-reg{border-radius:14px;padding:14px 16px;margin-bottom:12px}
     .card-reg-eu_red{background:#0d1a3a;border:1px solid #1e3a7a;border-left:3px solid #4a7dff}
@@ -53,8 +58,7 @@
     .filter-btn{padding:6px 14px;border-radius:8px;border:none;font-size:11px;cursor:pointer;font-weight:400;color:#7a7f9a;background:#1a1e35}
     .filter-btn.active{background:#4a7dff;color:#fff;font-weight:700}
     .switch{width:46px;height:26px;border-radius:13px;border:none;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
-    .switch-on{background:#4a7dff}
-    .switch-off{background:#2a2f4a}
+    .switch-on{background:#4a7dff}.switch-off{background:#2a2f4a}
     .switch-knob{position:absolute;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.5)}
     .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #2a2f4a}
     .toggle-left{display:flex;align-items:center;gap:10px}
@@ -62,6 +66,10 @@
     .log-ok{color:#4ade80;font-size:11px;margin-bottom:3px}
     .log-new{color:#38bdf8;font-size:11px;margin-bottom:3px}
     .hidden{display:none}
+    #push-banner{background:#1a1e35;border:1px solid #4a7dff55;border-radius:12px;padding:12px 14px;margin:14px 16px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    #push-banner p{font-size:12px;color:#c0c4d8;line-height:1.4}
+    #push-btn{background:#4a7dff;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+    #push-btn.subscribed{background:#4ade8033;color:#4ade80;border:1px solid #4ade80;cursor:default}
   </style>
 </head>
 <body>
@@ -96,7 +104,70 @@
     </button>
   </nav>
 </div>
-<!-- JS séparé : jamais touché par Jekyll -->
+
+<!-- OneSignal SDK -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "b3a574f9-95e1-4f1d-845d-984fad1c6fe0",
+      serviceWorkerParam: { scope: "/red-monitor/" },
+      serviceWorkerPath: "OneSignalSDKWorker.js",
+      notifyButton: { enable: false },
+      promptOptions: {
+        slidedown: {
+          prompts: [{
+            type: "push",
+            autoPrompt: true,
+            text: {
+              actionMessage: "RED Monitor vous alertera de chaque nouvelle reglementation RED publiee.",
+              acceptButton: "Activer les alertes",
+              cancelButton: "Plus tard"
+            }
+          }]
+        }
+      }
+    });
+    var subscribed = await OneSignal.User.PushSubscription.optedIn;
+    updatePushBtn(subscribed);
+    OneSignal.User.PushSubscription.addEventListener('change', function(e) {
+      updatePushBtn(e.current.optedIn);
+    });
+  });
+
+  function updatePushBtn(subscribed) {
+    var btn = document.getElementById('push-btn');
+    if (!btn) return;
+    if (subscribed) {
+      btn.textContent = 'Activees';
+      btn.className = 'subscribed';
+    } else {
+      btn.textContent = 'Activer';
+      btn.className = '';
+    }
+  }
+
+  function subscribePush() {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(function(OneSignal) {
+      OneSignal.Slidedown.promptPush();
+    });
+  }
+</script>
+
+<!-- App JS -->
 <script src="app.js"></script>
+
+<!-- Service Worker -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/red-monitor/OneSignalSDKWorker.js', { scope: '/red-monitor/' })
+        .then(function(r) { console.log('SW OK', r.scope); })
+        .catch(function(e) { console.warn('SW erreur:', e); });
+    });
+  }
+</script>
 </body>
 </html>
