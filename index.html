@@ -9,498 +9,94 @@
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:#0f1120;color:#e8eaf0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
     #app{max-width:480px;margin:0 auto;position:relative;min-height:100vh}
-
-    /* HEADER */
     .header{position:sticky;top:0;z-index:50;background:#0f1120;border-bottom:1px solid #2a2f4a;padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center}
     .header h1{font-size:22px;font-weight:800;letter-spacing:-0.03em}
     .header p{font-size:11px;color:#7a7f9a;margin-top:3px}
     .bell-btn{position:relative;background:#1a1e35;border:1px solid #2a2f4a;padding:10px 12px;border-radius:12px;cursor:pointer;font-size:20px;line-height:1}
     .bell-badge{position:absolute;top:4px;right:4px;background:#e04f5f;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
-
-    /* CONTENU */
     .content{padding-bottom:70px}
-
-    /* NAVIGATION */
     .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#1a1e35;border-top:1px solid #2a2f4a;display:flex;z-index:100}
     .nav-btn{flex:1;padding:10px 0;background:transparent;border:none;border-top:2px solid transparent;cursor:pointer;color:#7a7f9a;position:relative}
     .nav-btn.active{border-top-color:#4a7dff;color:#4a7dff}
     .nav-btn .nav-icon{font-size:20px;display:block}
     .nav-btn .nav-label{font-size:9px;font-weight:700;letter-spacing:0.06em;display:block;margin-top:2px}
     .nav-badge{position:absolute;top:5px;right:26%;background:#e04f5f;color:#fff;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
-
-    /* CARTES */
-    .card{border-radius:12px;padding:12px 14px;margin-bottom:12px;border-left:3px solid transparent}
-    .card-green{background:#0d2a18;border-color:#4ade80;border:1px solid #1a5a30;border-left:3px solid #4ade80}
+    .card{border-radius:12px;padding:12px 14px;margin-bottom:12px}
+    .card-green{background:#0d2a18;border:1px solid #1a5a30;border-left:3px solid #4ade80}
     .card-fr{background:#2a0d12;border:1px solid #5a1a22;border-left:3px solid #e04f5f}
     .card-eu{background:#0d2030;border:1px solid #1a4060;border-left:3px solid #38bdf8}
     .card-warn{background:#2a1f0d;border:1px solid #f59e0b;border-left:3px solid #f59e0b}
-    .card-plain{background:#1a1e35;border:1px solid #2a2f4a}
+    .card-plain{background:#1a1e35;border:1px solid #2a2f4a;border-radius:12px;padding:12px 14px;margin-bottom:12px}
     .card-reg{border-radius:14px;padding:14px 16px;margin-bottom:12px}
     .card-reg-eu_red{background:#0d1a3a;border:1px solid #1e3a7a;border-left:3px solid #4a7dff}
     .card-reg-eu_related{background:#0d2030;border:1px solid #1a4060;border-left:3px solid #38bdf8}
     .card-reg-fr{background:#2a0d12;border:1px solid #5a1a22;border-left:3px solid #e04f5f}
-
-    /* TEXTE */
     .t-green{color:#4ade80}.t-fr{color:#e04f5f}.t-eu{color:#38bdf8}.t-blue{color:#4a7dff}.t-purple{color:#a78bfa}.t-warn{color:#f59e0b}.t-muted{color:#7a7f9a}.t-text{color:#e8eaf0}.t-light{color:#c0c4d8}
     .fw7{font-weight:700}.fw8{font-weight:800}.fs10{font-size:10px}.fs11{font-size:11px}.fs12{font-size:12px}.fs13{font-size:13px}.fs14{font-size:14px}
     .mb4{margin-bottom:4px}.mb6{margin-bottom:6px}.mb8{margin-bottom:8px}.mb10{margin-bottom:10px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
     .lh15{line-height:1.5}.lh17{line-height:1.75}
-
-    /* CHIPS */
     .chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap;letter-spacing:0.05em}
     .chip-new{background:#e04f5f;color:#fff}
     .chip-eu_red{background:#4a7dff33;color:#4a7dff}
     .chip-eu_related{background:#38bdf833;color:#38bdf8}
     .chip-fr{background:#e04f5f33;color:#e04f5f}
-
-    /* DEVICE TAGS */
     .dtag{font-size:9px;color:#7a7f9a;background:#1a1e35;border:1px solid #2a2f4a;padding:1px 6px;border-radius:4px;display:inline-block;margin:2px}
-
-    /* DATE PILL */
     .date-pill{display:inline-flex;align-items:center;gap:5px;background:#1a0d2a;border:1px solid #a78bfa44;border-radius:6px;padding:4px 10px;margin-bottom:10px}
-
-    /* TOGGLE RÉSUMÉ */
     .summary-toggle{background:transparent;border:none;font-size:11px;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:5px}
     .arrow{display:inline-block;transition:transform .2s;font-style:normal}
     .summary-box{margin-top:10px;background:#0f1120;border-left:2px solid #4a7dff44;border-radius:0 8px 8px 0;padding:10px 14px}
-    .summary-box.eu_related .summary-box{border-left-color:#38bdf844}
-    .summary-box.fr{border-left-color:#e04f5f44}
     .eur-link{display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;text-decoration:none;color:#fff;margin-top:10px}
-
-    /* SCAN */
     .scan-btn{background:#4a7dff;color:#fff;border:none;padding:10px 18px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
     .scan-btn:disabled{background:#2a2f4a;cursor:not-allowed}
-
-    /* AGENDA */
     .agenda-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #2a2f4a}
     .agenda-date{background:#1a0d2a;border:1px solid #a78bfa44;border-radius:8px;padding:6px 10px;min-width:68px;text-align:center;flex-shrink:0}
-
-    /* FILTRES */
     .filter-btn{padding:6px 14px;border-radius:8px;border:none;font-size:11px;cursor:pointer;font-weight:400;color:#7a7f9a;background:#1a1e35}
     .filter-btn.active{background:#4a7dff;color:#fff;font-weight:700}
-
-    /* TOGGLE SWITCH */
     .switch{width:46px;height:26px;border-radius:13px;border:none;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
     .switch-on{background:#4a7dff}
     .switch-off{background:#2a2f4a}
     .switch-knob{position:absolute;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.5)}
     .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #2a2f4a}
     .toggle-left{display:flex;align-items:center;gap:10px}
-
-    /* SECTION LABEL */
     .section-label{font-size:10px;font-weight:700;letter-spacing:0.1em;margin-bottom:10px}
-
-    /* HISTORIQUE */
     .log-ok{color:#4ade80;font-size:11px;margin-bottom:3px}
     .log-new{color:#38bdf8;font-size:11px;margin-bottom:3px}
-
-    /* HIDDEN */
     .hidden{display:none}
   </style>
 </head>
 <body>
 <div id="app">
-
-  <!-- HEADER -->
   <div class="header">
     <div>
       <h1>RED Monitor</h1>
-      <p>Directive 2014/53/UE · Textes ≥ 01/06/2026</p>
+      <p>Directive 2014/53/UE &middot; Textes &ge; 01/06/2026</p>
     </div>
-    <button class="bell-btn" onclick="setTab('alertes')">
-      🔔<span class="bell-badge">4</span>
+    <button class="bell-btn" id="bell-btn">
+      &#128276;<span class="bell-badge" id="bell-count">4</span>
     </button>
   </div>
-
-  <!-- CONTENU -->
   <div class="content">
     <div id="tab-accueil"></div>
     <div id="tab-veille" class="hidden"></div>
     <div id="tab-alertes" class="hidden"></div>
   </div>
-
-  <!-- NAVIGATION -->
   <nav class="nav">
-    <button class="nav-btn active" id="nav-accueil" onclick="setTab('accueil')">
-      <span class="nav-icon">🏠</span>
+    <button class="nav-btn active" id="nav-accueil">
+      <span class="nav-icon">&#127968;</span>
       <span class="nav-label">ACCUEIL</span>
     </button>
-    <button class="nav-btn" id="nav-veille" onclick="setTab('veille')">
-      <span class="nav-icon">📋</span>
+    <button class="nav-btn" id="nav-veille">
+      <span class="nav-icon">&#128203;</span>
       <span class="nav-label">VEILLE</span>
     </button>
-    <button class="nav-btn" id="nav-alertes" onclick="setTab('alertes')">
-      <span class="nav-icon">🔔</span>
+    <button class="nav-btn" id="nav-alertes">
+      <span class="nav-icon">&#128276;</span>
       <span class="nav-label">ALERTES</span>
-      <span class="nav-badge">4</span>
+      <span class="nav-badge" id="nav-badge">4</span>
     </button>
   </nav>
 </div>
-
-<script>
-/* ── DONNÉES ── */
-const DATA = [
-  {id:"red-1",cat:"eu_red",tag:"Normes RED",isNew:false,
-   ref:"Décision (UE) 2025/893",
-   title:"Normes harmonisées RED — DECT, SRD, WAS/RLAN 5-6 GHz, IMT",
-   date:"15/05/2025",apply:"15/11/2026",type:"Décision d'exécution",
-   devices:["Smartphones","IoT","Routeurs","SRD"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D0893",
-   summary:"14 nouvelles normes ETSI publiées ; 6 anciennes normes (DECT, SRD, WAS/RLAN 5-6 GHz) retirées le 15/11/2026. Tout appareil certifié selon une norme retirée doit être recertifié avant cette date, sous peine de perdre la présomption de conformité RED et de voir son marquage CE remis en cause lors d'un contrôle DGCCRF."},
-  {id:"red-2",cat:"eu_red",tag:"Normes RED",isNew:false,
-   ref:"Décision (UE) 2025/1741",
-   title:"Norme CEM ferroviaire EN 301 489-28 V2.1.1",
-   date:"14/08/2025",apply:"14/02/2027",type:"Décision d'exécution",
-   devices:["Équipements ferroviaires","IoT transport"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D1741",
-   summary:"La norme EN 301 489-28 V2.1.1 est publiée pour les équipements radio embarqués dans les trains. Six normes antérieures restent valides jusqu'au 14/02/2027 uniquement. Après cette date, seule la nouvelle version est reconnue pour la présomption de conformité RED."},
-  {id:"red-3",cat:"eu_red",tag:"Normes RED",isNew:false,
-   ref:"Décision (UE) 2025/2499",
-   title:"Normes EN 303 659 V1.1.1 et EN 305 550-6 V1.2.1",
-   date:"11/12/2025",apply:"11/06/2027",type:"Décision d'exécution",
-   devices:["Radio courte portée","Balises","IoT industriel"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D2499",
-   summary:"Deux nouvelles normes harmonisées citées au JOUE ; trois normes antérieures retirées au 11/06/2027. Les fabricants certifiés selon les normes retirées doivent planifier leur recertification avant cette échéance pour éviter tout blocage à la mise sur le marché."},
-  {id:"cra-1",cat:"eu_related",tag:"Cybersécurité",isNew:true,
-   ref:"Règlement (UE) 2024/2847 — CRA Classe I",
-   title:"Cyber Resilience Act — Smartphones, IoT, routeurs, wearables",
-   date:"20/11/2024",apply:"11/12/2026",type:"Règlement UE",
-   devices:["Smartphones","Tablettes","Smartwatches","SmartGlasses","Routeurs","IoT","Caméras connectées"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
-   summary:"À partir du 11/12/2026, tout produit numérique doit prouver sa cybersécurité avant mise sur le marché UE. Obligations : interdiction des mots de passe identiques par défaut, correctifs de sécurité obligatoires pendant toute la durée de vie, déclaration des vulnérabilités à l'ENISA sous 24h. Importateurs et distributeurs solidairement responsables."},
-  {id:"cra-2",cat:"eu_related",tag:"Cybersécurité",isNew:false,
-   ref:"Règlement (UE) 2024/2847 — CRA Classe II",
-   title:"Cyber Resilience Act — Passerelles domotiques, équipements critiques",
-   date:"20/11/2024",apply:"11/12/2027",type:"Règlement UE",
-   devices:["Passerelles domotiques","SmartGlasses pro","Réseaux industriels","Sécurité connectée"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
-   summary:"Un an après la Classe I, les produits Classe II devront passer un audit tiers obligatoire. Cette catégorie inclut passerelles domotiques, gestionnaires de mots de passe matériels et tout équipement servant de hub pour d'autres appareils connectés."},
-  {id:"espr-1",cat:"eu_related",tag:"Écoconception",isNew:true,
-   ref:"Règlement délégué (UE) 2025/781",
-   title:"ESPR — Durabilité et réparabilité smartphones et tablettes",
-   date:"28/04/2025",apply:"28/06/2026",type:"Règlement délégué",
-   devices:["Smartphones","Tablettes","Liseuses connectées"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R0781",
-   summary:"Dès juin 2026, smartphones et tablettes doivent être conçus pour durer : IP54 minimum, mises à jour garanties 5 ans, pièces détachées 7 ans, score de réparabilité obligatoire sur l'emballage. Interdiction de brider volontairement les batteries pour pousser au remplacement."},
-  {id:"espr-2",cat:"eu_related",tag:"Écoconception",isNew:false,
-   ref:"Règlement délégué (UE) 2025/2134",
-   title:"ESPR — Smartwatches, trackers fitness, écouteurs, SmartGlasses",
-   date:"18/09/2025",apply:"18/09/2027",type:"Règlement délégué",
-   devices:["Smartwatches","Trackers fitness","Écouteurs sans fil","SmartGlasses"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R2134",
-   summary:"Les wearables devront être réparables : batterie remplaçable sans démonter 80% du produit, score de réparabilité affiché, durée de vie batterie garantie 3 ans minimum. Les modèles collés irréparablement seront interdits à la vente dans l'UE."},
-  {id:"data-1",cat:"eu_related",tag:"Données / IoT",isNew:false,
-   ref:"Règlement (UE) 2023/2854 — Data Act",
-   title:"Data Act — Accès aux données des objets connectés",
-   date:"22/12/2023",apply:"12/09/2026",type:"Règlement UE",
-   devices:["Smartphones","IoT","Smartwatches","Électroménager connecté","Véhicules connectés"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
-   summary:"Les utilisateurs auront le droit légal de récupérer et transférer toutes les données générées par leurs appareils. Obligation d'intégrer une API de portabilité dans chaque appareil connecté ; interdiction des clauses verrouillant les données chez le fabricant."},
-  {id:"ai-1",cat:"eu_related",tag:"Intelligence Artificielle",isNew:false,
-   ref:"Règlement (UE) 2024/1689 — AI Act",
-   title:"AI Act — IA embarquée dans les appareils radio",
-   date:"12/07/2024",apply:"02/08/2026",type:"Règlement UE",
-   devices:["Smartphones","SmartGlasses","Wearables santé","IoT décision autonome"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
-   summary:"Tout appareil embarquant une IA (assistant vocal, reconnaissance d'image, analyse biométrique) doit être classifié par niveau de risque. Obligations : transparence sur l'IA, interdiction de manipulation émotionnelle, enregistrement EU pour systèmes à risque limité."},
-  {id:"empco-1",cat:"eu_related",tag:"Greenwashing",isNew:false,
-   ref:"Directive (UE) 2024/825 — EmpCo",
-   title:"EmpCo — Interdiction allégations environnementales non prouvées",
-   date:"06/03/2024",apply:"27/09/2026",type:"Directive",
-   devices:["Tous appareils RED"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
-   summary:"12 nouvelles pratiques trompeuses interdites, dont 'neutre en carbone par compensation'. Toute allégation écologique sur un équipement radio doit être prouvée par un organisme indépendant accrédité. Sanctions jusqu'à 4% du CA annuel dans l'UE."},
-  {id:"empco-2",cat:"eu_related",tag:"Garantie / Durabilité",isNew:false,
-   ref:"Règlement d'exécution (UE) 2025/1960",
-   title:"Label harmonisé durabilité + notice garantie légale",
-   date:"25/09/2025",apply:"27/09/2026",type:"Règlement d'exécution",
-   devices:["Smartphones","Tablettes","Wearables","IoT grand public"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025R1960",
-   summary:"Un label visuel normalisé doit être apposé sur tout produit bénéficiant d'une garantie commerciale de durabilité. La maquette exacte du label est fixée par ce règlement. Notice de garantie légale (2 ans minimum) standardisée en 24 langues de l'UE."},
-  {id:"fr-1",cat:"fr",tag:"Anti-greenwashing",isNew:true,
-   ref:"Projet de loi DDADUE — Art. 20-21",
-   title:"Transposition EmpCo + garantie durabilité en droit français",
-   date:"En cours (Sénat, avr. 2026)",apply:"27/09/2026",
-   type:"Loi (Code conso + Code envir.)",
-   devices:["Tous appareils RED"],
-   link:"https://www.senat.fr/rap/a25-346/a25-3463.html",
-   summary:"Les articles 20 et 21 du projet DDADUE inscrivent dans le Code de la consommation et le Code de l'environnement les obligations EmpCo. La DGCCRF pourra sanctionner jusqu'à 10% du CA annuel les fabricants utilisant des allégations écologiques non prouvées."},
-  {id:"fr-2",cat:"fr",tag:"Réparabilité",isNew:true,
-   ref:"Décret ESPR smartphones (attendu T3 2026)",
-   title:"Transposition ESPR smartphones — Score réparabilité v2",
-   date:"Attendu juin 2026",apply:"28/06/2026",
-   type:"Décret (Code envir. art. L541-10-9)",
-   devices:["Smartphones","Tablettes"],
-   link:"https://www.legifrance.gouv.fr",
-   summary:"Ce décret aligne le score de réparabilité français sur l'ESPR : passage de 10 à 14 critères. Les vendeurs en ligne doivent afficher le score sur la fiche produit avant le bouton d'achat."},
-  {id:"fr-3",cat:"fr",tag:"Données / IoT",isNew:false,
-   ref:"Ordonnance Data Act (attendue S2 2026)",
-   title:"Transposition Data Act — Portabilité données IoT",
-   date:"Attendue sept. 2026",apply:"12/09/2026",
-   type:"Ordonnance (habilitation loi DDADUE)",
-   devices:["IoT","Smartphones","Wearables"],
-   link:"https://www.legifrance.gouv.fr",
-   summary:"La France transposera le Data Act via ordonnance. La CNIL sera l'autorité de contrôle pour les litiges de portabilité IoT. Sanctions jusqu'à 20 M€ ou 4% du CA mondial."},
-];
-
-const AGENDA=[
-  {date:"28/06/2026",label:"ESPR Smartphones & Tablettes",flags:"🇪🇺🇫🇷"},
-  {date:"02/08/2026",label:"AI Act — IA embarquée",flags:"🇪🇺"},
-  {date:"12/09/2026",label:"Data Act — Portabilité IoT",flags:"🇪🇺🇫🇷"},
-  {date:"27/09/2026",label:"EmpCo greenwashing + label garantie",flags:"🇪🇺🇫🇷"},
-  {date:"15/11/2026",label:"Retrait normes RED (DECT, SRD…)",flags:"🇪🇺"},
-  {date:"11/12/2026",label:"Cyber Resilience Act — Classe I",flags:"🇪🇺"},
-  {date:"14/02/2027",label:"Retrait normes RED ferroviaires",flags:"🇪🇺"},
-  {date:"11/06/2027",label:"Retrait normes RED (EN 303 659…)",flags:"🇪🇺"},
-  {date:"18/09/2027",label:"ESPR Wearables & SmartGlasses",flags:"🇪🇺"},
-  {date:"11/12/2027",label:"Cyber Resilience Act — Classe II",flags:"🇪🇺"},
-];
-
-/* ── ÉTAT ── */
-let currentTab = 'accueil';
-let scanLoading = false;
-let lastScan = fmtDate(new Date());
-let nextScan = fmtDate(addDays(new Date(),7));
-let scanLog = [];
-let openCards = {};
-let veilleFilter = 'tous';
-let prefs = {red_normes:true,cra:true,espr:true,data_act:true,ai_act:true,empco:true,fr_transpo:true,rien_nouveau:true,rappel_j60:true,rappel_j30:true};
-
-/* ── HELPERS ── */
-function fmtDate(d){
-  const p=n=>String(n).padStart(2,'0');
-  return ${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())};
-}
-function addDays(d,n){return new Date(d.getTime()+n*86400000);}
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-/* ── NAVIGATION ── */
-function setTab(tab){
-  currentTab=tab;
-  ['accueil','veille','alertes'].forEach(t=>{
-    document.getElementById('tab-'+t).classList.toggle('hidden',t!==tab);
-    const btn=document.getElementById('nav-'+t);
-    btn.classList.toggle('active',t===tab);
-  });
-}
-
-/* ── SCAN ── */
-function handleScan(){
-  if(scanLoading)return;
-  scanLoading=true;
-  const btn=document.getElementById('scan-btn');
-  if(btn){btn.disabled=true;btn.textContent='⏳…';}
-  setTimeout(()=>{
-    const d=new Date();
-    lastScan=fmtDate(d);
-    nextScan=fmtDate(addDays(d,7));
-    scanLog=[...scanLog,{date:lastScan,hasNew:false}].slice(-20);
-    scanLoading=false;
-    renderAccueil();
-    renderAlertes();
-    if(btn){btn.disabled=false;btn.textContent='🔄 Scan';}
-    if('Notification' in window && Notification.permission==='granted'){
-      new Notification('RED Monitor — Scan terminé',{body:'✅ Aucune modification — votre veille est à jour.',icon:'/favicon.ico'});
-    }
-  },1800);
-}
-
-/* ── TOGGLE CARTE ── */
-function toggleCard(id){
-  openCards[id]=!openCards[id];
-  const box=document.getElementById('summary-'+id);
-  const arrow=document.getElementById('arrow-'+id);
-  const lbl=document.getElementById('lbl-'+id);
-  if(box){box.classList.toggle('hidden',!openCards[id]);}
-  if(arrow){arrow.style.transform=openCards[id]?'rotate(90deg)':'rotate(0deg)';}
-  if(lbl){lbl.textContent=openCards[id]?'Masquer le résumé':'💬 Lire en clair';}
-}
-
-/* ── TOGGLE SWITCH ── */
-function togglePref(key){
-  prefs[key]=!prefs[key];
-  const sw=document.getElementById('sw-'+key);
-  if(sw){
-    sw.classList.toggle('switch-on',prefs[key]);
-    sw.classList.toggle('switch-off',!prefs[key]);
-    const knob=sw.querySelector('.switch-knob');
-    if(knob)knob.style.left=prefs[key]?'23px':'3px';
-  }
-}
-
-/* ── FILTRE VEILLE ── */
-function setVeilleFilter(f){
-  veilleFilter=f;
-  renderVeille();
-}
-
-/* ── RENDU CARTE RÉGLEMENTATION ── */
-function renderCard(reg){
-  const acc=reg.cat==='eu_red'?'#4a7dff':reg.cat==='fr'?'#e04f5f':'#38bdf8';
-  const flag=reg.cat==='eu_red'?'🇪🇺':reg.cat==='fr'?'🇫🇷':'🔗';
-  const linkLabel=reg.cat==='fr'?'Légifrance / Sénat':'EUR-Lex';
-  const isOpen=openCards[reg.id]||false;
-  return `
-  <div class="card-reg card-reg-${reg.cat}">
-    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">
-      ${reg.isNew?'<span class="chip chip-new">🆕 NOUVEAU</span>':''}
-      <span class="chip chip-${reg.cat}">${flag} ${esc(reg.tag)}</span>
-      <span style="margin-left:auto;font-size:11px;color:#7a7f9a">${esc(reg.date)}</span>
-    </div>
-    <p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">${esc(reg.title)}</p>
-    <p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">${esc(reg.ref)} — ${esc(reg.type)}</p>
-    <div style="display:flex;flex-wrap:wrap;margin-bottom:10px">
-      ${reg.devices.map(d=><span class="dtag">${esc(d)}</span>).join('')}
-    </div>
-    <div class="date-pill" style="margin-bottom:10px">
-      <span>📅</span>
-      <span style="font-size:11px;font-weight:700;color:#a78bfa">Application : ${esc(reg.apply)}</span>
-    </div>
-    <button class="summary-toggle" onclick="toggleCard('${reg.id}')" style="color:${acc}">
-      <i id="arrow-${reg.id}" class="arrow" style="transform:${isOpen?'rotate(90deg)':'rotate(0deg)'}">▶️</i>
-      <span id="lbl-${reg.id}">${isOpen?'Masquer le résumé':'💬 Lire en clair'}</span>
-    </button>
-    <div id="summary-${reg.id}" class="${isOpen?'summary-box':'summary-box hidden'}">
-      <p style="font-size:12px;color:#c0c4d8;line-height:1.75;margin-bottom:10px">${esc(reg.summary)}</p>
-      <a href="${reg.link}" target="_blank" class="eur-link" style="background:${acc}">${linkLabel}</a>
-    </div>
-  </div>`;
-}
-
-/* ── ONGLET ACCUEIL ── */
-function renderAccueil(){
-  document.getElementById('tab-accueil').innerHTML=`
-  <div style="padding:14px 16px 90px">
-    <div class="card card-green mb12">
-      <p class="fw7 fs12 t-green">✅ Filtre actif : réglementations ≥ 01/06/2026</p>
-      <p class="fs11 mb0" style="color:#86efac;margin-top:3px">13 textes en surveillance · Textes antérieurs masqués</p>
-    </div>
-    <div class="card card-fr mb10" style="display:flex;gap:10px">
-      <span style="font-size:20px">🇫🇷</span>
-      <div>
-        <p class="fw7 fs12 t-fr">2 nouveaux textes FR en cours d'adoption</p>
-        <p class="fs11 lh15 mb0" style="color:#fca5a5;margin-top:4px">DDADUE art.20-21 (greenwashing) + Décret ESPR smartphones<br><strong>Échéances : 27/09/2026 et 28/06/2026</strong></p>
-      </div>
-    </div>
-    <div class="card card-eu mb16" style="display:flex;gap:10px">
-      <span style="font-size:20px">🇪🇺</span>
-      <div>
-        <p class="fw7 fs12 t-eu">🆕 Cyber Resilience Act — Classe I (11/12/2026)</p>
-        <p class="fs11 lh15 mb0" style="color:#7dd3fc;margin-top:4px">Smartphones · IoT · Routeurs · Wearables<br>Nouvelles obligations cybersécurité obligatoires</p>
-      </div>
-    </div>
-    <div class="card card-plain mb16" style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <div style="flex:1;min-width:0">
-        <p class="fw7 fs13 t-text mb6">⏱️ Scraping hebdomadaire</p>
-        <p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">${lastScan}</span></p>
-        <p class="fs11 t-muted mb4">Prochain scan : <span class="t-warn">${nextScan}</span></p>
-        <p class="fs10 t-muted">EUR-Lex SPARQL · Légifrance API · JORF RSS · ETSI</p>
-      </div>
-      <button id="scan-btn" class="scan-btn" onclick="handleScan()" ${scanLoading?'disabled':''}>
-        ${scanLoading?'⏳…':'🔄 Scan'}
-      </button>
-    </div>
-    <p class="section-label t-muted">CALENDRIER DES ÉCHÉANCES</p>
-    ${AGENDA.map(e=>`
-    <div class="agenda-row">
-      <div class="agenda-date">
-        <p style="font-size:13px;font-weight:800;color:#a78bfa;margin:0">${e.date.slice(0,5)}</p>
-        <p style="font-size:10px;color:#a78bfa;margin:0">${e.date.slice(6)}</p>
-      </div>
-      <p style="font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.4;margin:0">${e.flags} ${esc(e.label)}</p>
-    </div>`).join('')}
-  </div>`;
-}
-
-/* ── ONGLET VEILLE ── */
-function renderVeille(){
-  const filters=[
-    {key:'tous',label:'Tous'},
-    {key:'eu_red',label:'🇪🇺 RED stricte'},
-    {key:'eu_related',label:'🔗 Connexes EU'},
-    {key:'fr',label:'🇫🇷 Droit FR'},
-  ];
-  const groups=[
-    {key:'eu_red',label:'🇪🇺 TEXTES RED (2014/53/UE)',color:'#4a7dff'},
-    {key:'eu_related',label:'🔗 RÉGLEMENTATIONS CONNEXES — APPAREILS RED',color:'#38bdf8'},
-    {key:'fr',label:'🇫🇷 TRANSPOSITIONS DROIT FRANÇAIS',color:'#e04f5f'},
-  ];
-  const shown=veilleFilter==='tous'?groups:groups.filter(g=>g.key===veilleFilter);
-  document.getElementById('tab-veille').innerHTML=`
-  <div style="padding:14px 16px 90px">
-    <div class="card card-plain fs10 t-muted mb12" style="line-height:1.9">
-      <strong class="t-text">Catégories surveillées :</strong><br>
-      🇪🇺 <span class="t-blue">RED stricte</span> — normes harmonisées 2014/53/UE<br>
-      🔗 <span class="t-eu">Connexes</span> — CRA · ESPR · Data Act · AI Act · EmpCo<br>
-      🇫🇷 <span class="t-fr">Droit FR</span> — Légifrance / JORF
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
-      ${filters.map(f=><button class="filter-btn ${veilleFilter===f.key?'active':''}" onclick="setVeilleFilter('${f.key}')">${f.label}</button>).join('')}
-    </div>
-    ${shown.map(g=>`
-      <p class="section-label" style="color:${g.color}">${g.label}</p>
-      ${DATA.filter(r=>r.cat===g.key).map(renderCard).join('')}
-    `).join('')}
-  </div>`;
-}
-
-/* ── ONGLET ALERTES ── */
-function renderAlertes(){
-  const rows=[
-    {key:'red_normes',icon:'📐',label:'Nouvelles normes harmonisées RED'},
-    {key:'cra',icon:'🛡️',label:'Cyber Resilience Act (CRA)'},
-    {key:'espr',icon:'♻️',label:'Écoconception ESPR'},
-    {key:'data_act',icon:'💾',label:'Data Act — IoT & données'},
-    {key:'ai_act',icon:'🤖',label:'AI Act — IA embarquée'},
-    {key:'empco',icon:'🌿',label:'Greenwashing / EmpCo / Garanties'},
-    {key:'fr_transpo',icon:'🇫🇷',label:'Transpositions droit français'},
-    {key:'rien_nouveau',icon:'✅',label:'Confirmation scan (même si rien de nouveau)'},
-    {key:'rappel_j60',icon:'📅',label:'Rappels échéances à J-60'},
-    {key:'rappel_j30',icon:'⏰',label:'Rappels échéances à J-30'},
-  ];
-  document.getElementById('tab-alertes').innerHTML=`
-  <div style="padding:14px 16px 90px">
-    <div class="card card-fr mb16">
-      <p class="fw7 fs12 t-fr">⚠️ Échéance critique</p>
-      <p class="fs12 lh15 mb0" style="color:#fca5a5;margin-top:5px">
-        <strong>28/06/2026</strong> — ESPR Smartphones entre en vigueur.<br>
-        Vérifier conformité réparabilité et score d'affichage.
-      </p>
-    </div>
-    <div class="card card-plain mb16">
-      <p class="fw7 fs12 t-text mb8">🔄 Statut scraping</p>
-      <p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">${lastScan}</span></p>
-      <p class="fs11 t-muted" style="margin-bottom:2px">Prochain scan : <span class="t-warn">${nextScan}</span></p>
-      <p class="fs11 t-muted mb8">Fréquence : <span class="t-text">7 jours</span> · Sources : <span class="t-text">EUR-Lex · Légifrance · JORF · ETSI</span></p>
-      ${scanLog.length>0?`
-      <div style="border-top:1px solid #2a2f4a;padding-top:8px">
-        <p class="fs10 fw7 t-muted" style="letter-spacing:.08em;margin-bottom:6px">HISTORIQUE</p>
-        ${[...scanLog].reverse().slice(0,5).map(l=>`
-          <p class="${l.hasNew?'log-new':'log-ok'}">${l.hasNew?'🆕':'✅'} ${l.date} — ${l.hasNew?'Nouveaux textes détectés':'Aucune modification'}</p>
-        `).join('')}
-      </div>`:''}
-    </div>
-    <p class="section-label t-muted">NOTIFICATIONS ACTIVES</p>
-    ${rows.map(r=>`
-    <div class="toggle-row">
-      <div class="toggle-left">
-        <span style="font-size:20px">${r.icon}</span>
-        <span class="fs13 t-text">${r.label}</span>
-      </div>
-      <button id="sw-${r.key}" class="switch ${prefs[r.key]?'switch-on':'switch-off'}" onclick="togglePref('${r.key}')">
-        <span class="switch-knob" style="left:${prefs[r.key]?'23px':'3px'}"></span>
-      </button>
-    </div>`).join('')}
-  </div>`;
-}
-
-/* ── INIT ── */
-if('Notification' in window && Notification.permission==='default'){
-  Notification.requestPermission();
-}
-renderAccueil();
-renderVeille();
-renderAlertes();
-</script>
+<!-- JS séparé : jamais touché par Jekyll -->
+<script src="app.js"></script>
 </body>
 </html>
