@@ -1,10 +1,10 @@
 /* ============================================================
-   RED Monitor — app.js — v2.5
+   RED Monitor — app.js — v2.6
    Veille réglementaire équipements radio (Directive 2014/53/UE)
-   Corrections : ESPR 2023/1670 en vigueur, batteries 2027
+   Corrections : ESPR 2023/1670, batteries 2027, versioning
    ============================================================ */
 
-var APP_VERSION = '2.6';
+var APP_VERSION = '2.7';
 
 // ─── DONNÉES RÉGLEMENTAIRES ───────────────────────────────────────────────────
 var DATA = [
@@ -131,7 +131,7 @@ var DATA = [
   {id:"fr-2", cat:"fr", tag:"Reparabilite", isNew:true,
    ref:"Decret d'application ESPR smartphones attendu",
    title:"Score de reparabilite v2 — Transposition ESPR smartphones",
-   date:"Attendu 2026", apply:"28/06/2026 (prevu)", type:"Decret",
+   date:"Attendu 2026", apply:"Horizon 2026", type:"Decret",
    devices:["Smartphones","Tablettes"],
    link:"",
    summary:"Decret qui alignera le score de reparabilite francais sur les nouvelles exigences ESPR. Les vendeurs en ligne devront afficher le score directement sur la fiche produit."},
@@ -147,8 +147,8 @@ var DATA = [
 
 // ─── AGENDA ───────────────────────────────────────────────────────────────────
 var AGENDA = [
-  {date:"12/09/2025", label:"Data Act — Applicable (deja en vigueur)",                    flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
   {date:"20/06/2025", label:"Ecoconception smartphones 2023/1670 — Deja en vigueur",      flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1670"},
+  {date:"12/09/2025", label:"Data Act — Applicable (deja en vigueur)",                    flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
   {date:"02/08/2026", label:"AI Act — IA embarquee (haut risque)",                        flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
   {date:"11/09/2026", label:"CRA — Declaration vulnerabilites (Art. 64)",                 flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
   {date:"27/09/2026", label:"EmpCo — Anti-greenwashing",                                  flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
@@ -334,6 +334,15 @@ function renderAccueil() {
   document.getElementById('tab-accueil').innerHTML =
     '<div style="padding:14px 16px 90px">'
 
+    // ── Badge version + date du dernier scan
+    + '<div style="display:flex;justify-content:flex-end;margin-bottom:8px">'
+    + '<span style="font-size:10px;font-weight:700;color:#7a7f9a;'
+    + 'background:#1a1e35;border:1px solid #2a2f4a;border-radius:6px;'
+    + 'padding:3px 10px;letter-spacing:0.05em">'
+    + 'v' + APP_VERSION + ' — ' + lastScan.slice(0,10)
+    + '</span>'
+    + '</div>'
+
     + '<div class="card card-green mb12">'
     + '<p class="fw7 fs12 t-green">Filtre actif : reglementations depuis 01/06/2026</p>'
     + '<p class="fs11" style="color:#86efac;margin-top:3px">' + DATA.length + ' textes en surveillance</p>'
@@ -344,7 +353,7 @@ function renderAccueil() {
     + '<p class="fw7 fs12 t-fr">2 textes FR en cours d\'adoption</p>'
     + '<p class="fs11 lh15 mb0" style="color:#fca5a5;margin-top:4px">'
     + 'DDADUE art.20-21 (greenwashing) + Decret ESPR smartphones<br>'
-    + '<strong>Echeances prevues : 27/09/2026 et 28/06/2026</strong></p>'
+    + '<strong>Echeances prevues : 27/09/2026 et horizon 2026</strong></p>'
     + '</div></div>'
 
     + '<div class="card card-eu mb16" style="display:flex;gap:10px">'
@@ -455,7 +464,15 @@ function renderAlertes() {
   document.getElementById('tab-alertes').innerHTML =
     '<div style="padding:14px 16px 90px">'
     + '<div class="card-plain mb16">'
-    + '<p class="fw7 fs12 t-text mb8">Statut scraping — v' + APP_VERSION + '</p>'
+
+    // ── En-tête statut avec version bien visible
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+    + '<p class="fw7 fs12 t-text" style="margin:0">Statut scraping</p>'
+    + '<span style="font-size:11px;font-weight:800;color:#a78bfa;'
+    + 'background:#1a0d2a;border:1px solid #a78bfa44;border-radius:6px;'
+    + 'padding:3px 10px">v' + APP_VERSION + '</span>'
+    + '</div>'
+
     + '<p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">' + lastScan + '</span></p>'
     + '<p class="fs11 t-muted" style="margin-bottom:2px">Prochain scan : <span class="t-warn">' + nextScan + '</span></p>'
     + '<p class="fs11 t-muted mb8">Frequence : 7 jours · Sources : EUR-Lex · Legifrance · JORF · ETSI</p>'
