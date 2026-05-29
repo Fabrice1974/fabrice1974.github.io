@@ -1,5 +1,5 @@
 /* RED Monitor — app.js */
- 
+
 var DATA = [
   {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false,
    ref:"Directive 2014/53/UE — RED",
@@ -107,7 +107,7 @@ var DATA = [
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
    summary:"Le Data Act (UE) 2023/2854 est directement applicable depuis le 12/09/2025. La France doit publier une ordonnance de transposition (habilitation prevue dans la loi DDADUE). La CNIL sera l'autorite nationale de controle. Ordonnance non encore publiee au JORF — lien vers le reglement Data Act directement applicable."}
 ];
- 
+
 var AGENDA = [
   {date:"12/09/2025", label:"Data Act — Applicable (deja en vigueur)", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
   {date:"28/06/2026", label:"ESPR Smartphones et Tablettes (prevu)", flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"},
@@ -118,7 +118,7 @@ var AGENDA = [
   {date:"11/12/2027", label:"CRA — Pleine application toutes classes", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
   {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses (prevu)", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
 ];
- 
+
 var currentTab   = 'accueil';
 var scanLoading  = false;
 var lastScan     = fmtDate(new Date());
@@ -131,7 +131,7 @@ var prefs = {
   ai_act:true, empco:true, fr_transpo:true,
   rien_nouveau:true, rappel_j60:true, rappel_j30:true
 };
- 
+
 function fmtDate(d) {
   var p = function(n) { return String(n).padStart(2,'0'); };
   return p(d.getDate()) + '/' + p(d.getMonth()+1) + '/' + d.getFullYear()
@@ -142,7 +142,7 @@ function esc(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
- 
+
 function setTab(tab) {
   currentTab = tab;
   ['accueil','veille','alertes'].forEach(function(t) {
@@ -158,7 +158,7 @@ function setTab(tab) {
     if (bellBadge) bellBadge.style.display = 'none';
   }
 }
- 
+
 function handleScan() {
   if (scanLoading) return;
   scanLoading = true;
@@ -175,7 +175,7 @@ function handleScan() {
     if (btn) { btn.disabled = false; btn.textContent = 'Scan'; }
   }, 1800);
 }
- 
+
 function toggleCard(id) {
   openCards[id] = !openCards[id];
   var box   = document.getElementById('summary-' + id);
@@ -185,7 +185,7 @@ function toggleCard(id) {
   if (arrow) arrow.style.transform = openCards[id] ? 'rotate(90deg)' : 'rotate(0deg)';
   if (lbl)   lbl.textContent = openCards[id] ? 'Masquer le resume' : 'Lire en clair';
 }
- 
+
 function togglePref(key) {
   prefs[key] = !prefs[key];
   var sw = document.getElementById('sw-' + key);
@@ -196,9 +196,9 @@ function togglePref(key) {
     if (knob) knob.style.left = prefs[key] ? '23px' : '3px';
   }
 }
- 
+
 function setVeilleFilter(f) { veilleFilter = f; renderVeille(); }
- 
+
 function renderCard(reg) {
   var acc = reg.cat === 'eu_red' ? '#4a7dff' : reg.cat === 'fr' ? '#e04f5f' : '#38bdf8';
   var flag = reg.cat === 'eu_red' ? 'EU' : reg.cat === 'fr' ? 'FR' : 'EU';
@@ -210,7 +210,7 @@ function renderCard(reg) {
   var linkBtn = reg.link
     ? '<a href="' + reg.link + '" target="_blank" rel="noopener" class="eur-link" style="background:' + acc + '">' + linkLabel + ' &rarr;</a>'
     : '<span style="display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;background:#2a2f4a;color:#7a7f9a;margin-top:10px">Texte non encore publie</span>';
- 
+
   return '<div class="card-reg card-reg-' + reg.cat + '">'
     + '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'
     + newChip + catChip
@@ -233,7 +233,7 @@ function renderCard(reg) {
     + '</div>'
     + '</div>';
 }
- 
+
 function renderAccueil() {
   var agendaRows = AGENDA.map(function(e) {
     return '<a href="' + e.link + '" target="_blank" rel="noopener" style="text-decoration:none">'
@@ -248,7 +248,7 @@ function renderAccueil() {
       + '</div>'
       + '</div></a>';
   }).join('');
- 
+
   document.getElementById('tab-accueil').innerHTML =
     '<div style="padding:14px 16px 90px">'
     + '<div class="card card-green mb12">'
@@ -276,7 +276,7 @@ function renderAccueil() {
     + agendaRows
     + '</div>';
 }
- 
+
 function renderVeille() {
   var filters = [
     {key:'tous', label:'Tous'},
@@ -303,7 +303,7 @@ function renderVeille() {
     + groupsHtml
     + '</div>';
 }
- 
+
 function renderAlertes() {
   var rows = [
     {key:'red_normes',  icon:'📐', label:'Nouvelles normes harmonisees RED'},
@@ -348,20 +348,20 @@ function renderAlertes() {
     + switchRows
     + '</div>';
 }
- 
+
 document.getElementById('bell-btn').addEventListener('click', function() { setTab('alertes'); });
 document.getElementById('nav-accueil').addEventListener('click', function() { setTab('accueil'); });
 document.getElementById('nav-veille').addEventListener('click',  function() { setTab('veille'); });
 document.getElementById('nav-alertes').addEventListener('click', function() { setTab('alertes'); });
- 
+
 if ('Notification' in window && Notification.permission === 'default') {
   Notification.requestPermission();
 }
- 
+
 renderAccueil();
 renderVeille();
 renderAlertes();
- 
+
 fetch('data.json?v=' + Date.now())
   .then(function(r) { return r.ok ? r.json() : []; })
   .catch(function() { return []; })
