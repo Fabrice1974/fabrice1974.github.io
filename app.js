@@ -93,4 +93,424 @@ var DATA = [
    date:"06/03/2024", apply:"27/09/2026", type:"Directive",
    devices:["Tous appareils RED"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
-   summary:"12 nouvelles pratiques commerciales trompeuses interdites, dont l'allegation neutre en carbone par compensation. Toute allegation ecologique doit etre prouvee par
+   summary:"12 nouvelles pratiques commerciales trompeuses interdites, dont l'allegation neutre en carbone par compensation. Toute allegation ecologique doit etre prouvee par un organisme independant accredite."},
+
+  {id:"empco-2", cat:"eu_related", tag:"Garantie Durabilite", isNew:false,
+   ref:"Directive (UE) 2024/825 — EmpCo volet garantie",
+   title:"Label harmonise durabilite + notice de garantie legale",
+   date:"06/03/2024", apply:"27/09/2026", type:"Directive",
+   devices:["Smartphones","Tablettes","Wearables","IoT grand public"],
+   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
+   summary:"La directive EmpCo instaure un label visuel normalise pour les produits beneficiant d'une garantie commerciale de durabilite, et standardise la notice de garantie legale en 24 langues de l'UE."},
+
+  {id:"fr-1", cat:"fr", tag:"Anti-greenwashing", isNew:true,
+   ref:"Projet de loi DDADUE — Art. 20-21",
+   title:"Transposition EmpCo en droit francais — DDADUE",
+   date:"En cours Parlement 2026", apply:"27/09/2026", type:"Projet de loi",
+   devices:["Tous appareils RED"],
+   link:"",
+   summary:"Les articles 20 et 21 du projet de loi DDADUE transposent la directive EmpCo dans le Code de la consommation et le Code de l'environnement. La DGCCRF sera l'autorite de controle avec des sanctions jusqu'a 10% du CA annuel."},
+
+  {id:"fr-2", cat:"fr", tag:"Reparabilite", isNew:true,
+   ref:"Decret d'application ESPR smartphones attendu",
+   title:"Score de reparabilite v2 — Transposition ESPR smartphones",
+   date:"Attendu 2026", apply:"28/06/2026 (prevu)", type:"Decret",
+   devices:["Smartphones","Tablettes"],
+   link:"",
+   summary:"Decret qui alignera le score de reparabilite francais sur les nouvelles exigences ESPR. Les vendeurs en ligne devront afficher le score directement sur la fiche produit."},
+
+  {id:"fr-3", cat:"fr", tag:"Donnees IoT", isNew:false,
+   ref:"Ordonnance de transposition Data Act attendue 2026",
+   title:"Transposition Data Act — Portabilite des donnees IoT",
+   date:"Attendue 2026", apply:"Le Data Act est applicable depuis 12/09/2025", type:"Ordonnance",
+   devices:["IoT","Smartphones","Wearables"],
+   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
+   summary:"Le Data Act (UE) 2023/2854 est directement applicable depuis le 12/09/2025. La France doit publier une ordonnance de transposition. La CNIL sera l'autorite nationale de controle."}
+];
+
+// ─── AGENDA ───────────────────────────────────────────────────────────────────
+var AGENDA = [
+  {date:"12/09/2025", label:"Data Act — Applicable (deja en vigueur)",                  flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
+  {date:"28/06/2026", label:"ESPR Smartphones et Tablettes (prevu)",                    flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"},
+  {date:"02/08/2026", label:"AI Act — IA embarquee (haut risque)",                      flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
+  {date:"11/09/2026", label:"CRA — Declaration vulnerabilites (Art. 64)",               flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
+  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing",                                flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
+  {date:"12/09/2026", label:"Data Act — Nouveaux produits IoT concus pour portabilite", flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
+  {date:"11/12/2027", label:"CRA — Pleine application toutes classes",                  flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
+  {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses (prevu)",                 flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
+];
+
+// ─── ÉTAT GLOBAL ──────────────────────────────────────────────────────────────
+var currentTab   = 'accueil';
+var scanLoading  = false;
+var lastScan     = fmtDate(new Date());
+var nextScan     = fmtDate(addDays(new Date(), 7));
+var scanLog      = [];
+var openCards    = {};
+var veilleFilter = 'tous';
+var prefs = {
+  red_normes:true, cra:true, espr:true, data_act:true,
+  ai_act:true, empco:true, fr_transpo:true,
+  rien_nouveau:true, rappel_j60:true, rappel_j30:true
+};
+
+// ─── UTILITAIRES ──────────────────────────────────────────────────────────────
+
+function fmtDate(d) {
+  var p = function(n) { return String(n).padStart(2, '0'); };
+  return p(d.getDate()) + '/' + p(d.getMonth()+1) + '/' + d.getFullYear()
+       + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function addDays(d, n) { return new Date(d.getTime() + n * 86400000); }
+
+function esc(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+
+function setTab(tab) {
+  currentTab = tab;
+  ['accueil','veille','alertes'].forEach(function(t) {
+    var panel = document.getElementById('tab-' + t);
+    var btn   = document.getElementById('nav-' + t);
+    if (panel) panel.classList.toggle('hidden', t !== tab);
+    if (btn)   btn.classList.toggle('active',   t === tab);
+  });
+  if (tab === 'alertes') {
+    var badge     = document.getElementById('nav-badge');
+    var bellBadge = document.getElementById('bell-count');
+    if (badge)     badge.style.display = 'none';
+    if (bellBadge) bellBadge.style.display = 'none';
+  }
+}
+
+// ─── SCAN ─────────────────────────────────────────────────────────────────────
+
+function handleScan() {
+  if (scanLoading) return;
+  scanLoading = true;
+  console.log('[Scan] Démarrage...');
+  var btn = document.getElementById('scan-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Scan en cours...'; }
+
+  setTimeout(function() {
+    var d    = new Date();
+    lastScan = fmtDate(d);
+    nextScan = fmtDate(addDays(d, 7));
+    scanLog  = scanLog.concat([{ date: lastScan, hasNew: false }]).slice(-20);
+    scanLoading = false;
+    console.log('[Scan] Terminé —', lastScan);
+    renderAccueil();
+    renderAlertes();
+    if (btn) { btn.disabled = false; btn.textContent = 'Scan'; }
+  }, 1800);
+}
+
+// ─── CARTES ───────────────────────────────────────────────────────────────────
+
+function toggleCard(id) {
+  openCards[id] = !openCards[id];
+  var box   = document.getElementById('summary-' + id);
+  var arrow = document.getElementById('arrow-'   + id);
+  var lbl   = document.getElementById('lbl-'     + id);
+  if (box)   box.classList.toggle('hidden', !openCards[id]);
+  if (arrow) arrow.style.transform = openCards[id] ? 'rotate(90deg)' : 'rotate(0deg)';
+  if (lbl)   lbl.textContent       = openCards[id] ? 'Masquer le resume' : 'Lire en clair';
+}
+
+// ─── PRÉFÉRENCES ──────────────────────────────────────────────────────────────
+
+function togglePref(key) {
+  prefs[key] = !prefs[key];
+  var sw = document.getElementById('sw-' + key);
+  if (sw) {
+    sw.classList.toggle('switch-on',  prefs[key]);
+    sw.classList.toggle('switch-off', !prefs[key]);
+    var knob = sw.querySelector('.switch-knob');
+    if (knob) knob.style.left = prefs[key] ? '23px' : '3px';
+  }
+  console.log('[Prefs]', key, '→', prefs[key] ? 'activé' : 'désactivé');
+}
+
+// ─── FILTRE VEILLE ────────────────────────────────────────────────────────────
+
+function setVeilleFilter(f) {
+  veilleFilter = f;
+  console.log('[Veille] Filtre →', f);
+  renderVeille();
+}
+
+// ─── RENDU CARTE ──────────────────────────────────────────────────────────────
+
+function renderCard(reg) {
+  var acc      = reg.cat === 'eu_red' ? '#4a7dff' : reg.cat === 'fr' ? '#e04f5f' : '#38bdf8';
+  var flag     = reg.cat === 'eu_red' ? 'EU' : reg.cat === 'fr' ? 'FR' : 'EU';
+  var linkLabel= reg.cat === 'fr' ? 'Legifrance' : 'EUR-Lex';
+  var isOpen   = openCards[reg.id] || false;
+
+  var newChip  = reg.isNew
+    ? '<span class="chip chip-new">Nouveau</span>' : '';
+  var catChip  = '<span class="chip chip-' + reg.cat + '">' + flag + ' ' + esc(reg.tag) + '</span>';
+  var deviceTags = reg.devices.map(function(d) {
+    return '<span class="dtag">' + esc(d) + '</span>';
+  }).join('');
+  var linkBtn  = reg.link
+    ? '<a href="' + reg.link + '" target="_blank" rel="noopener" class="eur-link" style="background:' + acc + '">'
+      + linkLabel + ' &rarr;</a>'
+    : '<span style="display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;'
+      + 'border-radius:6px;background:#2a2f4a;color:#7a7f9a;margin-top:10px">Texte non encore publie</span>';
+
+  return '<div class="card-reg card-reg-' + reg.cat + '">'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'
+    + newChip + catChip
+    + '<span style="margin-left:auto;font-size:11px;color:#7a7f9a">' + esc(reg.date) + '</span>'
+    + '</div>'
+    + '<p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">'
+    + esc(reg.title) + '</p>'
+    + '<p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">'
+    + esc(reg.ref) + ' - ' + esc(reg.type) + '</p>'
+    + '<div style="display:flex;flex-wrap:wrap;margin-bottom:10px">' + deviceTags + '</div>'
+    + '<div class="date-pill" style="margin-bottom:10px">'
+    + '<span>Application :</span>'
+    + '<span style="font-size:11px;font-weight:700;color:#a78bfa">' + esc(reg.apply) + '</span>'
+    + '</div>'
+    + '<button class="summary-toggle" onclick="toggleCard(\'' + reg.id + '\')" style="color:' + acc + '">'
+    + '<i id="arrow-' + reg.id + '" class="arrow" style="transform:'
+    + (isOpen ? 'rotate(90deg)' : 'rotate(0deg)') + '">&#9658;</i>'
+    + '<span id="lbl-' + reg.id + '">' + (isOpen ? 'Masquer' : 'Lire en clair') + '</span>'
+    + '</button>'
+    + '<div id="summary-' + reg.id + '" class="summary-box' + (isOpen ? '' : ' hidden') + '">'
+    + '<p style="font-size:12px;color:#c0c4d8;line-height:1.75;margin-bottom:10px">'
+    + esc(reg.summary) + '</p>'
+    + linkBtn
+    + '</div>'
+    + '</div>';
+}
+
+// ─── RENDU ACCUEIL ────────────────────────────────────────────────────────────
+
+function renderAccueil() {
+  console.log('[Render] Accueil v' + APP_VERSION);
+
+  var agendaRows = AGENDA.map(function(e) {
+    return '<a href="' + e.link + '" target="_blank" rel="noopener" style="text-decoration:none">'
+      + '<div class="agenda-row">'
+      + '<div class="agenda-date">'
+      + '<p style="font-size:12px;font-weight:800;color:#a78bfa;margin:0">' + esc(e.date.slice(0,5)) + '</p>'
+      + '<p style="font-size:10px;color:#a78bfa;margin:0">' + esc(e.date.slice(6)) + '</p>'
+      + '</div>'
+      + '<div style="flex:1">'
+      + '<p style="font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.4;margin:0">'
+      + esc(e.flags) + ' ' + esc(e.label) + '</p>'
+      + '<p style="font-size:10px;color:#4a7dff;margin-top:2px">Voir le texte</p>'
+      + '</div>'
+      + '</div></a>';
+  }).join('');
+
+  document.getElementById('tab-accueil').innerHTML =
+    '<div style="padding:14px 16px 90px">'
+
+    + '<div class="card card-green mb12">'
+    + '<p class="fw7 fs12 t-green">Filtre actif : reglementations depuis 01/06/2026</p>'
+    + '<p class="fs11" style="color:#86efac;margin-top:3px">' + DATA.length + ' textes en surveillance</p>'
+    + '</div>'
+
+    + '<div class="card card-fr mb10" style="display:flex;gap:10px">'
+    + '<div>'
+    + '<p class="fw7 fs12 t-fr">2 textes FR en cours d\'adoption</p>'
+    + '<p class="fs11 lh15 mb0" style="color:#fca5a5;margin-top:4px">'
+    + 'DDADUE art.20-21 (greenwashing) + Decret ESPR smartphones<br>'
+    + '<strong>Echeances prevues : 27/09/2026 et 28/06/2026</strong></p>'
+    + '</div></div>'
+
+    + '<div class="card card-eu mb16" style="display:flex;gap:10px">'
+    + '<div>'
+    + '<p class="fw7 fs12 t-eu">CRA — Pleine application toutes classes (11/12/2027)</p>'
+    + '<p class="fs11 lh15 mb0" style="color:#7dd3fc;margin-top:4px">'
+    + 'Reporting vulnerabilites applicable des 11/09/2026</p>'
+    + '</div></div>'
+
+    + '<div class="card-plain mb16" style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
+    + '<div style="flex:1;min-width:0">'
+    + '<p class="fw7 fs13 t-text mb6">Scraping hebdomadaire</p>'
+    + '<p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">' + lastScan + '</span></p>'
+    + '<p class="fs11 t-muted mb4">Prochain scan : <span class="t-warn">' + nextScan + '</span></p>'
+    + '<p class="fs10 t-muted">EUR-Lex · Legifrance · JORF · ETSI</p>'
+    + '</div>'
+    + '<button id="scan-btn" class="scan-btn" onclick="handleScan()">'
+    + (scanLoading ? 'En cours...' : 'Scan') + '</button>'
+    + '</div>'
+
+    + '<p class="section-label t-muted">CALENDRIER DES ECHEANCES</p>'
+    + agendaRows
+    + '</div>';
+}
+
+// ─── RENDU VEILLE ─────────────────────────────────────────────────────────────
+
+function renderVeille() {
+  console.log('[Render] Veille — filtre :', veilleFilter);
+
+  var filters = [
+    { key:'tous',       label:'Tous'        },
+    { key:'eu_red',     label:'RED stricte' },
+    { key:'eu_related', label:'Connexes EU' },
+    { key:'fr',         label:'Droit FR'    }
+  ];
+  var groups = [
+    { key:'eu_red',     label:'TEXTES RED (2014/53/UE)',       color:'#4a7dff' },
+    { key:'eu_related', label:'REGLEMENTATIONS CONNEXES',      color:'#38bdf8' },
+    { key:'fr',         label:'TRANSPOSITIONS DROIT FRANCAIS', color:'#e04f5f' }
+  ];
+
+  var shown = veilleFilter === 'tous'
+    ? groups
+    : groups.filter(function(g) { return g.key === veilleFilter; });
+
+  var filterBtns = filters.map(function(f) {
+    return '<button class="filter-btn ' + (veilleFilter === f.key ? 'active' : '')
+      + '" onclick="setVeilleFilter(\'' + f.key + '\')">' + f.label + '</button>';
+  }).join('');
+
+  var groupsHtml = shown.map(function(g) {
+    var cards = DATA
+      .filter(function(r) { return r.cat === g.key; })
+      .map(renderCard).join('');
+    return '<p class="section-label" style="color:' + g.color + '">' + g.label + '</p>' + cards;
+  }).join('');
+
+  document.getElementById('tab-veille').innerHTML =
+    '<div style="padding:14px 16px 90px">'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">' + filterBtns + '</div>'
+    + groupsHtml
+    + '</div>';
+}
+
+// ─── RENDU ALERTES ────────────────────────────────────────────────────────────
+
+function renderAlertes() {
+  console.log('[Render] Alertes');
+
+  var rows = [
+    { key:'red_normes',   icon:'📐', label:'Nouvelles normes harmonisees RED'            },
+    { key:'cra',          icon:'🛡️', label:'Cyber Resilience Act (CRA)'                 },
+    { key:'espr',         icon:'♻️', label:'Econception ESPR'                            },
+    { key:'data_act',     icon:'💾', label:'Data Act IoT'                                },
+    { key:'ai_act',       icon:'🤖', label:'AI Act IA embarquee'                         },
+    { key:'empco',        icon:'🌿', label:'Greenwashing EmpCo Garanties'                },
+    { key:'fr_transpo',   icon:'🇫🇷', label:'Transpositions droit francais'              },
+    { key:'rien_nouveau', icon:'✅', label:'Confirmation scan (meme si rien de nouveau)' },
+    { key:'rappel_j60',   icon:'📅', label:'Rappels echeances a J-60'                    },
+    { key:'rappel_j30',   icon:'⏰', label:'Rappels echeances a J-30'                    }
+  ];
+
+  var logHtml = '';
+  if (scanLog.length > 0) {
+    var logItems = scanLog.slice().reverse().slice(0,5).map(function(l) {
+      return '<p class="' + (l.hasNew ? 'log-new' : 'log-ok') + '">'
+        + (l.hasNew ? '🆕 Nouveaux textes detectes' : '✅ Aucune modification')
+        + ' — ' + l.date + '</p>';
+    }).join('');
+    logHtml = '<div style="border-top:1px solid #2a2f4a;padding-top:8px">' + logItems + '</div>';
+  }
+
+  var switchRows = rows.map(function(r) {
+    return '<div class="toggle-row">'
+      + '<div class="toggle-left">'
+      + '<span style="font-size:20px">' + r.icon + '</span>'
+      + '<span class="fs13 t-text">' + r.label + '</span>'
+      + '</div>'
+      + '<button id="sw-' + r.key + '" class="switch '
+      + (prefs[r.key] ? 'switch-on' : 'switch-off')
+      + '" onclick="togglePref(\'' + r.key + '\')">'
+      + '<span class="switch-knob" style="left:' + (prefs[r.key] ? '23px' : '3px') + '"></span>'
+      + '</button>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('tab-alertes').innerHTML =
+    '<div style="padding:14px 16px 90px">'
+    + '<div class="card-plain mb16">'
+    + '<p class="fw7 fs12 t-text mb8">Statut scraping — v' + APP_VERSION + '</p>'
+    + '<p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">' + lastScan + '</span></p>'
+    + '<p class="fs11 t-muted" style="margin-bottom:2px">Prochain scan : <span class="t-warn">' + nextScan + '</span></p>'
+    + '<p class="fs11 t-muted mb8">Frequence : 7 jours · Sources : EUR-Lex · Legifrance · JORF · ETSI</p>'
+    + logHtml
+    + '</div>'
+    + '<p class="section-label t-muted">NOTIFICATIONS ACTIVES</p>'
+    + switchRows
+    + '</div>';
+}
+
+// ─── INITIALISATION ───────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[App] DOM prêt — RED Monitor v' + APP_VERSION);
+
+  // Vérifie que les éléments critiques existent
+  var bellBtn    = document.getElementById('bell-btn');
+  var navAccueil = document.getElementById('nav-accueil');
+  var navVeille  = document.getElementById('nav-veille');
+  var navAlertes = document.getElementById('nav-alertes');
+  var tabAccueil = document.getElementById('tab-accueil');
+
+  if (!bellBtn || !navAccueil || !tabAccueil) {
+    console.error('[App] ❌ Éléments DOM manquants — vérifie index.html');
+    return;
+  }
+
+  // Event listeners navigation
+  bellBtn   .addEventListener('click', function() { setTab('alertes'); });
+  navAccueil.addEventListener('click', function() { setTab('accueil'); });
+  navVeille .addEventListener('click', function() { setTab('veille');  });
+  navAlertes.addEventListener('click', function() { setTab('alertes'); });
+
+  // Permission notifications push
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().then(function(result) {
+      console.log('[Notif] Permission :', result);
+    });
+  }
+
+  // Premier rendu
+  renderAccueil();
+  renderVeille();
+  renderAlertes();
+
+  console.log('[App] ✅ Rendu initial terminé');
+
+  // Chargement données dynamiques — cache-busting via timestamp
+  fetch('data.json?v=' + Date.now())
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .catch(function(err) {
+      console.warn('[Data] data.json non disponible :', err.message);
+      return [];
+    })
+    .then(function(dynamicItems) {
+      if (!dynamicItems || dynamicItems.length === 0) {
+        console.log('[Data] Aucune donnée dynamique — données statiques utilisées');
+        return;
+      }
+      var staticIds = DATA.map(function(d) { return d.id; });
+      var newOnly   = dynamicItems.filter(function(d) {
+        return !staticIds.includes(d.id);
+      });
+      if (newOnly.length > 0) {
+        console.log('[Data]', newOnly.length, 'nouveau(x) texte(s) chargé(s)');
+        DATA = newOnly.concat(DATA);
+        renderAccueil();
+        renderVeille();
+        renderAlertes();
+      } else {
+        console.log('[Data] Aucun nouveau texte dans data.json');
+      }
+    });
+});
