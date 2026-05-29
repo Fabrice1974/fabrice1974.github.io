@@ -1,10 +1,10 @@
 /* ============================================================
-   RED Monitor — app.js — v2.6
+   RED Monitor — app.js — v2.7
    Veille réglementaire équipements radio (Directive 2014/53/UE)
    Corrections : ESPR 2023/1670, batteries 2027, versioning
    ============================================================ */
 
-var APP_VERSION = '2.7';
+var APP_VERSION = '2.8';
 
 // ─── DONNÉES RÉGLEMENTAIRES ───────────────────────────────────────────────────
 var DATA = [
