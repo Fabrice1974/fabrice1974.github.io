@@ -1,6 +1,6 @@
 /* RED Monitor — app.js
    Séparé de index.html pour éviter que Jekyll corrompe les template literals JS */
-
+ 
 /* ═══════════════════════════════════════════════
    DONNÉES RÉGLEMENTAIRES
    ═══════════════════════════════════════════════ */
@@ -27,7 +27,7 @@ var DATA = [
    devices:["Smartphones","IoT","Smartwatches","SmartGlasses","Routeurs","Caméras connectées"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0030",
    summary:"Rend obligatoires les exigences de cybersécurité de l'article 3(3)(d)(e)(f) de la directive RED pour tous les appareils connectés à internet. Obligations : protection des données personnelles, protection contre les accès non autorisés, absence de fonctions frauduleuses. En vigueur depuis le 01/08/2025."},
-
+ 
   /* ── RÈGLEMENTS CONNEXES ── */
   {id:"cra-1", cat:"eu_related", tag:"Cybersécurité", isNew:true,
    ref:"Règlement (UE) 2024/2847 — CRA",
@@ -92,7 +92,7 @@ var DATA = [
    devices:["Smartphones","Tablettes","Wearables","IoT grand public"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
    summary:"La directive EmpCo instaure également un label visuel normalisé pour les produits bénéficiant d'une garantie commerciale de durabilité, et standardise la notice de garantie légale (2 ans minimum) en 24 langues de l'UE. Le règlement d'exécution précisant la maquette exacte du label est en cours de publication."},
-
+ 
   /* ── TRANSPOSITIONS FR ── */
   {id:"fr-1", cat:"fr", tag:"Anti-greenwashing", isNew:true,
    ref:"Projet de loi DDADUE — Art. 20-21",
@@ -119,7 +119,25 @@ var DATA = [
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
    summary:"La France transposera le Data Act par ordonnance (habilitation prévue dans la loi DDADUE). La CNIL sera l'autorité nationale de contrôle pour les litiges de portabilité IoT. Texte non encore publié au JORF — lien vers le règlement Data Act source (UE) 2023/2854 directement applicable."}
 ];
-
+ 
+var AGENDA = [
+  {date:"28/06/2026", label:"ESPR Smartphones et Tablettes", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"},
+  {date:"02/08/2026", label:"AI Act — IA embarquée", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
+  {date:"01/08/2025", label:"Acte délégué cybersécurité RED", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0030"},
+  {date:"12/09/2026", label:"Data Act — Portabilité IoT", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
+  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
+  {date:"11/12/2026", label:"Cyber Resilience Act — Classe I", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
+  {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"},
+  {date:"11/12/2027", label:"Cyber Resilience Act — Classe II", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"}
+];
+   title:"Transposition Data Act — Portabilité des données IoT",
+   date:"Attendue S2 2026", apply:"12/09/2026",
+   type:"Ordonnance",
+   devices:["IoT","Smartphones","Wearables"],
+   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
+   summary:"La France transposera le Data Act par ordonnance (habilitation prévue dans la loi DDADUE). La CNIL sera l'autorité nationale de contrôle pour les litiges de portabilité IoT. Texte non encore publié au JORF — lien vers le règlement Data Act source (UE) 2023/2854 directement applicable."}
+];
+ 
 /* ═══════════════════════════════════════════════
    ÉTAT
    ═══════════════════════════════════════════════ */
@@ -135,7 +153,7 @@ var prefs = {
   ai_act:true, empco:true, fr_transpo:true,
   rien_nouveau:true, rappel_j60:true, rappel_j30:true
 };
-
+ 
 /* ═══════════════════════════════════════════════
    HELPERS
    ═══════════════════════════════════════════════ */
@@ -144,11 +162,11 @@ function fmtDate(d) {
   return p(d.getDate()) + '/' + p(d.getMonth()+1) + '/' + d.getFullYear()
        + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
-
+ 
 function addDays(d, n) {
   return new Date(d.getTime() + n * 86400000);
 }
-
+ 
 function esc(s) {
   if (!s) return '';
   return String(s)
@@ -157,13 +175,13 @@ function esc(s) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
-
+ 
 function h(tag, attrs, inner) {
   var a = '';
   for (var k in attrs) { a += ' ' + k + '="' + attrs[k] + '"'; }
   return '<' + tag + a + '>' + (inner || '') + '</' + tag + '>';
 }
-
+ 
 /* ═══════════════════════════════════════════════
    NAVIGATION
    ═══════════════════════════════════════════════ */
@@ -182,7 +200,7 @@ function setTab(tab) {
     if (bellBadge) bellBadge.style.display = 'none';
   }
 }
-
+ 
 /* ═══════════════════════════════════════════════
    SCAN
    ═══════════════════════════════════════════════ */
@@ -191,7 +209,7 @@ function handleScan() {
   scanLoading = true;
   var btn = document.getElementById('scan-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Scan en cours...'; }
-
+ 
   setTimeout(function() {
     var d = new Date();
     lastScan = fmtDate(d);
@@ -209,7 +227,7 @@ function handleScan() {
     }
   }, 1800);
 }
-
+ 
 /* ═══════════════════════════════════════════════
    TOGGLE CARTE (résumé)
    ═══════════════════════════════════════════════ */
@@ -222,7 +240,7 @@ function toggleCard(id) {
   if (arrow) arrow.style.transform = openCards[id] ? 'rotate(90deg)' : 'rotate(0deg)';
   if (lbl)   lbl.textContent = openCards[id] ? 'Masquer le résumé' : 'Lire en clair';
 }
-
+ 
 /* ═══════════════════════════════════════════════
    TOGGLE SWITCH (alertes)
    ═══════════════════════════════════════════════ */
@@ -236,7 +254,7 @@ function togglePref(key) {
     if (knob) knob.style.left = prefs[key] ? '23px' : '3px';
   }
 }
-
+ 
 /* ═══════════════════════════════════════════════
    FILTRE VEILLE
    ═══════════════════════════════════════════════ */
@@ -244,7 +262,7 @@ function setVeilleFilter(f) {
   veilleFilter = f;
   renderVeille();
 }
-
+ 
 /* ═══════════════════════════════════════════════
    RENDU CARTE RÉGLEMENTATION
    ═══════════════════════════════════════════════ */
@@ -253,11 +271,11 @@ function renderCard(reg) {
   var flag = reg.cat === 'eu_red' ? '🇪🇺' : reg.cat === 'fr' ? '🇫🇷' : '🔗';
   var linkLabel = reg.cat === 'fr' ? 'Légifrance / Sénat' : 'EUR-Lex';
   var isOpen = openCards[reg.id] || false;
-
+ 
   var newChip    = reg.isNew ? '<span class="chip chip-new">Nouveau</span>' : '';
   var catChip    = '<span class="chip chip-' + reg.cat + '">' + flag + ' ' + esc(reg.tag) + '</span>';
   var deviceTags = reg.devices.map(function(d) { return '<span class="dtag">' + esc(d) + '</span>'; }).join('');
-
+ 
   return '<div class="card-reg card-reg-' + reg.cat + '">'
     + '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'
     +   newChip + catChip
@@ -283,7 +301,7 @@ function renderCard(reg) {
     + '</div>'
     + '</div>';
 }
-
+ 
 /* ═══════════════════════════════════════════════
    ONGLET ACCUEIL
    ═══════════════════════════════════════════════ */
@@ -302,7 +320,7 @@ function renderAccueil() {
       + '</div>'
       + '</a>';
   }).join('');
-
+ 
   document.getElementById('tab-accueil').innerHTML =
     '<div style="padding:14px 16px 90px">'
     + '<div class="card card-green mb12">'
@@ -338,7 +356,7 @@ function renderAccueil() {
     + agendaRows
     + '</div>';
 }
-
+ 
 /* ═══════════════════════════════════════════════
    ONGLET VEILLE
    ═══════════════════════════════════════════════ */
@@ -355,16 +373,16 @@ function renderVeille() {
     {key:'fr',        label:'🇫🇷 TRANSPOSITIONS DROIT FRANÇAIS',         color:'#e04f5f'}
   ];
   var shown = veilleFilter === 'tous' ? groups : groups.filter(function(g) { return g.key === veilleFilter; });
-
+ 
   var filterBtns = filters.map(function(f) {
     return '<button class="filter-btn ' + (veilleFilter === f.key ? 'active' : '') + '" onclick="setVeilleFilter(\'' + f.key + '\')">' + f.label + '</button>';
   }).join('');
-
+ 
   var groupsHtml = shown.map(function(g) {
     var cards = DATA.filter(function(r) { return r.cat === g.key; }).map(renderCard).join('');
     return '<p class="section-label" style="color:' + g.color + '">' + g.label + '</p>' + cards;
   }).join('');
-
+ 
   document.getElementById('tab-veille').innerHTML =
     '<div style="padding:14px 16px 90px">'
     + '<div class="card-plain fs10 t-muted mb12" style="line-height:1.9">'
@@ -377,7 +395,7 @@ function renderVeille() {
     + groupsHtml
     + '</div>';
 }
-
+ 
 /* ═══════════════════════════════════════════════
    ONGLET ALERTES
    ═══════════════════════════════════════════════ */
@@ -394,7 +412,7 @@ function renderAlertes() {
     {key:'rappel_j60',  icon:'📅', label:'Rappels échéances à J-60'},
     {key:'rappel_j30',  icon:'⏰', label:'Rappels échéances à J-30'}
   ];
-
+ 
   var logHtml = '';
   if (scanLog.length > 0) {
     var logItems = scanLog.slice().reverse().slice(0, 5).map(function(l) {
@@ -408,7 +426,7 @@ function renderAlertes() {
       + logItems
       + '</div>';
   }
-
+ 
   var switchRows = rows.map(function(r) {
     return '<div class="toggle-row">'
       + '<div class="toggle-left">'
@@ -420,7 +438,7 @@ function renderAlertes() {
       + '</button>'
       + '</div>';
   }).join('');
-
+ 
   document.getElementById('tab-alertes').innerHTML =
     '<div style="padding:14px 16px 90px">'
     + '<div class="card card-fr mb16">'
@@ -441,7 +459,7 @@ function renderAlertes() {
     + switchRows
     + '</div>';
 }
-
+ 
 /* ═══════════════════════════════════════════════
    INIT — charge data.json puis rend l'app
    ═══════════════════════════════════════════════ */
@@ -449,11 +467,11 @@ document.getElementById('bell-btn').addEventListener('click', function() { setTa
 document.getElementById('nav-accueil').addEventListener('click', function() { setTab('accueil'); });
 document.getElementById('nav-veille').addEventListener('click',  function() { setTab('veille'); });
 document.getElementById('nav-alertes').addEventListener('click', function() { setTab('alertes'); });
-
+ 
 if ('Notification' in window && Notification.permission === 'default') {
   Notification.requestPermission();
 }
-
+ 
 /* Charger les textes dynamiques depuis data.json (mis à jour par scrape.mjs)
    et les fusionner EN TÊTE des données statiques */
 fetch('data.json?v=' + Date.now())
