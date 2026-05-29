@@ -1,23 +1,20 @@
 /* ============================================================
-   RED Monitor — app.js — v2.9
-   Veille réglementaire équipements radio (Directive 2014/53/UE)
-   Filtre : échéances strictement après le 01/06/2026
-   Accueil : cartes dynamiques basées sur les vraies échéances
+   RED Monitor — app.js — v3.0
+   Filtre agenda : uniquement échéances >= 01/06/2026
    ============================================================ */
 
-var APP_VERSION = '2.9';
+var APP_VERSION = '3.0';
 
 // ─── DATE DE RÉFÉRENCE DU FILTRE ─────────────────────────────────────────────
 var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
 
 // ─── DONNÉES RÉGLEMENTAIRES ───────────────────────────────────────────────────
 var DATA = [
-  // ── Textes RED stricte
   {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false,
    ref:"Directive 2014/53/UE — RED",
    title:"Directive RED — Equipements radioelectriques (texte de reference)",
    date:"16/04/2014", apply:"13/06/2016", type:"Directive UE",
-   applyDate: null, // déjà en vigueur — exclu du filtre
+   applyDate:null,
    devices:["Smartphones","IoT","Routeurs","Wearables","SRD","Drones"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053",
    summary:"Texte fondateur de la directive RED. Fixe les exigences essentielles de securite, compatibilite electromagnetique et utilisation efficace du spectre pour tous les equipements radioelectriques mis sur le marche UE. Tout appareil emettant ou recevant des ondes radio doit y etre conforme pour porter le marquage CE."},
@@ -26,7 +23,7 @@ var DATA = [
    ref:"Decision d'execution (UE) 2022/2444",
    title:"Normes harmonisees RED publiees au JOUE — liste consolidee 2022",
    date:"13/12/2022", apply:"En vigueur", type:"Decision d'execution",
-   applyDate: null,
+   applyDate:null,
    devices:["Smartphones","IoT","Routeurs","SRD","Wearables"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022D2444",
    summary:"Liste consolidee des normes harmonisees RED publiees au Journal officiel de l'UE. Les fabricants qui respectent ces normes beneficient de la presomption de conformite aux exigences essentielles RED."},
@@ -35,17 +32,16 @@ var DATA = [
    ref:"Reglement delegue (UE) 2022/30",
    title:"Acte delegue cybersecurite RED — Art. 3(3)(d)(e)(f)",
    date:"29/10/2021", apply:"01/08/2025 au 10/12/2027", type:"Reglement delegue",
-   applyDate: null, // déjà en vigueur
+   applyDate:null,
    devices:["Smartphones","IoT","Smartwatches","SmartGlasses","Routeurs","Cameras connectees"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0030",
    summary:"En vigueur depuis le 01/08/2025 pour tous les appareils connectes a internet. Obligations : protection des donnees personnelles, protection contre les acces non autorises, absence de fonctions frauduleuses. Ce reglement sera abroge le 11/12/2027 lors de la pleine application du Cyber Resilience Act (CRA)."},
 
-  // ── Textes connexes EU
   {id:"cra-rapport", cat:"eu_related", tag:"Cybersecurite", isNew:true,
    ref:"Reglement (UE) 2024/2847 — CRA Art. 64",
    title:"Cyber Resilience Act — Declaration vulnerabilites et incidents",
    date:"23/10/2024", apply:"11/09/2026", type:"Reglement UE",
-   applyDate: new Date(2026, 8, 11),
+   applyDate:new Date(2026,8,11),
    devices:["Smartphones","Tablettes","Smartwatches","SmartGlasses","Routeurs","IoT"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
    summary:"Des le 11 septembre 2026, les fabricants doivent declarer toute vulnerabilite activement exploitee et tout incident grave a l'ENISA dans un delai de 24 heures."},
@@ -54,7 +50,7 @@ var DATA = [
    ref:"Reglement (UE) 2024/2847 — CRA pleine application",
    title:"Cyber Resilience Act — Pleine application toutes classes (I et II)",
    date:"23/10/2024", apply:"11/12/2027", type:"Reglement UE",
-   applyDate: new Date(2027, 11, 11),
+   applyDate:new Date(2027,11,11),
    devices:["Smartphones","Tablettes","Smartwatches","SmartGlasses","Routeurs","IoT","Cameras connectees","Passerelles domotiques"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
    summary:"A partir du 11/12/2027, tout produit numerique mis sur le marche UE doit satisfaire l'ensemble des exigences CRA : interdiction des mots de passe par defaut, correctifs de securite pendant toute la duree de vie, conformite evaluee."},
@@ -63,7 +59,7 @@ var DATA = [
    ref:"Reglement (UE) 2024/1781 — ESPR",
    title:"ESPR — Reglement ecoconception pour produits durables (base)",
    date:"28/06/2024", apply:"19/07/2024", type:"Reglement UE",
-   applyDate: null,
+   applyDate:null,
    devices:["Smartphones","Tablettes","Wearables","Liseuses","IoT grand public"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781",
    summary:"Reglement cadre en vigueur depuis le 19/07/2024. Remplace la directive Ecoconception 2009/125/CE. Instaure le Passeport Numerique de Produit (DNP), les scores de reparabilite et les criteres de durabilite."},
@@ -72,7 +68,7 @@ var DATA = [
    ref:"Reglement (UE) 2023/1670 — Ecoconception smartphones",
    title:"Ecoconception smartphones et tablettes — en vigueur 20/06/2025",
    date:"16/06/2023", apply:"20/06/2025", type:"Reglement UE",
-   applyDate: null, // déjà en vigueur
+   applyDate:null,
    devices:["Smartphones","Tablettes","Liseuses connectees"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1670",
    summary:"Texte operationnel applicable depuis le 20/06/2025. Fixe les obligations concretes : duree de vie batterie, disponibilite pieces detachees 7 ans, mises a jour OS garanties 5 ans, indice de reparabilite europeen obligatoire."},
@@ -81,7 +77,7 @@ var DATA = [
    ref:"Acte delegue ESPR smartphones — non encore publie au JOUE",
    title:"ESPR — Acte delegue smartphones (Passeport Numerique Produit)",
    date:"En preparation", apply:"Horizon 2027-2028", type:"Acte delegue attendu",
-   applyDate: new Date(2027, 6, 1), // horizon estimé
+   applyDate:new Date(2027,6,1),
    devices:["Smartphones","Tablettes"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781",
    summary:"L'acte delegue ESPR specifique aux smartphones n'est pas encore publie au JOUE. Il introduira le Passeport Numerique de Produit (DPP) et des exigences renforcees de durabilite. Dates de conformite dans la fenetre 2027-2028."},
@@ -90,7 +86,7 @@ var DATA = [
    ref:"Acte delegue ESPR wearables — en preparation",
    title:"ESPR — Smartwatches, trackers fitness, ecouteurs, SmartGlasses",
    date:"En preparation", apply:"Horizon 2027", type:"Acte delegue attendu",
-   applyDate: new Date(2027, 6, 1), // horizon estimé
+   applyDate:new Date(2027,6,1),
    devices:["Smartwatches","Trackers fitness","Ecouteurs sans fil","SmartGlasses"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781",
    summary:"L'acte delegue specifique aux wearables est en cours de preparation. Il devrait imposer batterie remplacable, score de reparabilite affiche et duree de vie garantie."},
@@ -99,7 +95,7 @@ var DATA = [
    ref:"Reglement (UE) 2023/1542 — Reglement Batteries",
    title:"Batterie remplacable par l'utilisateur — Smartphones obligatoire",
    date:"28/06/2023", apply:"18/02/2027", type:"Reglement UE",
-   applyDate: new Date(2027, 1, 18),
+   applyDate:new Date(2027,1,18),
    devices:["Smartphones","Tablettes","Wearables","Appareils portables"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
    summary:"A partir du 18/02/2027, tout smartphone mis sur le marche UE devra disposer d'une batterie remplacable par l'utilisateur final sans outil specialise. Le reglement batteries fixe egalement des exigences de performance, durabilite et tracabilite des materiaux."},
@@ -108,7 +104,7 @@ var DATA = [
    ref:"Reglement (UE) 2023/2854 — Data Act",
    title:"Data Act — Nouveaux produits IoT concus pour portabilite",
    date:"22/12/2023", apply:"12/09/2026", type:"Reglement UE",
-   applyDate: new Date(2026, 8, 12),
+   applyDate:new Date(2026,8,12),
    devices:["Smartphones","IoT","Smartwatches","Electromenager connecte","Vehicules connectes"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
    summary:"A partir du 12/09/2026, les nouveaux produits IoT mis sur le marche doivent etre concus pour permettre la portabilite des donnees. Les utilisateurs ont le droit legal de recuperer et transferer leurs donnees generees par leurs appareils."},
@@ -117,7 +113,7 @@ var DATA = [
    ref:"Reglement (UE) 2024/1689 — AI Act",
    title:"AI Act — IA embarquee dans les appareils connectes",
    date:"12/07/2024", apply:"02/08/2026", type:"Reglement UE",
-   applyDate: new Date(2026, 7, 2),
+   applyDate:new Date(2026,7,2),
    devices:["Smartphones","SmartGlasses","Wearables sante","IoT decision autonome"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
    summary:"Systemes a haut risque et IA embarquee dans les appareils connectes applicables depuis le 02/08/2026. Les pratiques IA interdites sont en vigueur depuis le 02/02/2025."},
@@ -126,7 +122,7 @@ var DATA = [
    ref:"Directive (UE) 2024/825 — EmpCo",
    title:"EmpCo — Interdiction allegations environnementales non prouvees",
    date:"06/03/2024", apply:"27/09/2026", type:"Directive",
-   applyDate: new Date(2026, 8, 27),
+   applyDate:new Date(2026,8,27),
    devices:["Tous appareils RED"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
    summary:"12 nouvelles pratiques commerciales trompeuses interdites, dont l'allegation neutre en carbone par compensation. Toute allegation ecologique doit etre prouvee par un organisme independant accredite."},
@@ -135,17 +131,16 @@ var DATA = [
    ref:"Directive (UE) 2024/825 — EmpCo volet garantie",
    title:"Label harmonise durabilite + notice de garantie legale",
    date:"06/03/2024", apply:"27/09/2026", type:"Directive",
-   applyDate: new Date(2026, 8, 27),
+   applyDate:new Date(2026,8,27),
    devices:["Smartphones","Tablettes","Wearables","IoT grand public"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
    summary:"La directive EmpCo instaure un label visuel normalise pour les produits beneficiant d'une garantie commerciale de durabilite, et standardise la notice de garantie legale en 24 langues de l'UE."},
 
-  // ── Droit français
   {id:"fr-1", cat:"fr", tag:"Anti-greenwashing", isNew:true,
    ref:"Projet de loi DDADUE — Art. 20-21",
    title:"Transposition EmpCo en droit francais — DDADUE",
    date:"En cours Parlement 2026", apply:"27/09/2026", type:"Projet de loi",
-   applyDate: new Date(2026, 8, 27),
+   applyDate:new Date(2026,8,27),
    devices:["Tous appareils RED"],
    link:"",
    summary:"Les articles 20 et 21 du projet de loi DDADUE transposent la directive EmpCo dans le Code de la consommation et le Code de l'environnement. La DGCCRF sera l'autorite de controle avec des sanctions jusqu'a 10% du CA annuel."},
@@ -154,7 +149,7 @@ var DATA = [
    ref:"Decret d'application ESPR smartphones attendu",
    title:"Score de reparabilite v2 — Transposition ESPR smartphones",
    date:"Attendu 2026", apply:"Horizon 2026", type:"Decret",
-   applyDate: new Date(2026, 11, 31), // horizon estimé fin 2026
+   applyDate:new Date(2026,11,31),
    devices:["Smartphones","Tablettes"],
    link:"",
    summary:"Decret qui alignera le score de reparabilite francais sur les nouvelles exigences ESPR. Les vendeurs en ligne devront afficher le score directement sur la fiche produit."},
@@ -163,33 +158,29 @@ var DATA = [
    ref:"Ordonnance de transposition Data Act attendue 2026",
    title:"Transposition Data Act — Portabilite des donnees IoT",
    date:"Attendue 2026", apply:"Horizon 2026", type:"Ordonnance",
-   applyDate: new Date(2026, 11, 31), // horizon estimé fin 2026
+   applyDate:new Date(2026,11,31),
    devices:["IoT","Smartphones","Wearables"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
    summary:"Le Data Act (UE) 2023/2854 est directement applicable depuis le 12/09/2025. La France doit publier une ordonnance de transposition. La CNIL sera l'autorite nationale de controle."}
 ];
 
 // ─── FILTRE GLOBAL — uniquement échéances après 01/06/2026 ───────────────────
-// Utilisé dans l'onglet Veille uniquement
-// L'onglet Accueil utilise toutes les données pour les cartes résumé
 var DATA_FILTRE = DATA.filter(function(d) {
-  // Exclut les textes sans date d'application future
   if (!d.applyDate) return false;
   return d.applyDate >= DATE_FILTRE;
 });
 
-// ─── AGENDA ───────────────────────────────────────────────────────────────────
+// ─── AGENDA — uniquement échéances après 01/06/2026 ──────────────────────────
+// ✅ Les entrées 2025 sont supprimées — déjà en vigueur
 var AGENDA = [
-  {date:"20/06/2025", label:"Ecoconception smartphones 2023/1670 — Deja en vigueur",      flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1670"},
-  {date:"12/09/2025", label:"Data Act — Applicable (deja en vigueur)",                    flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
   {date:"02/08/2026", label:"AI Act — IA embarquee (haut risque)",                        flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
   {date:"11/09/2026", label:"CRA — Declaration vulnerabilites (Art. 64)",                 flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
   {date:"12/09/2026", label:"Data Act — Nouveaux produits IoT concus pour portabilite",   flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
-  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing",                                  flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
+  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing + garantie durabilite",            flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
   {date:"18/02/2027", label:"Batterie remplacable utilisateur — Smartphones obligatoire", flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542"},
   {date:"11/12/2027", label:"CRA — Pleine application toutes classes",                    flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
   {date:"Horizon 2027-2028", label:"ESPR Acte delegue smartphones (DPP) — attendu",      flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"},
-  {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses (prevu)",                   flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
+  {date:"Horizon 2027",      label:"ESPR Wearables et SmartGlasses — attendu",            flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
 ];
 
 // ─── ÉTAT GLOBAL ──────────────────────────────────────────────────────────────
@@ -209,7 +200,7 @@ var prefs = {
 // ─── UTILITAIRES ──────────────────────────────────────────────────────────────
 
 function fmtDate(d) {
-  var p = function(n) { return String(n).padStart(2, '0'); };
+  var p = function(n) { return String(n).padStart(2,'0'); };
   return p(d.getDate()) + '/' + p(d.getMonth()+1) + '/' + d.getFullYear()
        + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
@@ -303,7 +294,7 @@ function renderAccueilCards() {
   var now  = new Date();
   var html = '';
 
-  // ── Trouve les échéances futures triées par date
+  // ── Échéances futures triées — uniquement après DATE_FILTRE
   var withDates = AGENDA.filter(function(e) {
     return /^\d{2}\/\d{2}\/\d{4}$/.test(e.date);
   }).map(function(e) {
@@ -313,7 +304,6 @@ function renderAccueilCards() {
       ts   : new Date(parts[2], parts[1]-1, parts[0]).getTime()
     };
   }).filter(function(e) {
-    // Uniquement les échéances après 01/06/2026
     return e.ts >= DATE_FILTRE.getTime();
   }).sort(function(a, b) {
     return a.ts - b.ts;
@@ -335,9 +325,7 @@ function renderAccueilCards() {
       urgColor = '#38bdf8'; urgBg = '#0d2030'; urgBorder = '#1a4060';
     }
 
-    var daysLabel = daysLeft <= 0
-      ? 'En vigueur'
-      : 'J-' + daysLeft;
+    var daysLabel = daysLeft <= 0 ? 'En vigueur' : 'J-' + daysLeft;
 
     html += '<div class="card mb10" style="background:' + urgBg + ';'
       + 'border:1px solid ' + urgBorder + ';border-left:3px solid ' + urgColor + '">'
@@ -352,14 +340,15 @@ function renderAccueilCards() {
       html += '<div class="card-plain mb12">'
         + '<p class="section-label t-muted" style="margin-bottom:8px">ÉCHÉANCES SUIVANTES</p>'
         + withDates.slice(1, 4).map(function(e) {
-            var dl       = Math.ceil((e.ts - now.getTime()) / 86400000);
-            var dlLabel  = dl <= 0 ? 'En vigueur' : 'J-' + dl;
-            var dlColor  = dl <= 30 ? '#e04f5f' : dl <= 90 ? '#f59e0b' : '#a78bfa';
+            var dl      = Math.ceil((e.ts - now.getTime()) / 86400000);
+            var dlLabel = dl <= 0 ? 'En vigueur' : 'J-' + dl;
+            var dlColor = dl <= 30 ? '#e04f5f' : dl <= 90 ? '#f59e0b' : '#a78bfa';
             return '<div style="display:flex;justify-content:space-between;'
               + 'align-items:center;padding:7px 0;border-bottom:1px solid #2a2f4a">'
               + '<div style="flex:1;min-width:0;margin-right:8px">'
               + '<p class="fs12 t-text" style="margin:0;line-height:1.3">' + esc(e.item.label) + '</p>'
-              + '<p class="fs10 t-muted" style="margin:2px 0 0">' + esc(e.item.flags) + ' · ' + esc(e.item.date) + '</p>'
+              + '<p class="fs10 t-muted" style="margin:2px 0 0">'
+              + esc(e.item.flags) + ' · ' + esc(e.item.date) + '</p>'
               + '</div>'
               + '<span style="font-size:10px;font-weight:800;color:' + dlColor + ';'
               + 'background:#1a0d2a;border:1px solid ' + dlColor + '44;border-radius:6px;'
@@ -385,7 +374,7 @@ function renderAccueilCards() {
       + '</div>';
   }
 
-  // ── Carte 4 — Compteur total textes surveillés
+  // ── Carte 4 — Compteur textes surveillés
   html += '<div class="card card-green mb16">'
     + '<p class="fw7 fs12 t-green">'
     + DATA_FILTRE.length + ' textes surveillés — échéances après 01/06/2026</p>'
@@ -404,13 +393,12 @@ function renderCard(reg) {
   var linkLabel= reg.cat === 'fr' ? 'Legifrance' : 'EUR-Lex';
   var isOpen   = openCards[reg.id] || false;
 
-  var newChip  = reg.isNew
-    ? '<span class="chip chip-new">Nouveau</span>' : '';
-  var catChip  = '<span class="chip chip-' + reg.cat + '">' + flag + ' ' + esc(reg.tag) + '</span>';
+  var newChip   = reg.isNew ? '<span class="chip chip-new">Nouveau</span>' : '';
+  var catChip   = '<span class="chip chip-' + reg.cat + '">' + flag + ' ' + esc(reg.tag) + '</span>';
   var deviceTags = reg.devices.map(function(d) {
     return '<span class="dtag">' + esc(d) + '</span>';
   }).join('');
-  var linkBtn  = reg.link
+  var linkBtn = reg.link
     ? '<a href="' + reg.link + '" target="_blank" rel="noopener" class="eur-link" style="background:' + acc + '">'
       + linkLabel + ' &rarr;</a>'
     : '<span style="display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;'
@@ -448,8 +436,13 @@ function renderCard(reg) {
 function renderAccueil() {
   console.log('[Render] Accueil v' + APP_VERSION);
 
-  // Agenda : uniquement les échéances après 01/06/2026
-  var agendaRows = AGENDA.map(function(e) {
+  // ✅ Agenda filtré — uniquement dates >= DATE_FILTRE
+  var agendaRows = AGENDA.filter(function(e) {
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(e.date)) return true; // garde "Horizon..."
+    var parts = e.date.split('/');
+    var ts    = new Date(parts[2], parts[1]-1, parts[0]).getTime();
+    return ts >= DATE_FILTRE.getTime();
+  }).map(function(e) {
     return '<a href="' + e.link + '" target="_blank" rel="noopener" style="text-decoration:none">'
       + '<div class="agenda-row">'
       + '<div class="agenda-date">'
@@ -491,7 +484,7 @@ function renderAccueil() {
     + (scanLoading ? 'En cours...' : 'Scan') + '</button>'
     + '</div>'
 
-    // ── Calendrier — uniquement échéances après 01/06/2026
+    // ── Calendrier filtré
     + '<p class="section-label t-muted">CALENDRIER DES ÉCHÉANCES — après 01/06/2026</p>'
     + agendaRows
     + '</div>';
@@ -523,13 +516,14 @@ function renderVeille() {
       + '" onclick="setVeilleFilter(\'' + f.key + '\')">' + f.label + '</button>';
   }).join('');
 
-  // ✅ Utilise DATA_FILTRE — uniquement échéances après 01/06/2026
+  // ✅ DATA_FILTRE — uniquement échéances après 01/06/2026
   var groupsHtml = shown.map(function(g) {
     var cards = DATA_FILTRE
       .filter(function(r) { return r.cat === g.key; })
       .map(renderCard).join('');
     var empty = cards === ''
-      ? '<p class="fs12 t-muted" style="padding:12px 0">Aucun texte dans cette catégorie après le 01/06/2026</p>'
+      ? '<p class="fs12 t-muted" style="padding:12px 0">'
+        + 'Aucun texte dans cette catégorie après le 01/06/2026</p>'
       : cards;
     return '<p class="section-label" style="color:' + g.color + '">' + g.label + '</p>' + empty;
   }).join('');
@@ -608,7 +602,7 @@ function renderAlertes() {
 
 document.addEventListener('DOMContentLoaded', function() {
   console.log('[App] DOM prêt — RED Monitor v' + APP_VERSION);
-  console.log('[App] Filtre actif : échéances après', DATE_FILTRE.toLocaleDateString('fr-FR'));
+  console.log('[App] Filtre : échéances après', DATE_FILTRE.toLocaleDateString('fr-FR'));
   console.log('[App] Textes filtrés :', DATA_FILTRE.length, '/', DATA.length);
 
   var bellBtn    = document.getElementById('bell-btn');
