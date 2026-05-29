@@ -1,9 +1,10 @@
 /* ============================================================
-   RED Monitor — app.js — v2.4
+   RED Monitor — app.js — v2.5
    Veille réglementaire équipements radio (Directive 2014/53/UE)
+   Corrections : ESPR 2023/1670 en vigueur, batteries 2027
    ============================================================ */
 
-var APP_VERSION = '2.4';
+var APP_VERSION = '2.6';
 
 // ─── DONNÉES RÉGLEMENTAIRES ───────────────────────────────────────────────────
 var DATA = [
@@ -56,12 +57,20 @@ var DATA = [
    summary:"Reglement cadre en vigueur depuis le 19/07/2024. Remplace la directive Ecoconception 2009/125/CE. Instaure le Passeport Numerique de Produit (DNP), les scores de reparabilite et les criteres de durabilite."},
 
   {id:"espr-phones", cat:"eu_related", tag:"Econception", isNew:true,
-   ref:"Acte delegue ESPR smartphones — non encore publie au JOUE",
-   title:"ESPR — Durabilite et reparabilite smartphones et tablettes",
-   date:"En cours de publication", apply:"28/06/2026 (prevu)", type:"Acte delegue attendu",
+   ref:"Reglement (UE) 2023/1670 — Ecoconception smartphones et tablettes",
+   title:"Ecoconception smartphones et tablettes — EN VIGUEUR depuis 20/06/2025",
+   date:"16/06/2023", apply:"20/06/2025 (en vigueur)", type:"Reglement UE",
    devices:["Smartphones","Tablettes","Liseuses connectees"],
+   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1670",
+   summary:"Texte operationnel deja applicable depuis le 20/06/2025. Fixe les obligations concretes : duree de vie batterie, disponibilite pieces detachees 7 ans, mises a jour OS garanties 5 ans, indice de reparabilite europeen obligatoire. A ne pas confondre avec l'acte delegue ESPR smartphones (horizon 2027-2028) qui n'est pas encore publie au JOUE."},
+
+  {id:"espr-phones-delegue", cat:"eu_related", tag:"Econception", isNew:false,
+   ref:"Acte delegue ESPR smartphones — non encore publie au JOUE",
+   title:"ESPR — Acte delegue smartphones et tablettes (Passeport Numerique Produit)",
+   date:"En preparation", apply:"Horizon 2027-2028", type:"Acte delegue attendu",
+   devices:["Smartphones","Tablettes"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781",
-   summary:"L'acte delegue specifique aux smartphones n'est pas encore publie au JOUE. Il imposera des juin 2026 : resistance IP54 minimum, mises a jour logicielles garanties 5 ans, pieces detachees 7 ans, score de reparabilite obligatoire sur l'emballage."},
+   summary:"L'acte delegue ESPR specifique aux smartphones n'est pas encore publie au JOUE. Il introduira le Passeport Numerique de Produit (DPP) et des exigences renforcees de durabilite. Categories prioritaires attendues entre 2025 et 2026, dates de conformite dans la fenetre 2027-2028."},
 
   {id:"espr-wearables", cat:"eu_related", tag:"Econception", isNew:false,
    ref:"Acte delegue ESPR wearables — en preparation",
@@ -70,6 +79,14 @@ var DATA = [
    devices:["Smartwatches","Trackers fitness","Ecouteurs sans fil","SmartGlasses"],
    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781",
    summary:"L'acte delegue specifique aux wearables est en cours de preparation. Il devrait imposer batterie remplacable, score de reparabilite affiche et duree de vie garantie."},
+
+  {id:"batteries-1", cat:"eu_related", tag:"Batteries", isNew:true,
+   ref:"Reglement (UE) 2023/1542 — Reglement Batteries",
+   title:"Batterie remplacable par l'utilisateur — Smartphones obligatoire",
+   date:"28/06/2023", apply:"18/02/2027", type:"Reglement UE",
+   devices:["Smartphones","Tablettes","Wearables","Appareils portables"],
+   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
+   summary:"A partir du 18/02/2027, tout smartphone mis sur le marche UE devra disposer d'une batterie remplacable par l'utilisateur final sans outil specialise. Obligation etendue aux appareils portables. Le reglement batteries fixe egalement des exigences de performance, durabilite et tracabilite des materiaux."},
 
   {id:"data-1", cat:"eu_related", tag:"Donnees IoT", isNew:false,
    ref:"Reglement (UE) 2023/2854 — Data Act",
@@ -130,14 +147,16 @@ var DATA = [
 
 // ─── AGENDA ───────────────────────────────────────────────────────────────────
 var AGENDA = [
-  {date:"12/09/2025", label:"Data Act — Applicable (deja en vigueur)",                  flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
-  {date:"28/06/2026", label:"ESPR Smartphones et Tablettes (prevu)",                    flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"},
-  {date:"02/08/2026", label:"AI Act — IA embarquee (haut risque)",                      flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
-  {date:"11/09/2026", label:"CRA — Declaration vulnerabilites (Art. 64)",               flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
-  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing",                                flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
-  {date:"12/09/2026", label:"Data Act — Nouveaux produits IoT concus pour portabilite", flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
-  {date:"11/12/2027", label:"CRA — Pleine application toutes classes",                  flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
-  {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses (prevu)",                 flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
+  {date:"12/09/2025", label:"Data Act — Applicable (deja en vigueur)",                    flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
+  {date:"20/06/2025", label:"Ecoconception smartphones 2023/1670 — Deja en vigueur",      flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1670"},
+  {date:"02/08/2026", label:"AI Act — IA embarquee (haut risque)",                        flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
+  {date:"11/09/2026", label:"CRA — Declaration vulnerabilites (Art. 64)",                 flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
+  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing",                                  flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
+  {date:"12/09/2026", label:"Data Act — Nouveaux produits IoT concus pour portabilite",   flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
+  {date:"18/02/2027", label:"Batterie remplacable utilisateur — Smartphones obligatoire", flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542"},
+  {date:"11/12/2027", label:"CRA — Pleine application toutes classes",                    flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
+  {date:"Horizon 2027-2028", label:"ESPR Acte delegue smartphones (DPP) — attendu",      flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"},
+  {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses (prevu)",                   flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
 ];
 
 // ─── ÉTAT GLOBAL ──────────────────────────────────────────────────────────────
@@ -452,7 +471,6 @@ function renderAlertes() {
 document.addEventListener('DOMContentLoaded', function() {
   console.log('[App] DOM prêt — RED Monitor v' + APP_VERSION);
 
-  // Vérifie que les éléments critiques existent
   var bellBtn    = document.getElementById('bell-btn');
   var navAccueil = document.getElementById('nav-accueil');
   var navVeille  = document.getElementById('nav-veille');
@@ -464,27 +482,23 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // Event listeners navigation
   bellBtn   .addEventListener('click', function() { setTab('alertes'); });
   navAccueil.addEventListener('click', function() { setTab('accueil'); });
   navVeille .addEventListener('click', function() { setTab('veille');  });
   navAlertes.addEventListener('click', function() { setTab('alertes'); });
 
-  // Permission notifications push
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission().then(function(result) {
       console.log('[Notif] Permission :', result);
     });
   }
 
-  // Premier rendu
   renderAccueil();
   renderVeille();
   renderAlertes();
 
   console.log('[App] ✅ Rendu initial terminé');
 
-  // Chargement données dynamiques — cache-busting via timestamp
   fetch('data.json?v=' + Date.now())
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
