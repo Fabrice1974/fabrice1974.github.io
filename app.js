@@ -45,14 +45,14 @@ var DATA = [
    title:"ESPR — Durabilité et réparabilité smartphones et tablettes",
    date:"28/04/2025", apply:"28/06/2026", type:"Règlement délégué",
    devices:["Smartphones","Tablettes","Liseuses connectées"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R0781",
+   link:"https://eur-lex.europa.eu/search.html?text=ESPR+smartphones+tablettes+r%C3%A9parabilit%C3%A9&scope=EURLEX&lang=fr&type=quick",
    summary:"Dès juin 2026, smartphones et tablettes doivent être conçus pour durer : IP54 minimum, mises à jour garanties 5 ans, pièces détachées 7 ans, score de réparabilité obligatoire sur l'emballage. Interdiction de brider volontairement les batteries pour pousser au remplacement."},
   {id:"espr-2", cat:"eu_related", tag:"Écoconception", isNew:false,
    ref:"Règlement délégué (UE) 2025/2134",
    title:"ESPR — Smartwatches, trackers fitness, écouteurs, SmartGlasses",
    date:"18/09/2025", apply:"18/09/2027", type:"Règlement délégué",
    devices:["Smartwatches","Trackers fitness","Écouteurs sans fil","SmartGlasses"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R2134",
+   link:"https://eur-lex.europa.eu/search.html?text=ESPR+wearables+smartwatch+%C3%A9coconception&scope=EURLEX&lang=fr&type=quick",
    summary:"Les wearables devront être réparables : batterie remplaçable sans démonter 80% du produit, score de réparabilité affiché, durée de vie batterie garantie 3 ans minimum. Les modèles collés irréparablement seront interdits à la vente dans l'UE."},
   {id:"data-1", cat:"eu_related", tag:"Données / IoT", isNew:false,
    ref:"Règlement (UE) 2023/2854 — Data Act",
@@ -80,7 +80,7 @@ var DATA = [
    title:"Label harmonisé durabilité + notice garantie légale",
    date:"25/09/2025", apply:"27/09/2026", type:"Règlement d'exécution",
    devices:["Smartphones","Tablettes","Wearables","IoT grand public"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025R1960",
+   link:"https://eur-lex.europa.eu/search.html?text=label+garantie+durabilit%C3%A9+%C3%A9quipements&scope=EURLEX&lang=fr&type=quick",
    summary:"Un label visuel normalisé doit être apposé sur tout produit bénéficiant d'une garantie commerciale de durabilité. La maquette exacte du label est fixée par ce règlement. Notice de garantie légale (2 ans minimum) standardisée en 24 langues de l'UE."},
   {id:"fr-1", cat:"fr", tag:"Anti-greenwashing", isNew:true,
    ref:"Projet de loi DDADUE — Art. 20-21",
@@ -88,7 +88,7 @@ var DATA = [
    date:"En cours (Sénat, avr. 2026)", apply:"27/09/2026",
    type:"Loi (Code conso + Code envir.)",
    devices:["Tous appareils RED"],
-   link:"https://www.legifrance.gouv.fr/dossierlegislatif/JORFDOLE000051232169/",
+   link:"https://www.legifrance.gouv.fr/search/all?query=DDADUE+greenwashing+EmpCo&fond=ALL",
    summary:"Les articles 20 et 21 du projet DDADUE inscrivent dans le Code de la consommation et le Code de l'environnement les obligations EmpCo. La DGCCRF pourra sanctionner jusqu'à 10% du CA annuel les fabricants utilisant des allégations écologiques non prouvées."},
   {id:"fr-2", cat:"fr", tag:"Réparabilité", isNew:true,
    ref:"Décret ESPR smartphones (attendu T3 2026)",
@@ -96,7 +96,7 @@ var DATA = [
    date:"Attendu juin 2026", apply:"28/06/2026",
    type:"Décret (Code envir. art. L541-10-9)",
    devices:["Smartphones","Tablettes"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R0781",
+   link:"https://www.legifrance.gouv.fr/search/all?query=score+reparabilite+smartphones+ESPR&fond=ALL",
    summary:"Ce décret aligne le score de réparabilité français sur l'ESPR : passage de 10 à 14 critères. Les vendeurs en ligne doivent afficher le score sur la fiche produit avant le bouton d'achat. En attendant la publication du décret, voir le règlement ESPR source (UE) 2025/781."},
   {id:"fr-3", cat:"fr", tag:"Données / IoT", isNew:false,
    ref:"Ordonnance Data Act (attendue S2 2026)",
@@ -109,7 +109,7 @@ var DATA = [
 ];
 
 var AGENDA = [
-  {date:"28/06/2026", label:"ESPR Smartphones et Tablettes", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R0781"},
+  {date:"28/06/2026", label:"ESPR Smartphones et Tablettes", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/search.html?text=ESPR+smartphones+tablettes+r%C3%A9parabilit%C3%A9&scope=EURLEX&lang=fr&type=quick"},
   {date:"02/08/2026", label:"AI Act — IA embarquée", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
   {date:"12/09/2026", label:"Data Act — Portabilité IoT", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
   {date:"27/09/2026", label:"EmpCo greenwashing + label garantie", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
@@ -117,7 +117,7 @@ var AGENDA = [
   {date:"11/12/2026", label:"Cyber Resilience Act — Classe I", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
   {date:"14/02/2027", label:"Retrait normes RED ferroviaires", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D1741"},
   {date:"11/06/2027", label:"Retrait normes RED (EN 303 659...)", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D2499"},
-  {date:"18/09/2027", label:"ESPR Wearables et SmartGlasses", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R2134"},
+  {date:"18/09/2027", label:"ESPR Wearables et SmartGlasses", flags:"🇪🇺", link:"https://eur-lex.europa.eu/search.html?text=ESPR+wearables+smartwatch+%C3%A9coconception&scope=EURLEX&lang=fr&type=quick"},
   {date:"11/12/2027", label:"Cyber Resilience Act — Classe II", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"}
 ];
 
