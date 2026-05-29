@@ -1,9 +1,9 @@
 /* RED Monitor — Service Worker
    Requis par OneSignal à la racine du site. */
-
+ 
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
-
-var CACHE = 'red-monitor-v3';
+ 
+var CACHE = 'red-monitor-v4';
 var FILES = [
   '/',
   '/index.html',
@@ -12,12 +12,12 @@ var FILES = [
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
-
+ 
 self.addEventListener('install', function(e) {
   e.waitUntil(caches.open(CACHE).then(function(c) { return c.addAll(FILES); }));
   self.skipWaiting();
 });
-
+ 
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(keys) {
@@ -26,7 +26,7 @@ self.addEventListener('activate', function(e) {
   );
   self.clients.claim();
 });
-
+ 
 self.addEventListener('fetch', function(e) {
   e.respondWith(
     caches.match(e.request).then(function(r) { return r || fetch(e.request); })
