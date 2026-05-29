@@ -1,377 +1,254 @@
-/* ============================================================
-   RED Monitor — app.js — v2.2
-   Veille réglementaire équipements radio (Directive 2014/53/UE)
-   Correction : gestion Service Worker + cache busting
-   ============================================================ */
+html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#0f1120"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="RED Monitor"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <title>RED Monitor</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0f1120;color:#e8eaf0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+    #app{max-width:480px;margin:0 auto;position:relative;min-height:100vh}
+    .header{position:sticky;top:0;z-index:50;background:#0f1120;border-bottom:1px solid #2a2f4a;padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center}
+    .header h1{font-size:22px;font-weight:800;letter-spacing:-0.03em}
+    .header p{font-size:11px;color:#7a7f9a;margin-top:3px}
+    .bell-btn{position:relative;background:#1a1e35;border:1px solid #2a2f4a;padding:10px 12px;border-radius:12px;cursor:pointer;font-size:20px;line-height:1}
+    .bell-badge{position:absolute;top:4px;right:4px;background:#e04f5f;color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+    .content{padding-bottom:70px}
+    .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#1a1e35;border-top:1px solid #2a2f4a;display:flex;z-index:100}
+    .nav-btn{flex:1;padding:10px 0;background:transparent;border:none;border-top:2px solid transparent;cursor:pointer;color:#7a7f9a;position:relative}
+    .nav-btn.active{border-top-color:#4a7dff;color:#4a7dff}
+    .nav-btn .nav-icon{font-size:20px;display:block}
+    .nav-btn .nav-label{font-size:9px;font-weight:700;letter-spacing:0.06em;display:block;margin-top:2px}
+    .nav-badge{position:absolute;top:5px;right:26%;background:#e04f5f;color:#fff;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700}
+    .card{border-radius:12px;padding:12px 14px;margin-bottom:12px}
+    .card-green{background:#0d2a18;border:1px solid #1a5a30;border-left:3px solid #4ade80}
+    .card-fr{background:#2a0d12;border:1px solid #5a1a22;border-left:3px solid #e04f5f}
+    .card-eu{background:#0d2030;border:1px solid #1a4060;border-left:3px solid #38bdf8}
+    .card-plain{background:#1a1e35;border:1px solid #2a2f4a;border-radius:12px;padding:12px 14px;margin-bottom:12px}
+    .card-reg{border-radius:14px;padding:14px 16px;margin-bottom:12px}
+    .card-reg-eu_red{background:#0d1a3a;border:1px solid #1e3a7a;border-left:3px solid #4a7dff}
+    .card-reg-eu_related{background:#0d2030;border:1px solid #1a4060;border-left:3px solid #38bdf8}
+    .card-reg-fr{background:#2a0d12;border:1px solid #5a1a22;border-left:3px solid #e04f5f}
+    .t-green{color:#4ade80}.t-fr{color:#e04f5f}.t-eu{color:#38bdf8}.t-blue{color:#4a7dff}.t-purple{color:#a78bfa}.t-warn{color:#f59e0b}.t-muted{color:#7a7f9a}.t-text{color:#e8eaf0}.t-light{color:#c0c4d8}
+    .fw7{font-weight:700}.fw8{font-weight:800}.fs10{font-size:10px}.fs11{font-size:11px}.fs12{font-size:12px}.fs13{font-size:13px}.fs14{font-size:14px}
+    .mb4{margin-bottom:4px}.mb6{margin-bottom:6px}.mb8{margin-bottom:8px}.mb10{margin-bottom:10px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}
+    .lh15{line-height:1.5}.lh17{line-height:1.75}
+    .chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap;letter-spacing:0.05em}
+    .chip-new{background:#e04f5f;color:#fff}
+    .chip-eu_red{background:#4a7dff33;color:#4a7dff}
+    .chip-eu_related{background:#38bdf833;color:#38bdf8}
+    .chip-fr{background:#e04f5f33;color:#e04f5f}
+    .dtag{font-size:9px;color:#7a7f9a;background:#1a1e35;border:1px solid #2a2f4a;padding:1px 6px;border-radius:4px;display:inline-block;margin:2px}
+    .date-pill{display:inline-flex;align-items:center;gap:5px;background:#1a0d2a;border:1px solid #a78bfa44;border-radius:6px;padding:4px 10px;margin-bottom:10px}
+    .summary-toggle{background:transparent;border:none;font-size:11px;font-weight:600;cursor:pointer;padding:0;display:flex;align-items:center;gap:5px}
+    .arrow{display:inline-block;transition:transform .2s;font-style:normal}
+    .summary-box{margin-top:10px;background:#0f1120;border-left:2px solid #4a7dff44;border-radius:0 8px 8px 0;padding:10px 14px}
+    .eur-link{display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;text-decoration:none;color:#fff;margin-top:10px}
+    .scan-btn{background:#4a7dff;color:#fff;border:none;padding:10px 18px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap}
+    .scan-btn:disabled{background:#2a2f4a;cursor:not-allowed}
+    .agenda-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #2a2f4a}
+    .agenda-date{background:#1a0d2a;border:1px solid #a78bfa44;border-radius:8px;padding:6px 10px;min-width:68px;text-align:center;flex-shrink:0}
+    .filter-btn{padding:6px 14px;border-radius:8px;border:none;font-size:11px;cursor:pointer;font-weight:400;color:#7a7f9a;background:#1a1e35}
+    .filter-btn.active{background:#4a7dff;color:#fff;font-weight:700}
+    .switch{width:46px;height:26px;border-radius:13px;border:none;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+    .switch-on{background:#4a7dff}.switch-off{background:#2a2f4a}
+    .switch-knob{position:absolute;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #2a2f4a}
+    .toggle-left{display:flex;align-items:center;gap:10px}
+    .section-label{font-size:10px;font-weight:700;letter-spacing:0.1em;margin-bottom:10px}
+    .log-ok{color:#4ade80;font-size:11px;margin-bottom:3px}
+    .log-new{color:#38bdf8;font-size:11px;margin-bottom:3px}
+    .hidden{display:none}
+    #push-banner{background:#1a1e35;border:1px solid #4a7dff55;border-radius:12px;padding:12px 14px;margin:14px 16px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    #push-banner p{font-size:12px;color:#c0c4d8;line-height:1.4}
+    #push-btn{background:#4a7dff;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+    #push-btn.subscribed{background:#4ade8033;color:#4ade80;border:1px solid #4ade80;cursor:default}
+    #update-banner{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid #a78bfa;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.5);max-width:320px;width:90%}
+    #update-banner p{margin:0;color:#e8eaf0}
+    #update-banner .update-title{font-size:12px;font-weight:700}
+    #update-banner .update-sub{font-size:11px;color:#a78bfa;margin-top:2px}
+    #update-banner .update-btn{background:#a78bfa;color:#0f1117;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0}
+  </style>
+</head>
+<body>
+<div id="app">
 
-// ─── VERSION (à incrémenter à chaque déploiement) ────────────────────────────
-var APP_VERSION = '2.2';
+  <!-- ── HEADER ──────────────────────────────────────────────── -->
+  <div class="header">
+    <div>
+      <h1>RED Monitor</h1>
+      <p>Directive 2014/53/UE &middot; Textes &ge; 01/06/2026</p>
+    </div>
+    <button class="bell-btn" id="bell-btn">
+      &#128276;<span class="bell-badge" id="bell-count">4</span>
+    </button>
+  </div>
 
-// ─── GESTION DU SERVICE WORKER ───────────────────────────────────────────────
-(function initServiceWorker() {
-  if (!('serviceWorker' in navigator)) {
-    console.warn('[SW] Service Worker non supporté sur ce navigateur');
-    return;
-  }
+  <!-- ── CONTENU ONGLETS ─────────────────────────────────────── -->
+  <div class="content">
+    <div id="tab-accueil"></div>
+    <div id="tab-veille"  class="hidden"></div>
+    <div id="tab-alertes" class="hidden"></div>
+  </div>
 
-  navigator.serviceWorker.register('./sw.js')
-    .then(function(registration) {
-      console.log('[SW] Enregistré — scope :', registration.scope, '— App v' + APP_VERSION);
+  <!-- ── NAVIGATION BAS ─────────────────────────────────────── -->
+  <nav class="nav">
+    <button class="nav-btn active" id="nav-accueil">
+      <span class="nav-icon">&#127968;</span>
+      <span class="nav-label">ACCUEIL</span>
+    </button>
+    <button class="nav-btn" id="nav-veille">
+      <span class="nav-icon">&#128203;</span>
+      <span class="nav-label">VEILLE</span>
+    </button>
+    <button class="nav-btn" id="nav-alertes">
+      <span class="nav-icon">&#128276;</span>
+      <span class="nav-label">ALERTES</span>
+      <span class="nav-badge" id="nav-badge">4</span>
+    </button>
+  </nav>
 
-      // Vérifie immédiatement si une mise à jour est disponible
-      registration.update();
+</div><!-- /#app -->
 
-      // Écoute les nouvelles versions du SW en attente
-      registration.addEventListener('updatefound', function() {
-        var newWorker = registration.installing;
-        console.log('[SW] Nouveau worker détecté — état :', newWorker.state);
-
-        newWorker.addEventListener('statechange', function() {
-          console.log('[SW] State →', newWorker.state);
-
-          // Nouveau SW prêt et en attente d'activation
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log('[SW] Mise à jour disponible — affichage bannière');
-            showUpdateBanner();
+<!-- ══════════════════════════════════════════════════════════════
+     OneSignal SDK — Push notifications UNIQUEMENT
+     Son SW (OneSignalSDKWorker.js) est cantonné à /red-monitor/
+     Il ne touche plus au cache de l'app
+     ══════════════════════════════════════════════════════════════ -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    try {
+      await OneSignal.init({
+        appId: "b3a574f9-95e1-4f1d-845d-984fad1c6fe0",
+        serviceWorkerParam: { scope: "/red-monitor/" },
+        serviceWorkerPath: "OneSignalSDKWorker.js",
+        notifyButton: { enable: false },
+        promptOptions: {
+          slidedown: {
+            prompts: [{
+              type: "push",
+              autoPrompt: true,
+              text: {
+                actionMessage: "RED Monitor vous alertera de chaque nouvelle reglementation RED publiee.",
+                acceptButton: "Activer les alertes",
+                cancelButton: "Plus tard"
+              }
+            }]
           }
-        });
+        }
       });
-    })
-    .catch(function(err) {
-      console.error('[SW] Erreur enregistrement :', err);
+      var subscribed = await OneSignal.User.PushSubscription.optedIn;
+      updatePushBtn(subscribed);
+      OneSignal.User.PushSubscription.addEventListener('change', function(e) {
+        updatePushBtn(e.current.optedIn);
+      });
+    } catch(e) {
+      // OneSignal ne bloque pas l'app si erreur
+      console.warn('[OneSignal] Erreur init :', e);
+    }
+  });
+
+  function updatePushBtn(subscribed) {
+    var btn = document.getElementById('push-btn');
+    if (!btn) return;
+    btn.textContent = subscribed ? 'Activées' : 'Activer';
+    btn.className   = subscribed ? 'subscribed' : '';
+  }
+
+  function subscribePush() {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(function(OneSignal) {
+      OneSignal.Slidedown.promptPush();
     });
-
-  // Recharge la page quand le nouveau SW prend le contrôle
-  var refreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', function() {
-    if (!refreshing) {
-      refreshing = true;
-      console.log('[SW] Nouveau SW actif — rechargement');
-      window.location.reload();
-    }
-  });
-})();
-
-// ─── BANNIÈRE DE MISE À JOUR ──────────────────────────────────────────────────
-function showUpdateBanner() {
-  if (document.getElementById('update-banner')) return; // évite les doublons
-
-  var banner = document.createElement('div');
-  banner.id = 'update-banner';
-  banner.style.cssText = [
-    'position:fixed',
-    'bottom:80px',
-    'left:50%',
-    'transform:translateX(-50%)',
-    'background:#1e293b',
-    'border:1px solid #a78bfa',
-    'border-radius:12px',
-    'padding:12px 16px',
-    'display:flex',
-    'align-items:center',
-    'gap:12px',
-    'z-index:9999',
-    'box-shadow:0 4px 24px rgba(0,0,0,0.5)',
-    'max-width:320px',
-    'width:90%'
-  ].join(';');
-
-  banner.innerHTML =
-    '<span style="font-size:20px">🔄</span>'
-    + '<div style="flex:1">'
-    + '<p style="font-size:12px;font-weight:700;color:#e8eaf0;margin:0">Mise à jour disponible</p>'
-    + '<p style="font-size:11px;color:#a78bfa;margin:2px 0 0">Nouvelles données réglementaires</p>'
-    + '</div>'
-    + '<button onclick="applyUpdate()" style="'
-    + 'background:#a78bfa;color:#0f1117;border:none;border-radius:8px;'
-    + 'padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer'
-    + '">Mettre à jour</button>';
-
-  document.body.appendChild(banner);
-}
-
-// ─── APPLICATION DE LA MISE À JOUR ───────────────────────────────────────────
-function applyUpdate() {
-  console.log('[App] Mise à jour demandée par l\'utilisateur');
-  navigator.serviceWorker.ready.then(function(registration) {
-    if (registration.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    }
-  });
-}
-
-// ─── DONNÉES RÉGLEMENTAIRES ───────────────────────────────────────────────────
-var DATA = [
-  {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false,
-   ref:"Directive 2014/53/UE — RED",
-   title:"Directive RED — Equipements radioelectriques (texte de reference)",
-   date:"16/04/2014", apply:"13/06/2016", type:"Directive UE",
-   devices:["Smartphones","IoT","Routeurs","Wearables","SRD","Drones"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053",
-   summary:"Texte fondateur de la directive RED. Fixe les exigences essentielles de securite, compatibilite electromagnetique et utilisation efficace du spectre pour tous les equipements radioelectriques mis sur le marche UE. Tout appareil emettant ou recevant des ondes radio doit y etre conforme pour porter le marquage CE."},
-
-  {id:"red-2", cat:"eu_red", tag:"Normes RED", isNew:false,
-   ref:"Decision d'execution (UE) 2022/2444",
-   title:"Normes harmonisees RED publiees au JOUE — liste consolidee 2022",
-   date:"13/12/2022", apply:"En vigueur", type:"Decision d'execution",
-   devices:["Smartphones","IoT","Routeurs","SRD","Wearables"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022D2444",
-   summary:"Liste consolidee des normes harmonisees RED publiees au Journal officiel de l'UE. Les fabricants qui respectent ces normes beneficient de la presomption de conformite aux exigences essentielles RED. Des decisions de mise a jour sont publiees regulierement au JOUE."},
-
-  {id:"red-3", cat:"eu_red", tag:"Cybersecurite RED", isNew:false,
-   ref:"Reglement delegue (UE) 2022/30",
-   title:"Acte delegue cybersecurite RED — Art. 3(3)(d)(e)(f) — Applicable depuis 01/08/2025",
-   date:"29/10/2021", apply:"01/08/2025 au 10/12/2027", type:"Reglement delegue",
-   devices:["Smartphones","IoT","Smartwatches","SmartGlasses","Routeurs","Cameras connectees"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0030",
-   summary:"En vigueur depuis le 01/08/2025 pour tous les appareils connectes a internet. Obligations : protection des donnees personnelles, protection contre les acces non autorises, absence de fonctions frauduleuses. Ce reglement sera abroge le 11/12/2027 lors de la pleine application du Cyber Resilience Act (CRA), qui reprend et etend ces obligations."},
-
-  {id:"cra-rapport", cat:"eu_related", tag:"Cybersecurite", isNew:true,
-   ref:"Reglement (UE) 2024/2847 — CRA Art. 64",
-   title:"Cyber Resilience Act — Obligations de declaration vulnerabilites et incidents",
-   date:"23/10/2024", apply:"11/09/2026", type:"Reglement UE",
-   devices:["Smartphones","Tablettes","Smartwatches","SmartGlasses","Routeurs","IoT"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
-   summary:"Des le 11 septembre 2026, les fabricants doivent declarer toute vulnerabilite activement exploitee et tout incident grave a l'ENISA dans un delai de 24 heures. Cette obligation s'applique aux produits deja sur le marche. Elle precede d'un an la pleine application du CRA (11/12/2027)."},
-
-  {id:"cra-1", cat:"eu_related", tag:"Cybersecurite", isNew:true,
-   ref:"Reglement (UE) 2024/2847 — CRA pleine application",
-   title:"Cyber Resilience Act — Pleine application toutes classes (I et II)",
-   date:"23/10/2024", apply:"11/12/2027", type:"Reglement UE",
-   devices:["Smartphones","Tablettes","Smartwatches","SmartGlasses","Routeurs","IoT","Cameras connectees","Passerelles domotiques"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
-   summary:"A partir du 11/12/2027, tout produit numerique mis sur le marche UE doit satisfaire l'ensemble des exigences CRA : interdiction des mots de passe par defaut, correctifs de securite pendant toute la duree de vie, conformite evaluee (audit tiers pour produits Classe II). Produits Classe I : auto-evaluation possible. Produits Classe II : audit tiers obligatoire. Entree en vigueur du reglement : 10/12/2024."},
-
-  {id:"espr-base", cat:"eu_related", tag:"Econception", isNew:false,
-   ref:"Reglement (UE) 2024/1781 — ESPR",
-   title:"ESPR — Reglement ecoconception pour produits durables (base)",
-   date:"28/06/2024", apply:"19/07/2024", type:"Reglement UE",
-   devices:["Smartphones","Tablettes","Wearables","Liseuses","IoT grand public"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781",
-   summary:"Reglement cadre en vigueur depuis le 19/07/2024. Remplace la directive Ecoconception 2009/125/CE. Instaure le Passeport Numerique de Produit (DNP), les scores de reparabilite et les criteres de durabilite. Les actes delegues specifiques par categorie de produits (smartphones, wearables) sont publies separement."},
-
-  {id:"espr-phones", cat:"eu_related", tag:"Econception", isNew:true,
-   ref:"Acte delegue ESPR smartphones — non encore publie au JOUE",
-   title:"ESPR — Durabilite et reparabilite smartphones et tablettes",
-   date:"En cours de publication", apply:"28/06/2026 (prevu)", type:"Acte delegue attendu",
-   devices:["Smartphones","Tablettes","Liseuses connectees"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781",
-   summary:"L'acte delegue specifique aux smartphones n'est pas encore publie au JOUE. Selon le plan de travail ESPR, il imposera des juin 2026 : resistance IP54 minimum, mises a jour logicielles garanties 5 ans, pieces detachees 7 ans, score de reparabilite obligatoire sur l'emballage. Lien vers le reglement ESPR de base (2024/1781) en attendant la publication officielle."},
-
-  {id:"espr-wearables", cat:"eu_related", tag:"Econception", isNew:false,
-   ref:"Acte delegue ESPR wearables — en preparation",
-   title:"ESPR — Smartwatches, trackers fitness, ecouteurs, SmartGlasses",
-   date:"En preparation", apply:"Horizon 2027", type:"Acte delegue attendu",
-   devices:["Smartwatches","Trackers fitness","Ecouteurs sans fil","SmartGlasses"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781",
-   summary:"L'acte delegue specifique aux wearables est en cours de preparation. Il devrait imposer batterie remplacable, score de reparabilite affiche et duree de vie garantie. Non encore publie au JOUE. Lien vers le reglement ESPR de base (2024/1781)."},
-
-  {id:"data-1", cat:"eu_related", tag:"Donnees IoT", isNew:false,
-   ref:"Reglement (UE) 2023/2854 — Data Act",
-   title:"Data Act — Acces aux donnees des objets connectes — Applicable depuis 12/09/2025",
-   date:"22/12/2023", apply:"12/09/2025 (en vigueur)", type:"Reglement UE",
-   devices:["Smartphones","IoT","Smartwatches","Electromenager connecte","Vehicules connectes"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
-   summary:"Applicable depuis le 12 septembre 2025. Les utilisateurs ont le droit legal de recuperer et transferer leurs donnees generees par leurs appareils. Obligation d'integrer une API de portabilite dans chaque appareil connecte mis sur le marche apres le 12/09/2026. Interdiction des clauses contractuelles verrouillant les donnees chez le fabricant."},
-
-  {id:"ai-1", cat:"eu_related", tag:"Intelligence Artificielle", isNew:false,
-   ref:"Reglement (UE) 2024/1689 — AI Act",
-   title:"AI Act — IA embarquee dans les appareils connectes",
-   date:"12/07/2024", apply:"02/08/2026", type:"Reglement UE",
-   devices:["Smartphones","SmartGlasses","Wearables sante","IoT decision autonome"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
-   summary:"Entree en vigueur : 01/08/2024. Application progressive : pratiques IA interdites depuis le 02/02/2025, modeles IA generaux depuis le 02/08/2025, systemes a haut risque et IA embarquee dans les appareils connectes depuis le 02/08/2026. Obligations : classification par niveau de risque, transparence, interdiction de manipulation emotionnelle."},
-
-  {id:"empco-1", cat:"eu_related", tag:"Greenwashing", isNew:false,
-   ref:"Directive (UE) 2024/825 — EmpCo",
-   title:"EmpCo — Interdiction allegations environnementales non prouvees",
-   date:"06/03/2024", apply:"27/09/2026", type:"Directive",
-   devices:["Tous appareils RED"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
-   summary:"Les Etats membres doivent transposer la directive et l'appliquer au plus tard le 27/09/2026. 12 nouvelles pratiques commerciales trompeuses interdites, dont l'allegation neutre en carbone par compensation. Toute allegation ecologique doit etre prouvee par un organisme independant accredite. Sanctions jusqu'a 4% du CA annuel."},
-
-  {id:"empco-2", cat:"eu_related", tag:"Garantie Durabilite", isNew:false,
-   ref:"Directive (UE) 2024/825 — EmpCo volet garantie",
-   title:"Label harmonise durabilite + notice de garantie legale",
-   date:"06/03/2024", apply:"27/09/2026", type:"Directive",
-   devices:["Smartphones","Tablettes","Wearables","IoT grand public"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
-   summary:"La directive EmpCo instaure un label visuel normalise pour les produits beneficiant d'une garantie commerciale de durabilite, et standardise la notice de garantie legale (2 ans minimum) en 24 langues de l'UE. Application : 27/09/2026 dans les Etats membres ayant transpose la directive."},
-
-  {id:"fr-1", cat:"fr", tag:"Anti-greenwashing", isNew:true,
-   ref:"Projet de loi DDADUE — Art. 20-21",
-   title:"Transposition EmpCo en droit francais — DDADUE",
-   date:"En cours Parlement 2026", apply:"27/09/2026", type:"Projet de loi",
-   devices:["Tous appareils RED"],
-   link:"",
-   summary:"Les articles 20 et 21 du projet de loi DDADUE transposent la directive EmpCo dans le Code de la consommation et le Code de l'environnement. La DGCCRF sera l'autorite de controle avec des sanctions jusqu'a 10% du CA annuel. Texte en cours d'adoption parlementaire — non encore publie au JORF."},
-
-  {id:"fr-2", cat:"fr", tag:"Reparabilite", isNew:true,
-   ref:"Decret d'application ESPR smartphones attendu",
-   title:"Score de reparabilite v2 — Transposition ESPR smartphones",
-   date:"Attendu 2026", apply:"28/06/2026 (prevu)", type:"Decret",
-   devices:["Smartphones","Tablettes"],
-   link:"",
-   summary:"Decret qui alignera le score de reparabilite francais (actuellement sur 10 criteres) sur les nouvelles exigences ESPR. Les vendeurs en ligne devront afficher le score directement sur la fiche produit. Texte en cours de preparation — non encore publie au JORF."},
-
-  {id:"fr-3", cat:"fr", tag:"Donnees IoT", isNew:false,
-   ref:"Ordonnance de transposition Data Act attendue 2026",
-   title:"Transposition Data Act — Portabilite des donnees IoT",
-   date:"Attendue 2026", apply:"Le Data Act est applicable depuis 12/09/2025", type:"Ordonnance",
-   devices:["IoT","Smartphones","Wearables"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
-   summary:"Le Data Act (UE) 2023/2854 est directement applicable depuis le 12/09/2025. La France doit publier une ordonnance de transposition (habilitation prevue dans la loi DDADUE). La CNIL sera l'autorite nationale de controle. Ordonnance non encore publiee au JORF — lien vers le reglement Data Act directement applicable."}
-];
-
-// ─── AGENDA DES ÉCHÉANCES ─────────────────────────────────────────────────────
-var AGENDA = [
-  {date:"12/09/2025", label:"Data Act — Applicable (deja en vigueur)",                    flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
-  {date:"28/06/2026", label:"ESPR Smartphones et Tablettes (prevu)",                      flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"},
-  {date:"02/08/2026", label:"AI Act — IA embarquee (haut risque)",                        flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
-  {date:"11/09/2026", label:"CRA — Declaration vulnerabilites (Art. 64)",                 flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
-  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing",                                  flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
-  {date:"12/09/2026", label:"Data Act — Nouveaux produits IoT concus pour portabilite",   flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
-  {date:"11/12/2027", label:"CRA — Pleine application toutes classes",                    flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
-  {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses (prevu)",                   flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
-];
-
-// ─── ÉTAT GLOBAL ──────────────────────────────────────────────────────────────
-var currentTab   = 'accueil';
-var scanLoading  = false;
-var lastScan     = fmtDate(new Date());
-var nextScan     = fmtDate(addDays(new Date(), 7));
-var scanLog      = [];
-var openCards    = {};
-var veilleFilter = 'tous';
-var prefs = {
-  red_normes:true, cra:true, espr:true, data_act:true,
-  ai_act:true, empco:true, fr_transpo:true,
-  rien_nouveau:true, rappel_j60:true, rappel_j30:true
-};
-
-// ─── UTILITAIRES ──────────────────────────────────────────────────────────────
-
-/** Formate une date JS en "DD/MM/YYYY HH:MM" */
-function fmtDate(d) {
-  var p = function(n) { return String(n).padStart(2, '0'); };
-  return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear()
-       + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
-}
-
-/** Ajoute n jours à une date */
-function addDays(d, n) { return new Date(d.getTime() + n * 86400000); }
-
-/** Échappe les caractères HTML pour éviter les injections XSS */
-function esc(s) {
-  if (!s) return '';
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// ─── NAVIGATION ───────────────────────────────────────────────────────────────
-
-/** Active un onglet et masque les autres */
-function setTab(tab) {
-  currentTab = tab;
-  ['accueil', 'veille', 'alertes'].forEach(function(t) {
-    var panel = document.getElementById('tab-' + t);
-    var btn   = document.getElementById('nav-' + t);
-    if (panel) panel.classList.toggle('hidden', t !== tab);
-    if (btn)   btn.classList.toggle('active',   t === tab);
-  });
-  // Masque le badge de notification quand on ouvre l'onglet alertes
-  if (tab === 'alertes') {
-    var badge     = document.getElementById('nav-badge');
-    var bellBadge = document.getElementById('bell-count');
-    if (badge)     badge.style.display     = 'none';
-    if (bellBadge) bellBadge.style.display = 'none';
   }
-}
+</script>
 
-// ─── SCAN ─────────────────────────────────────────────────────────────────────
+<!-- ══════════════════════════════════════════════════════════════
+     App JS — chargé en DEFER pour ne pas bloquer le DOM
+     ══════════════════════════════════════════════════════════════ -->
+<script src="app.js" defer></script>
 
-/** Déclenche un scan simulé (à connecter à un vrai backend) */
-function handleScan() {
-  if (scanLoading) return;
-  scanLoading = true;
-  console.log('[Scan] Démarrage du scan réglementaire...');
-
-  var btn = document.getElementById('scan-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Scan en cours...'; }
-
-  setTimeout(function() {
-    var d    = new Date();
-    lastScan = fmtDate(d);
-    nextScan = fmtDate(addDays(d, 7));
-    scanLog  = scanLog.concat([{ date: lastScan, hasNew: false }]).slice(-20);
-    scanLoading = false;
-
-    console.log('[Scan] Terminé —', lastScan, '— Aucune modification détectée');
-
-    renderAccueil();
-    renderAlertes();
-    if (btn) { btn.disabled = false; btn.textContent = 'Scan'; }
-  }, 1800);
-}
-
-// ─── CARTES ───────────────────────────────────────────────────────────────────
-
-/** Ouvre/ferme le résumé d'une carte réglementaire */
-function toggleCard(id) {
-  openCards[id] = !openCards[id];
-  var box   = document.getElementById('summary-' + id);
-  var arrow = document.getElementById('arrow-'   + id);
-  var lbl   = document.getElementById('lbl-'     + id);
-  if (box)   box.classList.toggle('hidden', !openCards[id]);
-  if (arrow) arrow.style.transform = openCards[id] ? 'rotate(90deg)' : 'rotate(0deg)';
-  if (lbl)   lbl.textContent       = openCards[id] ? 'Masquer le resume' : 'Lire en clair';
-}
-
-// ─── PRÉFÉRENCES ──────────────────────────────────────────────────────────────
-
-/** Bascule une préférence de notification */
-function togglePref(key) {
-  prefs[key] = !prefs[key];
-  var sw = document.getElementById('sw-' + key);
-  if (sw) {
-    sw.classList.toggle('switch-on',  prefs[key]);
-    sw.classList.toggle('switch-off', !prefs[key]);
-    var knob = sw.querySelector('.switch-knob');
-    if (knob) knob.style.left = prefs[key] ? '23px' : '3px';
+<!-- ══════════════════════════════════════════════════════════════
+     Service Worker sw.js — Cache + offline + mises à jour
+     Enregistré APRÈS le chargement complet de la page (load)
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+  // ── Bannière mise à jour (déclarée avant le SW pour être dispo au besoin)
+  function showUpdateBanner() {
+    if (document.getElementById('update-banner')) return;
+    var banner = document.createElement('div');
+    banner.id  = 'update-banner';
+    banner.innerHTML =
+      '<span style="font-size:20px">🔄</span>'
+      + '<div style="flex:1">'
+      + '<p class="update-title">Mise à jour disponible</p>'
+      + '<p class="update-sub">Nouvelles données réglementaires</p>'
+      + '</div>'
+      + '<button class="update-btn" onclick="applyUpdate()">Mettre à jour</button>';
+    document.body.appendChild(banner);
   }
-  console.log('[Prefs]', key, '→', prefs[key] ? 'activé' : 'désactivé');
-}
 
-// ─── FILTRE VEILLE ────────────────────────────────────────────────────────────
+  function applyUpdate() {
+    console.log('[SW] Mise à jour demandée');
+    navigator.serviceWorker.ready.then(function(reg) {
+      if (reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    });
+  }
 
-/** Applique un filtre sur l'onglet Veille */
-function setVeilleFilter(f) {
-  veilleFilter = f;
-  console.log('[Veille] Filtre →', f);
-  renderVeille();
-}
+  // ── Enregistrement SW principal — uniquement si supporté
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
 
-// ─── RENDU : CARTE RÉGLEMENTAIRE ─────────────────────────────────────────────
+      navigator.serviceWorker.register('./sw.js', { scope: '/' })
+        .then(function(reg) {
+          console.log('[SW] Enregistré — scope :', reg.scope);
 
-/**
- * Génère le HTML d'une carte réglementaire
- * @param {Object} reg - Objet réglementation depuis DATA[]
- * @returns {string} HTML de la carte
- */
-function renderCard(reg) {
-  var acc       = reg.cat === 'eu_red' ? '#4a7dff' : reg.cat === 'fr' ? '#e04f5f' : '#38bdf8';
-  var flag      = reg.cat === 'eu_red' ? 'EU' : reg.cat === 'fr' ? 'FR' : 'EU';
-  var linkLabel = reg.cat === 'fr' ? 'Legifrance' : 'EUR-Lex';
-  var isOpen    = openCards[reg.id] || false;
+          // Vérifie si une mise à jour est déjà disponible
+          reg.update();
 
-  var newChip  = reg.isNew
-    ? '<span class="chip chip-new">Nouveau</span>'
-    : '';
-  var catChip  = '<span class="chip chip-' + reg.cat + '">' + flag + ' ' + esc(reg.tag) + '</span>';
-  var deviceTags = reg.devices.map(function(d) {
-    return '<span class="dtag">' + esc(d) + '</span>';
-  }).join('');
-  var linkBtn  = reg
+          // Écoute les nouvelles versions
+          reg.addEventListener('updatefound', function() {
+            var newWorker = reg.installing;
+            console.log('[SW] Nouveau worker — état :', newWorker.state);
+
+            newWorker.addEventListener('statechange', function() {
+              console.log('[SW] State →', newWorker.state);
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                showUpdateBanner();
+              }
+            });
+          });
+        })
+        .catch(function(err) {
+          // ⚠️ L'erreur SW est loggée mais NE bloque PAS l'app
+          console.warn('[SW] Erreur enregistrement (non bloquant) :', err);
+        });
+
+      // Recharge quand le nouveau SW prend le contrôle
+      var refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!refreshing) {
+          refreshing = true;
+          console.log('[SW] Nouveau SW actif — rechargement');
+          window.location.reload();
+        }
+      });
+
+    });
+  }
+</script>
+
+</body>
+</html>
