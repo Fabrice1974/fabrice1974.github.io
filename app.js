@@ -3,7 +3,7 @@
    Veille réglementaire équipements radio (Directive 2014/53/UE)
    ============================================================ */
 
-var APP_VERSION = '2.3';
+var APP_VERSION = '2.4';
 
 // ─── DONNÉES RÉGLEMENTAIRES ───────────────────────────────────────────────────
 var DATA = [
