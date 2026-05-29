@@ -1,5 +1,5 @@
 /* ============================================================
-   RED Monitor — app.js — v2.3
+   RED Monitor — app.js — v2.4
    Veille réglementaire équipements radio (Directive 2014/53/UE)
    ============================================================ */
 
