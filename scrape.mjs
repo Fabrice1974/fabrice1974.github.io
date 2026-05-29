@@ -1,6 +1,9 @@
 /**
  * RED Monitor — scrape.mjs
- * Script Node.js lancé par GitHub Actions chaque semaine.
+ * Chaque semaine :
+ * 1. Scrape EUR-Lex SPARQL + JORF RSS
+ * 2. Ajoute les nouveaux textes dans data.json (lu par l'app)
+ * 3. Envoie une notification push OneSignal
  */
 
 import fetch from 'node-fetch';
@@ -9,18 +12,58 @@ import fs from 'fs';
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
 const CUTOFF = '2026-06-01';
-const KNOWN_IDS_FILE = 'known-ids.json';
-const SITE_URL = 'https://fabrice1974.github.io/';
+const KNOWN_IDS_FILE  = 'known-ids.json';
+const DATA_FILE       = 'data.json';
+const SITE_URL        = 'https://fabrice1974.github.io/';
 
-function loadKnownIds() {
-  try { return JSON.parse(fs.readFileSync(KNOWN_IDS_FILE, 'utf8')); }
-  catch { return []; }
+/* ── Helpers fichiers ── */
+function loadJSON(path, fallback) {
+  try { return JSON.parse(fs.readFileSync(path, 'utf8')); }
+  catch { return fallback; }
+}
+function saveJSON(path, data) {
+  fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
 
-function saveKnownIds(ids) {
-  fs.writeFileSync(KNOWN_IDS_FILE, JSON.stringify(ids, null, 2));
+/* ── Catégorisation automatique ── */
+function categorize(title) {
+  const t = title.toLowerCase();
+  if (/cyber.r[eé]silien|cra\b|2024\/2847/.test(t))          return {cat:'eu_related', tag:'Cybersécurité'};
+  if (/[eé]coconception|espr|r[eé]parabilit/.test(t))         return {cat:'eu_related', tag:'Écoconception'};
+  if (/greenwashing|empco|allégation.environ|2024\/825/.test(t)) return {cat:'eu_related', tag:'Greenwashing'};
+  if (/data act|portabilit|2023\/2854/.test(t))               return {cat:'eu_related', tag:'Données / IoT'};
+  if (/intelligence artificielle|ai act|2024\/1689/.test(t))  return {cat:'eu_related', tag:'Intelligence Artificielle'};
+  if (/garantie|durabilit|label/.test(t))                     return {cat:'eu_related', tag:'Garantie / Durabilité'};
+  if (/jorf|légifrance|décret|ordonnance|loi\s/.test(t))      return {cat:'fr',         tag:'Transposition FR'};
+  return                                                              {cat:'eu_red',      tag:'Normes RED'};
 }
 
+/* ── Construire un item structuré depuis un résultat brut ── */
+function buildItem(raw) {
+  const {cat, tag} = categorize(raw.title);
+  const celex = raw.id.match(/CELEX[:/]([0-9A-Z]+)/i)?.[1] || '';
+  const link = celex
+    ? 'https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:' + celex
+    : (raw.id.startsWith('http') ? raw.id : 'https://eur-lex.europa.eu/search.html');
+  const dateStr = raw.date ? raw.date.slice(0,10) : new Date().toISOString().slice(0,10);
+  const [y,m,d] = dateStr.split('-');
+  return {
+    id:      raw.id,
+    cat,
+    tag,
+    isNew:   true,
+    ref:     celex ? 'Acte (UE) ' + celex : raw.title.slice(0,60),
+    title:   raw.title,
+    date:    (d||'??') + '/' + (m||'??') + '/' + (y||'????'),
+    apply:   'À confirmer',
+    type:    cat === 'fr' ? 'Texte national' : 'Acte UE',
+    devices: ['Smartphones','IoT','Wearables'],
+    link,
+    summary: 'Nouveau texte détecté automatiquement lors du scan du ' + new Date().toLocaleDateString('fr-FR') + '. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d\'application exact et la date d\'entrée en vigueur.'
+  };
+}
+
+/* ── EUR-Lex SPARQL ── */
 async function fetchEurLex() {
   const query = `
     PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>
@@ -31,10 +74,10 @@ async function fetchEurLex() {
       FILTER(?date >= "${CUTOFF}"^^xsd:date)
       FILTER(lang(?title) = "fr")
       FILTER(regex(?title,
-        "radio.lectrique|.quipements radio|directive RED|2014/53|harmonisée|DECT|RLAN|wearable|IoT|cyber.résilience|écoconception|greenwashing|Data Act|intelligence artificielle",
+        "radio.lectrique|.quipements radio|directive RED|2014/53|harmonisée|DECT|RLAN|wearable|IoT|cyber.résilience|écoconception|greenwashing|Data Act|intelligence artificielle|réparabilité|durabilité",
         "i"))
     }
-    ORDER BY DESC(?date) LIMIT 30
+    ORDER BY DESC(?date) LIMIT 40
   `;
   const url = 'https://publications.europa.eu/webapi/rdf/sparql?'
     + new URLSearchParams({ query, format: 'application/sparql-results+json' });
@@ -43,9 +86,9 @@ async function fetchEurLex() {
     if (!res.ok) throw new Error('EUR-Lex HTTP ' + res.status);
     const json = await res.json();
     return (json.results?.bindings || []).map(b => ({
-      id: b.work?.value || '',
+      id:    b.work?.value || '',
       title: b.title?.value || '',
-      date: b.date?.value || ''
+      date:  b.date?.value || ''
     }));
   } catch (e) {
     console.warn('EUR-Lex erreur:', e.message);
@@ -53,6 +96,7 @@ async function fetchEurLex() {
   }
 }
 
+/* ── JORF RSS ── */
 async function fetchJORF() {
   const items = [];
   try {
@@ -62,19 +106,25 @@ async function fetchJORF() {
     const text = await res.text();
     const titles = [...text.matchAll(/<title><!\[CDATA\[([^\]]+)\]\]><\/title>/g)].map(m => m[1]);
     const links  = [...text.matchAll(/<link>([^<]+)<\/link>/g)].map(m => m[1]);
+    const dates  = [...text.matchAll(/<pubDate>([^<]+)<\/pubDate>/g)].map(m => m[1]);
     for (let i = 1; i < titles.length; i++) {
       const t = titles[i] || '';
-      if (/radio|RED|équipement|cyber|écoconception|greenwashing|IoT|wearable|smartphone|tablette/i.test(t)) {
-        items.push({ id: links[i] || t, title: t, date: '' });
+      if (/radio|RED|.quipement|cyber|.coconception|greenwashing|IoT|wearable|smartphone|tablette|r.parabilit/i.test(t)) {
+        items.push({
+          id:    links[i] || t,
+          title: t,
+          date:  dates[i] ? new Date(dates[i]).toISOString().slice(0,10) : ''
+        });
       }
     }
   } catch (e) { console.warn('JORF erreur:', e.message); }
   return items;
 }
 
+/* ── OneSignal ── */
 async function sendNotification(heading, message) {
   if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
-    console.log('OneSignal non configuré — simulation:', heading);
+    console.log('OneSignal simulation:', heading, '|', message);
     return;
   }
   const payload = {
@@ -96,39 +146,64 @@ async function sendNotification(heading, message) {
       body: JSON.stringify(payload)
     });
     const json = await res.json();
-    console.log('OneSignal réponse:', json.id || JSON.stringify(json.errors));
+    console.log('OneSignal:', json.id || JSON.stringify(json.errors));
   } catch (e) { console.error('OneSignal erreur:', e.message); }
 }
 
+/* ── MAIN ── */
 async function main() {
   console.log('=== RED Monitor — Scan du', new Date().toISOString(), '===');
-  const knownIds = loadKnownIds();
-  console.log('IDs connus:', knownIds.length);
 
-  const [eurLexItems, jorFItems] = await Promise.all([fetchEurLex(), fetchJORF()]);
-  const allItems = [...eurLexItems, ...jorFItems];
-  console.log('Items — EUR-Lex:', eurLexItems.length, '| JORF:', jorFItems.length);
+  // Charger les états actuels
+  const knownIds   = loadJSON(KNOWN_IDS_FILE, []);
+  const currentData = loadJSON(DATA_FILE, []);
+  console.log('IDs connus:', knownIds.length, '| Textes en base:', currentData.length);
 
-  const newItems = allItems.filter(i => i.id && !knownIds.includes(i.id));
-  console.log('Nouveaux textes:', newItems.length);
+  // Scraping parallèle
+  const [eurLexRaw, jorFRaw] = await Promise.all([fetchEurLex(), fetchJORF()]);
+  const allRaw = [...eurLexRaw, ...jorFRaw];
+  console.log('Bruts — EUR-Lex:', eurLexRaw.length, '| JORF:', jorFRaw.length);
 
-  if (newItems.length > 0) {
+  // Détecter les nouveautés
+  const newRaw = allRaw.filter(r => r.id && !knownIds.includes(r.id));
+  console.log('Nouveaux textes:', newRaw.length);
+
+  if (newRaw.length > 0) {
+    // Construire les items structurés
+    const newItems = newRaw.map(buildItem);
+
+    // Marquer les anciens comme non-nouveaux et ajouter les nouveaux en tête
+    const updatedData = [
+      ...newItems,
+      ...currentData.map(i => ({ ...i, isNew: false }))
+    ];
+    saveJSON(DATA_FILE, updatedData);
+    console.log('data.json mis à jour — total:', updatedData.length, 'textes');
+
+    // Notifications (max 3 individuelles)
     for (const item of newItems.slice(0, 3)) {
-      const title = item.title.length > 80 ? item.title.slice(0, 80) + '...' : item.title;
-      await sendNotification('🆕 Nouveau texte RED', title);
+      const shortTitle = item.title.length > 80 ? item.title.slice(0, 80) + '...' : item.title;
+      await sendNotification('🆕 Nouveau texte RED', shortTitle);
     }
     if (newItems.length > 3) {
-      await sendNotification('🆕 ' + (newItems.length - 3) + ' autres nouveaux textes',
-        'Ouvrez RED Monitor pour voir toutes les nouvelles réglementations.');
+      await sendNotification(
+        '🆕 ' + (newItems.length - 3) + ' autres nouveaux textes',
+        'Ouvrez RED Monitor pour voir toutes les nouvelles réglementations détectées.'
+      );
     }
   } else {
-    await sendNotification('✅ Scan RED terminé',
-      'Aucun nouveau texte réglementaire cette semaine. Votre veille est à jour.');
+    // Aucun nouveau — confirmer quand même
+    await sendNotification(
+      '✅ Scan RED terminé',
+      'Aucun nouveau texte réglementaire cette semaine. Votre veille est à jour.'
+    );
+    console.log('Aucun nouveau texte — data.json inchangé');
   }
 
-  const updatedIds = [...new Set([...knownIds, ...allItems.map(i => i.id).filter(Boolean)])];
-  saveKnownIds(updatedIds);
-  console.log('=== Scan terminé ===');
+  // Mettre à jour known-ids
+  const updatedIds = [...new Set([...knownIds, ...allRaw.map(r => r.id).filter(Boolean)])];
+  saveJSON(KNOWN_IDS_FILE, updatedIds);
+  console.log('=== Scan terminé — IDs connus:', updatedIds.length, '===');
 }
 
 main().catch(console.error);
