@@ -130,13 +130,6 @@ var AGENDA = [
   {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"},
   {date:"11/12/2027", label:"Cyber Resilience Act — Classe II", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"}
 ];
-   title:"Transposition Data Act — Portabilité des données IoT",
-   date:"Attendue S2 2026", apply:"12/09/2026",
-   type:"Ordonnance",
-   devices:["IoT","Smartphones","Wearables"],
-   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
-   summary:"La France transposera le Data Act par ordonnance (habilitation prévue dans la loi DDADUE). La CNIL sera l'autorité nationale de contrôle pour les litiges de portabilité IoT. Texte non encore publié au JORF — lien vers le règlement Data Act source (UE) 2023/2854 directement applicable."}
-];
  
 /* ═══════════════════════════════════════════════
    ÉTAT
