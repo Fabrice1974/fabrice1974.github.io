@@ -72,7 +72,7 @@
     #push-btn.subscribed{background:#4ade8033;color:#4ade80;border:1px solid #4ade80;cursor:default}
 
     /* ══════════════════════════════════════════════════════
-       Bannière mise à jour — persistante et bien visible
+       Bannière mise à jour — persistante, visible, animée
        ══════════════════════════════════════════════════════ */
     #update-banner {
       position: fixed;
@@ -88,18 +88,19 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      z-index: 9999;
-      box-shadow: 0 8px 32px rgba(167,139,250,0.3), 0 2px 8px rgba(0,0,0,0.8);
-      animation: bannerSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      /* ✅ Au-dessus de tout — nav comprise */
+      z-index: 99999;
+      box-shadow: 0 8px 32px rgba(167,139,250,0.35), 0 2px 8px rgba(0,0,0,0.9);
+      animation: bannerSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
     @keyframes bannerSlideUp {
-      from { transform: translateX(-50%) translateY(120px); opacity: 0; }
-      to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+      from { transform: translateX(-50%) translateY(140px); opacity: 0; }
+      to   { transform: translateX(-50%) translateY(0);     opacity: 1; }
     }
-    #update-banner p            { margin: 0; color: #e8eaf0; }
-    #update-banner .update-title{ font-size: 13px; font-weight: 800; }
-    #update-banner .update-sub  { font-size: 11px; color: #a78bfa; margin-top: 3px; }
-    #update-banner .update-btn  {
+    #update-banner p             { margin: 0; color: #e8eaf0; }
+    #update-banner .update-title { font-size: 13px; font-weight: 800; }
+    #update-banner .update-sub   { font-size: 11px; color: #a78bfa; margin-top: 3px; }
+    #update-banner .update-btn   {
       background: #a78bfa;
       color: #0f1117;
       border: none;
@@ -110,12 +111,20 @@
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
+      /* ✅ Pulsation pour attirer l'œil */
       animation: btnPulse 2s ease-in-out infinite;
     }
     @keyframes btnPulse {
-      0%,100% { box-shadow: 0 0 0 0   rgba(167,139,250,0.4); }
-      50%     { box-shadow: 0 0 0 6px rgba(167,139,250,0);   }
+      0%,100% { box-shadow: 0 0 0 0   rgba(167,139,250,0.5); }
+      50%     { box-shadow: 0 0 0 8px rgba(167,139,250,0);   }
     }
+    /* ✅ État "en cours" après clic */
+    #update-banner.updating {
+      border-color: #4ade80;
+      background: #0d2a18;
+    }
+    #update-banner.updating .update-title { color: #4ade80; }
+    #update-banner.updating .update-sub   { color: #86efac; }
   </style>
 </head>
 <body>
@@ -217,13 +226,19 @@
 <script src="app.js"></script>
 
 <!-- ══════════════════════════════════════════════════════════════
-     Service Worker sw.js — Cache + offline + mises à jour
+     Service Worker sw.js
+     Règle clé : reload() UNIQUEMENT sur clic utilisateur
+     Jamais automatiquement → bannière toujours visible
      ══════════════════════════════════════════════════════════════ -->
 <script>
 
-  // ── Bannière mise à jour — PERSISTANTE jusqu'au clic
+  // ── Drapeau : reload autorisé UNIQUEMENT après clic bouton
+  window._swRefreshAllowed = false;
+
+  // ── Affiche la bannière — PERSISTANTE jusqu'au clic
   function showUpdateBanner() {
     if (document.getElementById('update-banner')) return;
+    console.log('[SW] Affichage bannière mise à jour — persistante');
 
     var banner = document.createElement('div');
     banner.id  = 'update-banner';
@@ -237,18 +252,18 @@
       + '</div>'
       + '<button class="update-btn" onclick="applyUpdate()">Mettre à jour</button>';
 
-    // ⚠️ Pas de setTimeout → reste affichée jusqu'au clic
+    // ⚠️ Aucun setTimeout — la bannière reste jusqu'au clic
     document.body.appendChild(banner);
-    console.log('[SW] Bannière mise à jour affichée — persistante');
   }
 
-  // ── Application de la mise à jour avec feedback visuel
+  // ── Applique la mise à jour UNIQUEMENT sur clic utilisateur
   function applyUpdate() {
-    console.log('[SW] Mise à jour demandée par l\'utilisateur');
+    console.log('[SW] Clic utilisateur — mise à jour autorisée');
 
-    // Feedback visuel pendant le rechargement
+    // Feedback visuel immédiat
     var banner = document.getElementById('update-banner');
     if (banner) {
+      banner.classList.add('updating');
       banner.innerHTML =
         '<span style="font-size:24px">⏳</span>'
         + '<div style="flex:1">'
@@ -257,14 +272,18 @@
         + '</div>';
     }
 
+    // ✅ Autorise le reload dans controllerchange
+    window._swRefreshAllowed = true;
+
     navigator.serviceWorker.ready.then(function(registration) {
       if (registration.waiting) {
-        // SW en attente → envoie le signal d'activation
+        // Envoie SKIP_WAITING → déclenche controllerchange → reload
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       } else {
-        // Pas de SW en attente → recharge directement
-        console.log('[SW] Pas de SW en attente — rechargement direct');
-        setTimeout(function() { window.location.reload(); }, 1500);
+        // Pas de SW en attente → reload direct après délai
+        setTimeout(function() {
+          window.location.reload();
+        }, 1500);
       }
     });
   }
@@ -287,34 +306,43 @@
 
             newWorker.addEventListener('statechange', function() {
               console.log('[SW] State →', newWorker.state);
-
-              // Nouveau SW installé et en attente d'activation
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('[SW] Mise à jour disponible — affichage bannière persistante');
+                // ✅ Nouveau SW prêt → bannière persistante
                 showUpdateBanner();
               }
             });
           });
 
-          // Vérifie si un SW est déjà en attente au chargement
-          // (cas où l'utilisateur avait ignoré la bannière)
+          // SW déjà en attente au chargement de la page
+          // (utilisateur avait fermé l'app sans cliquer)
           if (reg.waiting) {
-            console.log('[SW] SW en attente détecté au chargement — affichage bannière');
+            console.log('[SW] SW en attente détecté au chargement');
             showUpdateBanner();
           }
+
         })
         .catch(function(err) {
+          // Erreur SW non bloquante pour l'app
           console.warn('[SW] Erreur enregistrement (non bloquant) :', err);
         });
 
-      // Recharge la page quand le nouveau SW prend le contrôle
+      // ── controllerchange : reload UNIQUEMENT si utilisateur a cliqué
       var refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', function() {
-        if (!refreshing) {
-          refreshing = true;
-          console.log('[SW] Nouveau SW actif — rechargement');
-          window.location.reload();
+        if (refreshing) return;
+
+        if (!window._swRefreshAllowed) {
+          // ⚠️ Nouveau SW actif mais pas de clic utilisateur
+          // → on affiche la bannière, on NE recharge PAS
+          console.log('[SW] controllerchange sans clic — bannière affichée, pas de reload');
+          showUpdateBanner();
+          return;
         }
+
+        // ✅ Utilisateur a cliqué → reload autorisé
+        refreshing = true;
+        console.log('[SW] Reload autorisé — rechargement');
+        window.location.reload();
       });
 
     });
