@@ -29,8 +29,8 @@ jobs:
           ONESIGNAL_API_KEY: ${{ secrets.ONESIGNAL_API_KEY }}
         run: node scrape.mjs
 
-      - name: Save known IDs
+      - name: Save known IDs and data
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: update known-ids cache"
-          file_pattern: known-ids.json
+          commit_message: "chore: update known-ids and data cache"
+          file_pattern: known-ids.json data.json
