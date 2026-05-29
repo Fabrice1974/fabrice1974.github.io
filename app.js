@@ -88,7 +88,7 @@ var DATA = [
    date:"En cours (Sénat, avr. 2026)", apply:"27/09/2026",
    type:"Loi (Code conso + Code envir.)",
    devices:["Tous appareils RED"],
-   link:"https://www.senat.fr/rap/a25-346/a25-3463.html",
+   link:"https://www.legifrance.gouv.fr/dossierlegislatif/JORFDOLE000051232169/",
    summary:"Les articles 20 et 21 du projet DDADUE inscrivent dans le Code de la consommation et le Code de l'environnement les obligations EmpCo. La DGCCRF pourra sanctionner jusqu'à 10% du CA annuel les fabricants utilisant des allégations écologiques non prouvées."},
   {id:"fr-2", cat:"fr", tag:"Réparabilité", isNew:true,
    ref:"Décret ESPR smartphones (attendu T3 2026)",
@@ -96,29 +96,29 @@ var DATA = [
    date:"Attendu juin 2026", apply:"28/06/2026",
    type:"Décret (Code envir. art. L541-10-9)",
    devices:["Smartphones","Tablettes"],
-   link:"https://www.legifrance.gouv.fr",
-   summary:"Ce décret aligne le score de réparabilité français sur l'ESPR : passage de 10 à 14 critères. Les vendeurs en ligne doivent afficher le score sur la fiche produit avant le bouton d'achat."},
+   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R0781",
+   summary:"Ce décret aligne le score de réparabilité français sur l'ESPR : passage de 10 à 14 critères. Les vendeurs en ligne doivent afficher le score sur la fiche produit avant le bouton d'achat. En attendant la publication du décret, voir le règlement ESPR source (UE) 2025/781."},
   {id:"fr-3", cat:"fr", tag:"Données / IoT", isNew:false,
    ref:"Ordonnance Data Act (attendue S2 2026)",
    title:"Transposition Data Act — Portabilité données IoT",
    date:"Attendue sept. 2026", apply:"12/09/2026",
    type:"Ordonnance (habilitation loi DDADUE)",
    devices:["IoT","Smartphones","Wearables"],
-   link:"https://www.legifrance.gouv.fr",
-   summary:"La France transposera le Data Act via ordonnance. La CNIL sera l'autorité de contrôle pour les litiges de portabilité IoT. Sanctions jusqu'à 20 M euros ou 4% du CA mondial."}
+   link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
+   summary:"La France transposera le Data Act via ordonnance. La CNIL sera l'autorité de contrôle pour les litiges de portabilité IoT. Sanctions jusqu'à 20 M euros ou 4% du CA mondial. En attendant, voir le règlement Data Act source (UE) 2023/2854."}
 ];
 
 var AGENDA = [
-  {date:"28/06/2026", label:"ESPR Smartphones et Tablettes", flags:"🇪🇺🇫🇷"},
-  {date:"02/08/2026", label:"AI Act — IA embarquée", flags:"🇪🇺"},
-  {date:"12/09/2026", label:"Data Act — Portabilité IoT", flags:"🇪🇺🇫🇷"},
-  {date:"27/09/2026", label:"EmpCo greenwashing + label garantie", flags:"🇪🇺🇫🇷"},
-  {date:"15/11/2026", label:"Retrait normes RED (DECT, SRD...)", flags:"🇪🇺"},
-  {date:"11/12/2026", label:"Cyber Resilience Act — Classe I", flags:"🇪🇺"},
-  {date:"14/02/2027", label:"Retrait normes RED ferroviaires", flags:"🇪🇺"},
-  {date:"11/06/2027", label:"Retrait normes RED (EN 303 659...)", flags:"🇪🇺"},
-  {date:"18/09/2027", label:"ESPR Wearables et SmartGlasses", flags:"🇪🇺"},
-  {date:"11/12/2027", label:"Cyber Resilience Act — Classe II", flags:"🇪🇺"}
+  {date:"28/06/2026", label:"ESPR Smartphones et Tablettes", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R0781"},
+  {date:"02/08/2026", label:"AI Act — IA embarquée", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
+  {date:"12/09/2026", label:"Data Act — Portabilité IoT", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
+  {date:"27/09/2026", label:"EmpCo greenwashing + label garantie", flags:"🇪🇺🇫🇷", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
+  {date:"15/11/2026", label:"Retrait normes RED (DECT, SRD...)", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D0893"},
+  {date:"11/12/2026", label:"Cyber Resilience Act — Classe I", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
+  {date:"14/02/2027", label:"Retrait normes RED ferroviaires", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D1741"},
+  {date:"11/06/2027", label:"Retrait normes RED (EN 303 659...)", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=CELEX:32025D2499"},
+  {date:"18/09/2027", label:"ESPR Wearables et SmartGlasses", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R2134"},
+  {date:"11/12/2027", label:"Cyber Resilience Act — Classe II", flags:"🇪🇺", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"}
 ];
 
 /* ═══════════════════════════════════════════════
@@ -287,13 +287,18 @@ function renderCard(reg) {
    ═══════════════════════════════════════════════ */
 function renderAccueil() {
   var agendaRows = AGENDA.map(function(e) {
-    return '<div class="agenda-row">'
+    return '<a href="' + e.link + '" target="_blank" rel="noopener" style="text-decoration:none">'
+      + '<div class="agenda-row" style="cursor:pointer">'
       + '<div class="agenda-date">'
       +   '<p style="font-size:13px;font-weight:800;color:#a78bfa;margin:0">' + e.date.slice(0,5) + '</p>'
       +   '<p style="font-size:10px;color:#a78bfa;margin:0">' + e.date.slice(6) + '</p>'
       + '</div>'
-      + '<p style="font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.4;margin:0">' + e.flags + ' ' + esc(e.label) + '</p>'
-      + '</div>';
+      + '<div style="flex:1">'
+      +   '<p style="font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.4;margin:0">' + e.flags + ' ' + esc(e.label) + '</p>'
+      +   '<p style="font-size:10px;color:#4a7dff;margin-top:2px">Voir le texte ↗</p>'
+      + '</div>'
+      + '</div>'
+      + '</a>';
   }).join('');
 
   document.getElementById('tab-accueil').innerHTML =
@@ -436,7 +441,7 @@ function renderAlertes() {
 }
 
 /* ═══════════════════════════════════════════════
-   INIT
+   INIT — charge data.json puis rend l'app
    ═══════════════════════════════════════════════ */
 document.getElementById('bell-btn').addEventListener('click', function() { setTab('alertes'); });
 document.getElementById('nav-accueil').addEventListener('click', function() { setTab('accueil'); });
@@ -447,6 +452,26 @@ if ('Notification' in window && Notification.permission === 'default') {
   Notification.requestPermission();
 }
 
-renderAccueil();
-renderVeille();
-renderAlertes();
+/* Charger les textes dynamiques depuis data.json (mis à jour par scrape.mjs)
+   et les fusionner EN TÊTE des données statiques */
+fetch('data.json?v=' + Date.now())
+  .then(function(r) { return r.ok ? r.json() : []; })
+  .catch(function() { return []; })
+  .then(function(dynamicItems) {
+    if (dynamicItems && dynamicItems.length > 0) {
+      // Éviter les doublons : on ne garde que les items dynamiques
+      // dont l'id n'existe pas déjà dans DATA statique
+      var staticIds = DATA.map(function(d) { return d.id; });
+      var newOnly = dynamicItems.filter(function(d) {
+        return !staticIds.includes(d.id);
+      });
+      // Insérer les nouveaux en tête
+      if (newOnly.length > 0) {
+        DATA = newOnly.concat(DATA);
+        console.log('data.json : ' + newOnly.length + ' nouveaux textes chargés');
+      }
+    }
+    renderAccueil();
+    renderVeille();
+    renderAlertes();
+  });
