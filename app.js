@@ -357,6 +357,12 @@ if ('Notification' in window && Notification.permission === 'default') {
   Notification.requestPermission();
 }
  
+/* Rendu immediat — l'app s'affiche toujours meme si le fetch echoue */
+renderAccueil();
+renderVeille();
+renderAlertes();
+ 
+/* Puis on tente de charger les nouveaux textes depuis data.json */
 fetch('data.json?v=' + Date.now())
   .then(function(r) { return r.ok ? r.json() : []; })
   .catch(function() { return []; })
@@ -364,9 +370,11 @@ fetch('data.json?v=' + Date.now())
     if (dynamicItems && dynamicItems.length > 0) {
       var staticIds = DATA.map(function(d) { return d.id; });
       var newOnly = dynamicItems.filter(function(d) { return !staticIds.includes(d.id); });
-      if (newOnly.length > 0) { DATA = newOnly.concat(DATA); }
+      if (newOnly.length > 0) {
+        DATA = newOnly.concat(DATA);
+        renderAccueil();
+        renderVeille();
+        renderAlertes();
+      }
     }
-    renderAccueil();
-    renderVeille();
-    renderAlertes();
   });
