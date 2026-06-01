@@ -1,15 +1,20 @@
 /* ============================================================
-   RED Monitor — app.js — v4.0.1
-   Compatible moteur dynamique (data.json + scan-meta.json)
-   Badge alertes dynamique = nombre réel de nouveautés
+   RED Monitor — app.js — v4.0.2
+   - Ancien design conservé
+   - Compat data.json / scan-meta.json
+   - Badge alertes dynamique (nombre réel de isNew)
    ============================================================ */
 
 var APP_VERSION = '4.0';
 
-// ─── DATE DE RÉFÉRENCE DU FILTRE ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Date filtre
+// ─────────────────────────────────────────────────────────────
 var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
 
-// ─── DONNÉES STATIQUES ────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Données statiques de base (socle)
+// ─────────────────────────────────────────────────────────────
 var DATA = [
   {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false, ref:"Directive 2014/53/UE — RED", title:"Directive RED — Equipements radioelectriques (texte de reference)", date:"16/04/2014", apply:"13/06/2016", type:"Directive UE", applyDate:null, devices:["Smartphones","IoT","Routeurs","Wearables","SRD","Drones"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053", summary:"Texte fondateur RED."},
   {id:"red-2", cat:"eu_red", tag:"Normes RED", isNew:false, ref:"Decision d'execution (UE) 2022/2444", title:"Normes harmonisees RED publiees au JOUE — liste consolidee 2022", date:"13/12/2022", apply:"En vigueur", type:"Decision d'execution", applyDate:null, devices:["Smartphones","IoT","Routeurs","SRD","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022D2444", summary:"Liste consolidee des normes harmonisees RED."},
@@ -34,7 +39,9 @@ var DATA = [
   {id:"fr-3", cat:"fr", tag:"Donnees IoT", isNew:false, ref:"Ordonnance de transposition Data Act attendue 2026", title:"Transposition Data Act — Portabilite des donnees IoT", date:"Attendue 2026", apply:"Horizon 2026", type:"Ordonnance", applyDate:new Date(2026,11,31), devices:["IoT","Smartphones","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854", summary:"Transposition FR Data Act."}
 ];
 
-// ─── AGENDA ───────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Agenda
+// ─────────────────────────────────────────────────────────────
 var AGENDA = [
   {date:"02/08/2026", label:"AI Act — IA embarquee (haut risque)", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
   {date:"11/09/2026", label:"CRA — Declaration vulnerabilites (Art. 64)", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
@@ -46,69 +53,74 @@ var AGENDA = [
   {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses — attendu", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
 ];
 
-// ─── ÉTAT ─────────────────────────────────────────────────────────────────────
-var currentTab = 'accueil';
-var scanLoading = false;
-var lastScan = fmtDate(new Date());
-var nextScan = fmtDate(addDays(new Date(), 7));
-var scanLog = [];
-var openCards = {};
-var veilleFilter = 'tous';
-var prefs = {
-  red_normes:true, cra:true, espr:true, data_act:true, ai_act:true, empco:true, fr_transpo:true,
-  rien_nouveau:true, rappel_j60:true, rappel_j30:true
-};
+// ─────────────────────────────────────────────────────────────
+// Etat UI
+// ─────────────────────────────────────────────────────────────
+var currentTab='accueil';
+var scanLoading=false;
+var lastScan=fmtDate(new Date());
+var nextScan=fmtDate(addDays(new Date(),7));
+var scanLog=[];
+var openCards={};
+var veilleFilter='tous';
+var prefs={red_normes:true,cra:true,espr:true,data_act:true,ai_act:true,empco:true,fr_transpo:true,rien_nouveau:true,rappel_j60:true,rappel_j30:true};
 
-function fmtDate(d){ var p=n=>String(n).padStart(2,'0'); return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes()); }
-function addDays(d,n){ return new Date(d.getTime()+n*86400000); }
-function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-function parseFRDateStrict(str){
-  var m = String(str||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if(!m) return null;
-  var d = new Date(+m[3], +m[2]-1, +m[1]); return isNaN(d) ? null : d;
-}
+// ─────────────────────────────────────────────────────────────
+// Utils
+// ─────────────────────────────────────────────────────────────
+function fmtDate(d){var p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());}
+function addDays(d,n){return new Date(d.getTime()+n*86400000);}
+function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function parseFRDateStrict(str){var m=String(str||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m)return null;var d=new Date(+m[3],+m[2]-1,+m[1]);return isNaN(d)?null:d;}
 function parseApplyToDate(apply){
-  var txt = String(apply||'');
-  var d = parseFRDateStrict(txt); if(d) return d;
-  var r = txt.match(/(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/); if(r) return parseFRDateStrict(r[1]);
-  var h = txt.match(/Horizon\s+(\d{4})/i); if(h) return new Date(+h[1],6,1);
-  var y = txt.match(/(20\d{2})/); if(y) return new Date(+y[1],11,31);
+  var txt=String(apply||'');
+  var d=parseFRDateStrict(txt); if(d) return d;
+  var r=txt.match(/(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/); if(r) return parseFRDateStrict(r[1]);
+  var h=txt.match(/Horizon\s+(\d{4})/i); if(h) return new Date(+h[1],6,1);
+  var y=txt.match(/(20\d{2})/); if(y) return new Date(+y[1],11,31);
   return null;
 }
 function computeDataFiltre(){
   return DATA.filter(function(d){
-    var dt = d.applyDate instanceof Date ? d.applyDate : parseApplyToDate(d.apply);
-    return dt && dt.getTime() >= DATE_FILTRE.getTime();
+    var dt=d.applyDate instanceof Date?d.applyDate:parseApplyToDate(d.apply);
+    return dt && dt.getTime()>=DATE_FILTRE.getTime();
   });
 }
-var DATA_FILTRE = computeDataFiltre();
+var DATA_FILTRE=computeDataFiltre();
 
-// ✅ Badge dynamique
+// ─────────────────────────────────────────────────────────────
+// Badge dynamique (correction clé)
+// ─────────────────────────────────────────────────────────────
 function updateAlertBadges(){
-  var count = (DATA || []).filter(function(i){ return !!i.isNew; }).length;
-  var bell = document.getElementById('bell-count');
-  var nav  = document.getElementById('nav-badge');
+  var count=(DATA||[]).filter(function(item){return !!item.isNew;}).length;
+  var bell=document.getElementById('bell-count');
+  var nav=document.getElementById('nav-badge');
 
-  if (bell) {
-    bell.textContent = String(count);
-    bell.style.display = count > 0 ? 'flex' : 'none';
+  if(bell){
+    bell.textContent=String(count);
+    bell.style.display=count>0?'flex':'none';
   }
-  if (nav) {
-    nav.textContent = String(count);
-    nav.style.display = count > 0 ? 'flex' : 'none';
+  if(nav){
+    nav.textContent=String(count);
+    nav.style.display=count>0?'flex':'none';
   }
-  console.log('[Badge] alertes =', count);
+  console.log('[Badge] nouveautés =',count);
 }
 
+// ─────────────────────────────────────────────────────────────
+// Navigation
+// ─────────────────────────────────────────────────────────────
 function setTab(tab){
-  currentTab = tab;
+  currentTab=tab;
   ['accueil','veille','alertes'].forEach(function(t){
-    var panel=document.getElementById('tab-'+t), btn=document.getElementById('nav-'+t);
-    if(panel) panel.classList.toggle('hidden', t!==tab);
-    if(btn) btn.classList.toggle('active', t===tab);
+    var panel=document.getElementById('tab-'+t);
+    var btn=document.getElementById('nav-'+t);
+    if(panel) panel.classList.toggle('hidden',t!==tab);
+    if(btn) btn.classList.toggle('active',t===tab);
   });
   if(tab==='alertes'){
-    var badge=document.getElementById('nav-badge'), bell=document.getElementById('bell-count');
+    var badge=document.getElementById('nav-badge');
+    var bell=document.getElementById('bell-count');
     if(badge) badge.style.display='none';
     if(bell) bell.style.display='none';
   } else {
@@ -116,25 +128,39 @@ function setTab(tab){
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Scan manuel UI
+// ─────────────────────────────────────────────────────────────
 function handleScan(){
   if(scanLoading) return;
   scanLoading=true;
+  console.log('[Scan] start');
   var btn=document.getElementById('scan-btn');
-  if(btn){ btn.disabled=true; btn.textContent='Scan en cours...'; }
+  if(btn){btn.disabled=true;btn.textContent='Scan en cours...';}
 
   setTimeout(function(){
-    var d=new Date(); lastScan=fmtDate(d); nextScan=fmtDate(addDays(d,7));
+    var d=new Date();
+    lastScan=fmtDate(d);
+    nextScan=fmtDate(addDays(d,7));
     scanLog=scanLog.concat([{date:lastScan,hasNew:false}]).slice(-20);
     scanLoading=false;
-    renderAccueil(); renderAlertes(); updateAlertBadges();
-    if(btn){ btn.disabled=false; btn.textContent='Scan'; }
+    renderAccueil();
+    renderAlertes();
+    updateAlertBadges();
+    if(btn){btn.disabled=false;btn.textContent='Scan';}
+    console.log('[Scan] done',lastScan);
   },1000);
 }
 
+// ─────────────────────────────────────────────────────────────
+// Cards
+// ─────────────────────────────────────────────────────────────
 function toggleCard(id){
   openCards[id]=!openCards[id];
-  var box=document.getElementById('summary-'+id), arr=document.getElementById('arrow-'+id), lbl=document.getElementById('lbl-'+id);
-  if(box) box.classList.toggle('hidden', !openCards[id]);
+  var box=document.getElementById('summary-'+id);
+  var arr=document.getElementById('arrow-'+id);
+  var lbl=document.getElementById('lbl-'+id);
+  if(box) box.classList.toggle('hidden',!openCards[id]);
   if(arr) arr.style.transform=openCards[id]?'rotate(90deg)':'rotate(0deg)';
   if(lbl) lbl.textContent=openCards[id]?'Masquer le resume':'Lire en clair';
 }
@@ -142,41 +168,45 @@ function togglePref(key){
   prefs[key]=!prefs[key];
   var sw=document.getElementById('sw-'+key);
   if(sw){
-    sw.classList.toggle('switch-on',prefs[key]); sw.classList.toggle('switch-off',!prefs[key]);
+    sw.classList.toggle('switch-on',prefs[key]);
+    sw.classList.toggle('switch-off',!prefs[key]);
     var k=sw.querySelector('.switch-knob'); if(k) k.style.left=prefs[key]?'23px':'3px';
   }
 }
-function setVeilleFilter(f){ veilleFilter=f; renderVeille(); }
+function setVeilleFilter(f){veilleFilter=f;renderVeille();}
 
 function renderAccueilCards(){
-  var now=new Date(), html='';
-  var withDates = AGENDA.filter(e=>/^\d{2}\/\d{2}\/\d{4}$/.test(e.date))
-    .map(function(e){ var p=e.date.split('/'); return {item:e, ts:new Date(p[2],p[1]-1,p[0]).getTime()}; })
-    .filter(e=>e.ts>=DATE_FILTRE.getTime()).sort((a,b)=>a.ts-b.ts);
+  var now=new Date(),html='';
+  var withDates=AGENDA.filter(function(e){return /^\d{2}\/\d{2}\/\d{4}$/.test(e.date);})
+    .map(function(e){var p=e.date.split('/');return {item:e,ts:new Date(p[2],p[1]-1,p[0]).getTime()};})
+    .filter(function(e){return e.ts>=DATE_FILTRE.getTime();})
+    .sort(function(a,b){return a.ts-b.ts;});
 
   if(withDates.length){
-    var next=withDates[0], days=Math.ceil((next.ts-now.getTime())/86400000);
-    var c = days<=0?['#4ade80','#0d2a18','#1a5a30'] : days<=30?['#e04f5f','#2a0d12','#5a1a22'] : days<=90?['#f59e0b','#2a1a00','#5a3a00'] : ['#38bdf8','#0d2030','#1a4060'];
-    html += '<div class="card mb10" style="background:'+c[1]+';border:1px solid '+c[2]+';border-left:3px solid '+c[0]+'"><p class="fw7 fs11 mb4" style="color:'+c[0]+';letter-spacing:0.08em">⏰ PROCHAINE ÉCHÉANCE — '+(days<=0?'En vigueur':'J-'+days)+'</p><p class="fs13 fw7 t-text mb4">'+esc(next.item.label)+'</p><p class="fs11 t-muted">'+esc(next.item.flags)+' · '+esc(next.item.date)+'</p></div>';
+    var next=withDates[0];
+    var days=Math.ceil((next.ts-now.getTime())/86400000);
+    var c=days<=0?['#4ade80','#0d2a18','#1a5a30']:days<=30?['#e04f5f','#2a0d12','#5a1a22']:days<=90?['#f59e0b','#2a1a00','#5a3a00']:['#38bdf8','#0d2030','#1a4060'];
+    html+='<div class="card mb10" style="background:'+c[1]+';border:1px solid '+c[2]+';border-left:3px solid '+c[0]+'"><p class="fw7 fs11 mb4" style="color:'+c[0]+';letter-spacing:0.08em">⏰ PROCHAINE ÉCHÉANCE — '+(days<=0?'En vigueur':'J-'+days)+'</p><p class="fs13 fw7 t-text mb4">'+esc(next.item.label)+'</p><p class="fs11 t-muted">'+esc(next.item.flags)+' · '+esc(next.item.date)+'</p></div>';
   }
 
-  var fr = DATA_FILTRE.filter(d=>d.cat==='fr'&&d.isNew);
+  var fr=DATA_FILTRE.filter(function(d){return d.cat==='fr'&&d.isNew;});
   if(fr.length){
-    html += '<div class="card card-fr mb12"><p class="fw7 fs12 t-fr mb6">🇫🇷 '+fr.length+' texte(s) FR en cours d\'adoption</p>'
-      + fr.map(d=>'<p class="fs11" style="color:#fca5a5;margin-top:3px;line-height:1.4">· '+esc(d.ref)+' — '+esc(d.apply)+'</p>').join('') + '</div>';
+    html+='<div class="card card-fr mb12"><p class="fw7 fs12 t-fr mb6">🇫🇷 '+fr.length+' texte(s) FR en cours d\'adoption</p>'
+      +fr.map(function(d){return '<p class="fs11" style="color:#fca5a5;margin-top:3px;line-height:1.4">· '+esc(d.ref)+' — '+esc(d.apply)+'</p>';}).join('')
+      +'</div>';
   }
 
-  html += '<div class="card card-green mb16"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p><p class="fs11" style="color:#86efac;margin-top:3px">Sources : EUR-Lex · Legifrance · JORF · ETSI</p></div>';
+  html+='<div class="card card-green mb16"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p><p class="fs11" style="color:#86efac;margin-top:3px">Sources : EUR-Lex · Legifrance · JORF · ETSI</p></div>';
   return html;
 }
 
 function renderCard(reg){
   var acc=reg.cat==='eu_red'?'#4a7dff':reg.cat==='fr'?'#e04f5f':'#38bdf8';
   var flag=reg.cat==='eu_red'?'EU':reg.cat==='fr'?'FR':'EU';
+  var isOpen=!!openCards[reg.id];
   var newChip=reg.isNew?'<span class="chip chip-new">Nouveau</span>':'';
   var catChip='<span class="chip chip-'+reg.cat+'">'+flag+' '+esc(reg.tag)+'</span>';
-  var devices=(reg.devices||[]).map(d=>'<span class="dtag">'+esc(d)+'</span>').join('');
-  var isOpen=!!openCards[reg.id];
+  var devices=(reg.devices||[]).map(function(d){return '<span class="dtag">'+esc(d)+'</span>';}).join('');
   var linkBtn=reg.link?'<a href="'+reg.link+'" target="_blank" rel="noopener" class="eur-link" style="background:'+acc+'">'+(reg.cat==='fr'?'Legifrance':'EUR-Lex')+' &rarr;</a>'
                     :'<span style="display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;background:#2a2f4a;color:#7a7f9a;margin-top:10px">Texte non encore publie</span>';
 
@@ -184,32 +214,33 @@ function renderCard(reg){
 }
 
 function renderAccueil(){
-  var agendaRows = AGENDA.filter(function(e){
+  var agendaRows=AGENDA.filter(function(e){
     if(!/^\d{2}\/\d{2}\/\d{4}$/.test(e.date)) return true;
-    var p=e.date.split('/'); var ts=new Date(p[2],p[1]-1,p[0]).getTime(); return ts>=DATE_FILTRE.getTime();
+    var p=e.date.split('/'); var ts=new Date(p[2],p[1]-1,p[0]).getTime();
+    return ts>=DATE_FILTRE.getTime();
   }).map(function(e){
     return '<a href="'+e.link+'" target="_blank" rel="noopener" style="text-decoration:none"><div class="agenda-row"><div class="agenda-date"><p style="font-size:12px;font-weight:800;color:#a78bfa;margin:0">'+esc(e.date.slice(0,5))+'</p><p style="font-size:10px;color:#a78bfa;margin:0">'+esc(e.date.slice(6))+'</p></div><div style="flex:1"><p style="font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.4;margin:0">'+esc(e.flags)+' '+esc(e.label)+'</p><p style="font-size:10px;color:#4a7dff;margin-top:2px">Voir le texte</p></div></div></a>';
   }).join('');
 
-  document.getElementById('tab-accueil').innerHTML =
+  document.getElementById('tab-accueil').innerHTML=
     '<div style="padding:14px 16px 90px"><div style="display:flex;justify-content:flex-end;margin-bottom:8px"><span style="font-size:10px;font-weight:700;color:#7a7f9a;background:#1a1e35;border:1px solid #2a2f4a;border-radius:6px;padding:3px 10px;letter-spacing:0.05em">v'+APP_VERSION+' — '+lastScan.slice(0,10)+'</span></div>'
-    + renderAccueilCards()
-    + '<div class="card-plain mb16" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="flex:1;min-width:0"><p class="fw7 fs13 t-text mb6">Scraping hebdomadaire</p><p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted mb4">Prochain scan : <span class="t-warn">'+nextScan+'</span></p><p class="fs10 t-muted">EUR-Lex · Legifrance · JORF · ETSI</p></div><button id="scan-btn" class="scan-btn" onclick="handleScan()">'+(scanLoading?'En cours...':'Scan')+'</button></div>'
-    + '<p class="section-label t-muted">CALENDRIER DES ÉCHÉANCES — après 01/06/2026</p>'+agendaRows+'</div>';
+    +renderAccueilCards()
+    +'<div class="card-plain mb16" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="flex:1;min-width:0"><p class="fw7 fs13 t-text mb6">Scraping hebdomadaire</p><p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted mb4">Prochain scan : <span class="t-warn">'+nextScan+'</span></p><p class="fs10 t-muted">EUR-Lex · Legifrance · JORF · ETSI</p></div><button id="scan-btn" class="scan-btn" onclick="handleScan()">'+(scanLoading?'En cours...':'Scan')+'</button></div>'
+    +'<p class="section-label t-muted">CALENDRIER DES ÉCHÉANCES — après 01/06/2026</p>'+agendaRows+'</div>';
 }
 
 function renderVeille(){
   var filters=[{key:'tous',label:'Tous'},{key:'eu_red',label:'RED stricte'},{key:'eu_related',label:'Connexes EU'},{key:'fr',label:'Droit FR'}];
   var groups=[{key:'eu_red',label:'TEXTES RED (2014/53/UE)',color:'#4a7dff'},{key:'eu_related',label:'REGLEMENTATIONS CONNEXES',color:'#38bdf8'},{key:'fr',label:'TRANSPOSITIONS DROIT FRANCAIS',color:'#e04f5f'}];
-  var shown=veilleFilter==='tous'?groups:groups.filter(g=>g.key===veilleFilter);
-  var filterBtns=filters.map(f=>'<button class="filter-btn '+(veilleFilter===f.key?'active':'')+'" onclick="setVeilleFilter(\''+f.key+'\')">'+f.label+'</button>').join('');
+  var shown=veilleFilter==='tous'?groups:groups.filter(function(g){return g.key===veilleFilter;});
+  var filterBtns=filters.map(function(f){return '<button class="filter-btn '+(veilleFilter===f.key?'active':'')+'" onclick="setVeilleFilter(\''+f.key+'\')">'+f.label+'</button>';}).join('');
   var groupsHtml=shown.map(function(g){
-    var cards=DATA_FILTRE.filter(r=>r.cat===g.key).map(renderCard).join('');
-    return '<p class="section-label" style="color:'+g.color+'">'+g.label+'</p>'+(cards||'<p class="fs12 t-muted" style="padding:12px 0">Aucun texte dans cette catégorie après le 01/06/2026</p>');
+    var cards=DATA_FILTRE.filter(function(r){return r.cat===g.key;}).map(renderCard).join('');
+    var empty=cards===''?'<p class="fs12 t-muted" style="padding:12px 0">Aucun texte dans cette catégorie après le 01/06/2026</p>':cards;
+    return '<p class="section-label" style="color:'+g.color+'">'+g.label+'</p>'+empty;
   }).join('');
 
-  document.getElementById('tab-veille').innerHTML =
-    '<div style="padding:14px 16px 90px"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+filterBtns+'</div><p class="fs10 t-muted" style="margin-bottom:12px;font-style:italic">'+DATA_FILTRE.length+' textes — échéances après 01/06/2026</p>'+groupsHtml+'</div>';
+  document.getElementById('tab-veille').innerHTML='<div style="padding:14px 16px 90px"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+filterBtns+'</div><p class="fs10 t-muted" style="margin-bottom:12px;font-style:italic">'+DATA_FILTRE.length+' textes — échéances après 01/06/2026</p>'+groupsHtml+'</div>';
 }
 
 function renderAlertes(){
@@ -225,74 +256,109 @@ function renderAlertes(){
     {key:'rappel_j60',icon:'📅',label:'Rappels echeances a J-60'},
     {key:'rappel_j30',icon:'⏰',label:'Rappels echeances a J-30'}
   ];
+
   var logHtml='';
   if(scanLog.length){
-    logHtml='<div style="border-top:1px solid #2a2f4a;padding-top:8px">'+scanLog.slice().reverse().slice(0,5).map(function(l){
+    var logItems=scanLog.slice().reverse().slice(0,5).map(function(l){
       return '<p class="'+(l.hasNew?'log-new':'log-ok')+'">'+(l.hasNew?'🆕 Nouveaux textes detectes':'✅ Aucune modification')+' — '+l.date+'</p>';
-    }).join('')+'</div>';
+    }).join('');
+    logHtml='<div style="border-top:1px solid #2a2f4a;padding-top:8px">'+logItems+'</div>';
   }
+
   var switchRows=rows.map(function(r){
     return '<div class="toggle-row"><div class="toggle-left"><span style="font-size:20px">'+r.icon+'</span><span class="fs13 t-text">'+r.label+'</span></div><button id="sw-'+r.key+'" class="switch '+(prefs[r.key]?'switch-on':'switch-off')+'" onclick="togglePref(\''+r.key+'\')"><span class="switch-knob" style="left:'+(prefs[r.key]?'23px':'3px')+'"></span></button></div>';
   }).join('');
 
-  document.getElementById('tab-alertes').innerHTML =
+  document.getElementById('tab-alertes').innerHTML=
     '<div style="padding:14px 16px 90px"><div class="card-plain mb16"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><p class="fw7 fs12 t-text" style="margin:0">Statut scraping</p><span style="font-size:11px;font-weight:800;color:#a78bfa;background:#1a0d2a;border:1px solid #a78bfa44;border-radius:6px;padding:3px 10px">v'+APP_VERSION+'</span></div><p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted" style="margin-bottom:2px">Prochain scan : <span class="t-warn">'+nextScan+'</span></p><p class="fs11 t-muted mb8">Frequence : 7 jours · Sources : EUR-Lex · Legifrance · JORF · ETSI</p>'+logHtml+'</div><p class="section-label t-muted">NOTIFICATIONS ACTIVES</p>'+switchRows+'</div>';
 }
 
+// ─────────────────────────────────────────────────────────────
+// Intégration dynamique data.json + scan-meta.json
+// ─────────────────────────────────────────────────────────────
 function normalizeDynamicItem(d){
   var i=Object.assign({},d);
   i.id=i.id||('dyn-'+Math.random().toString(36).slice(2));
-  i.title=i.title||i.ref||'Texte detecte';
+  i.title=i.title||i.ref||'Texte détecté';
   i.ref=i.ref||i.title;
   i.type=i.type||(i.cat==='fr'?'Texte national':'Acte UE');
   i.tag=i.tag||(i.cat==='fr'?'Transposition FR':'Normes RED');
   i.date=i.date||'—';
-  i.apply=i.apply||'À confirmer';
+  i.apply=i.apply||'À confirmer — voir texte officiel';
   i.summary=i.summary||'Texte détecté automatiquement.';
   i.devices=Array.isArray(i.devices)?i.devices:['Smartphones','IoT','Wearables'];
   i.isNew=!!i.isNew;
+
   if(!i.cat){
     var t=(i.title+' '+i.type).toLowerCase();
     if(/(france|jorf|decret|arrete|ordonnance|national)/.test(t)) i.cat='fr';
     else if(/(etsi|norme)/.test(t)) i.cat='eu_red';
     else i.cat='eu_related';
   }
+
   if(!(i.applyDate instanceof Date)) i.applyDate=parseApplyToDate(i.apply);
   return i;
 }
 
 function rebuildFromDynamic(dynamicItems){
-  var staticIds=DATA.map(d=>d.id);
-  var newOnly=(dynamicItems||[]).map(normalizeDynamicItem).filter(d=>!staticIds.includes(d.id));
-  if(newOnly.length){ DATA=newOnly.concat(DATA); console.log('[Data] +',newOnly.length,'nouveaux'); }
+  var ids=DATA.map(function(d){return d.id;});
+  var newOnly=(dynamicItems||[]).map(normalizeDynamicItem).filter(function(d){return !ids.includes(d.id);});
+
+  if(newOnly.length){
+    console.log('[Data] nouveaux chargés:',newOnly.length);
+    DATA=newOnly.concat(DATA);
+  } else {
+    console.log('[Data] aucun nouveau id');
+  }
+
   DATA_FILTRE=computeDataFiltre();
 }
 
 function applyScanMeta(meta){
   if(!meta||!meta.lastScan) return;
   var d=new Date(meta.lastScan);
-  if(!isNaN(d)){ lastScan=fmtDate(d); nextScan=fmtDate(addDays(d,7)); }
+  if(!isNaN(d.getTime())){
+    lastScan=fmtDate(d);
+    nextScan=fmtDate(addDays(d,7));
+  }
 }
 
-document.addEventListener('DOMContentLoaded', function(){
-  var bellBtn=document.getElementById('bell-btn'), navAccueil=document.getElementById('nav-accueil'),
-      navVeille=document.getElementById('nav-veille'), navAlertes=document.getElementById('nav-alertes');
+// ─────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',function(){
+  console.log('[App] RED Monitor v'+APP_VERSION);
 
-  if(bellBtn) bellBtn.addEventListener('click', ()=>setTab('alertes'));
-  if(navAccueil) navAccueil.addEventListener('click', ()=>setTab('accueil'));
-  if(navVeille) navVeille.addEventListener('click', ()=>setTab('veille'));
-  if(navAlertes) navAlertes.addEventListener('click', ()=>setTab('alertes'));
+  var bellBtn=document.getElementById('bell-btn');
+  var navAccueil=document.getElementById('nav-accueil');
+  var navVeille=document.getElementById('nav-veille');
+  var navAlertes=document.getElementById('nav-alertes');
 
-  renderAccueil(); renderVeille(); renderAlertes(); updateAlertBadges();
+  if(bellBtn) bellBtn.addEventListener('click',function(){setTab('alertes');});
+  if(navAccueil) navAccueil.addEventListener('click',function(){setTab('accueil');});
+  if(navVeille) navVeille.addEventListener('click',function(){setTab('veille');});
+  if(navAlertes) navAlertes.addEventListener('click',function(){setTab('alertes');});
+
+  renderAccueil();
+  renderVeille();
+  renderAlertes();
+  updateAlertBadges();
 
   Promise.allSettled([
-    fetch('scan-meta.json?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null),
-    fetch('data.json?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():[])
+    fetch('scan-meta.json?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok) throw new Error('scan-meta HTTP '+r.status); return r.json();}),
+    fetch('data.json?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok) throw new Error('data HTTP '+r.status); return r.json();})
   ]).then(function(res){
-    var meta = res[0].status==='fulfilled'?res[0].value:null;
-    var dyn  = res[1].status==='fulfilled'?res[1].value:[];
-    applyScanMeta(meta);
-    if(Array.isArray(dyn) && dyn.length) rebuildFromDynamic(dyn);
-    renderAccueil(); renderVeille(); renderAlertes(); updateAlertBadges();
+    var meta=res[0].status==='fulfilled'?res[0].value:null;
+    var dyn=res[1].status==='fulfilled'?res[1].value:[];
+    if(meta) applyScanMeta(meta);
+    if(Array.isArray(dyn)&&dyn.length) rebuildFromDynamic(dyn);
+
+    renderAccueil();
+    renderVeille();
+    renderAlertes();
+    updateAlertBadges();
+    console.log('[App] rendu final OK');
+  }).catch(function(e){
+    console.warn('[App] chargement dynamique partiel:',e.message);
   });
 });
