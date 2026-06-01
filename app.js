@@ -1,20 +1,17 @@
 /* ============================================================
-   RED Monitor — app.js — v4.0.3
-   - Ancien design conservé
-   - Compat data.json / scan-meta.json
-   - Badge alertes = nouveaux IDs depuis dernier état connu
+   RED Monitor — app.js — v4.0.4
+   - Badge alertes fiable (nouvelles IDs depuis dernier état)
+   - Si aucun nouveau texte au scan suivant => badge 0
    ============================================================ */
 
 var APP_VERSION = '4.0';
 var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
 
-// --- Persistance badge ---
-var ALERT_SEEN_KEY = 'redmonitor_seen_ids_v1';
+// --- Badge persistence ---
+var ALERT_SEEN_KEY = 'redmonitor_seen_ids_v2';
 var newlyDetectedCount = 0;
 
-// ─────────────────────────────────────────────────────────────
-// Données statiques
-// ─────────────────────────────────────────────────────────────
+// --- Data
 var DATA = [
   {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false, ref:"Directive 2014/53/UE — RED", title:"Directive RED — Equipements radioelectriques (texte de reference)", date:"16/04/2014", apply:"13/06/2016", type:"Directive UE", applyDate:null, devices:["Smartphones","IoT","Routeurs","Wearables","SRD","Drones"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053", summary:"Texte fondateur RED."},
   {id:"red-2", cat:"eu_red", tag:"Normes RED", isNew:false, ref:"Decision d'execution (UE) 2022/2444", title:"Normes harmonisees RED publiees au JOUE — liste consolidee 2022", date:"13/12/2022", apply:"En vigueur", type:"Decision d'execution", applyDate:null, devices:["Smartphones","IoT","Routeurs","SRD","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022D2444", summary:"Liste consolidee des normes harmonisees RED."},
@@ -50,7 +47,7 @@ var AGENDA = [
   {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses — attendu", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
 ];
 
-// Etat UI
+// state
 var currentTab='accueil';
 var scanLoading=false;
 var lastScan=fmtDate(new Date());
@@ -60,7 +57,7 @@ var openCards={};
 var veilleFilter='tous';
 var prefs={red_normes:true,cra:true,espr:true,data_act:true,ai_act:true,empco:true,fr_transpo:true,rien_nouveau:true,rappel_j60:true,rappel_j30:true};
 
-// Utils
+// utils
 function fmtDate(d){var p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());}
 function addDays(d,n){return new Date(d.getTime()+n*86400000);}
 function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -81,43 +78,47 @@ function computeDataFiltre(){
 }
 var DATA_FILTRE=computeDataFiltre();
 
-// --- Seen IDs management ---
 function loadSeenIds(){
-  try{
-    var raw=localStorage.getItem(ALERT_SEEN_KEY);
-    return new Set(raw?JSON.parse(raw):[]);
-  }catch(e){
-    console.warn('[Badge] loadSeenIds error', e);
-    return new Set();
+  try {
+    var raw = localStorage.getItem(ALERT_SEEN_KEY);
+    return raw ? JSON.parse(raw) : null; // null = pas de baseline
+  } catch(e){
+    return null;
   }
 }
-function saveSeenIds(setObj){
-  try{
-    localStorage.setItem(ALERT_SEEN_KEY, JSON.stringify(Array.from(setObj)));
-  }catch(e){
-    console.warn('[Badge] saveSeenIds error', e);
-  }
+function saveSeenIds(idsArray){
+  try { localStorage.setItem(ALERT_SEEN_KEY, JSON.stringify(idsArray)); }
+  catch(e){ console.warn('[Badge] saveSeenIds fail', e); }
 }
-function getCurrentIds(items){
-  return new Set((items||[]).map(function(x){return x.id;}).filter(Boolean));
+function currentIdsArray(items){
+  var ids = (items||[]).map(function(x){ return x && x.id ? String(x.id) : null; }).filter(Boolean);
+  // unique + tri pour stabilité
+  var uniq = Array.from(new Set(ids)).sort();
+  return uniq;
+}
+function diffCount(newArr, oldArr){
+  var oldSet = new Set(oldArr || []);
+  var c = 0;
+  for (var i=0;i<newArr.length;i++){
+    if (!oldSet.has(newArr[i])) c++;
+  }
+  return c;
 }
 
-/**
- * Calcule le nombre de "nouveaux" depuis le dernier état connu.
- * Si aucun nouvel ID entre deux scans => 0.
- */
-function computeNewlyDetectedCount(items){
+function computeNewlyDetectedCountAndPersist(items){
+  var current = currentIdsArray(items);
   var seen = loadSeenIds();
-  var current = getCurrentIds(items);
 
-  var count = 0;
-  current.forEach(function(id){
-    if(!seen.has(id)) count++;
-  });
+  if (seen === null) {
+    // première initialisation = baseline, pas d'alerte
+    newlyDetectedCount = 0;
+    saveSeenIds(current);
+    console.log('[Badge] baseline créée. count=0');
+    return;
+  }
 
-  newlyDetectedCount = count;
-  saveSeenIds(current);
-
+  newlyDetectedCount = diffCount(current, seen);
+  saveSeenIds(current); // commit nouvel état
   console.log('[Badge] nouveaux depuis dernier état =', newlyDetectedCount);
 }
 
@@ -144,7 +145,6 @@ function setTab(tab){
     if(panel) panel.classList.toggle('hidden',t!==tab);
     if(btn) btn.classList.toggle('active',t===tab);
   });
-
   if(tab==='alertes'){
     var badge=document.getElementById('nav-badge');
     var bell=document.getElementById('bell-count');
@@ -219,7 +219,7 @@ function renderAccueilCards(){
 
   var fr=DATA_FILTRE.filter(function(d){return d.cat==='fr'&&d.isNew;});
   if(fr.length){
-    html+='<div class="card card-fr mb12"><p class="fw7 fs12 t-fr mb6">🇫🇷 '+fr.length+' texte(s) FR en cours d\'adoption</p>'
+    html+='<div class="card card-fr mb12"><p class="fw7 fs12 t-fr mb6">FR '+fr.length+' texte(s) FR en cours d\'adoption</p>'
       +fr.map(function(d){return '<p class="fs11" style="color:#fca5a5;margin-top:3px;line-height:1.4">· '+esc(d.ref)+' — '+esc(d.apply)+'</p>';}).join('')
       +'</div>';
   }
@@ -371,23 +371,16 @@ document.addEventListener('DOMContentLoaded', function(){
   if(navVeille) navVeille.addEventListener('click',function(){setTab('veille');});
   if(navAlertes) navAlertes.addEventListener('click',function(){setTab('alertes');});
 
-  // Rendu initial
+  // initial UI
   renderAccueil();
   renderVeille();
   renderAlertes();
 
-  // Initialisation baseline "vu" si absente -> évite gros chiffre permanent
-  var hasBaseline = !!localStorage.getItem(ALERT_SEEN_KEY);
-  if(!hasBaseline){
-    saveSeenIds(getCurrentIds(DATA));
-    newlyDetectedCount = 0;
-    console.log('[Badge] baseline initialisée');
-  } else {
-    computeNewlyDetectedCount(DATA);
-  }
+  // baseline on static set (no false positives)
+  computeNewlyDetectedCountAndPersist(DATA);
   updateAlertBadges();
 
-  // Chargement dynamique
+  // dynamic load
   Promise.allSettled([
     fetch('scan-meta.json?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok) throw new Error('scan-meta HTTP '+r.status); return r.json();}),
     fetch('data.json?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok) throw new Error('data HTTP '+r.status); return r.json();})
@@ -398,8 +391,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(meta) applyScanMeta(meta);
     if(Array.isArray(dyn)&&dyn.length) rebuildFromDynamic(dyn);
 
-    // Calcul badge sur état final
-    computeNewlyDetectedCount(DATA);
+    computeNewlyDetectedCountAndPersist(DATA);
 
     renderAccueil();
     renderVeille();
