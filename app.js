@@ -1,9 +1,9 @@
 /* ============================================================
-   RED Monitor — app.js — v3.0
+   RED Monitor — app.js — v4.0
    Filtre agenda : uniquement échéances >= 01/06/2026
    ============================================================ */
 
-var APP_VERSION = '3.0';
+var APP_VERSION = '4.0';
 
 // ─── DATE DE RÉFÉRENCE DU FILTRE ─────────────────────────────────────────────
 var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
