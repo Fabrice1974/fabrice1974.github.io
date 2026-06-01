@@ -1,10 +1,10 @@
 /* ============================================================
-   sw.js — RED Monitor v3.0
+   sw.js — RED Monitor v4.0
    Service Worker dédié — Stratégie Network First
    Séparé de OneSignal qui gère uniquement les push notifs
    ============================================================ */
 
-const CACHE_VERSION = 'red-monitor-v3.0';
+const CACHE_VERSION = 'red-monitor-v4.0';
 const CACHE_NAME    = CACHE_VERSION;
 
 // Fichiers mis en cache au premier chargement
