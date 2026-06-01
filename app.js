@@ -1,19 +1,19 @@
 /* ============================================================
-   RED Monitor — app.js — v4.0.2
+   RED Monitor — app.js — v4.0.3
    - Ancien design conservé
    - Compat data.json / scan-meta.json
-   - Badge alertes dynamique (nombre réel de isNew)
+   - Badge alertes = nouveaux IDs depuis dernier état connu
    ============================================================ */
 
 var APP_VERSION = '4.0';
-
-// ─────────────────────────────────────────────────────────────
-// Date filtre
-// ─────────────────────────────────────────────────────────────
 var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
 
+// --- Persistance badge ---
+var ALERT_SEEN_KEY = 'redmonitor_seen_ids_v1';
+var newlyDetectedCount = 0;
+
 // ─────────────────────────────────────────────────────────────
-// Données statiques de base (socle)
+// Données statiques
 // ─────────────────────────────────────────────────────────────
 var DATA = [
   {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false, ref:"Directive 2014/53/UE — RED", title:"Directive RED — Equipements radioelectriques (texte de reference)", date:"16/04/2014", apply:"13/06/2016", type:"Directive UE", applyDate:null, devices:["Smartphones","IoT","Routeurs","Wearables","SRD","Drones"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053", summary:"Texte fondateur RED."},
@@ -39,9 +39,6 @@ var DATA = [
   {id:"fr-3", cat:"fr", tag:"Donnees IoT", isNew:false, ref:"Ordonnance de transposition Data Act attendue 2026", title:"Transposition Data Act — Portabilite des donnees IoT", date:"Attendue 2026", apply:"Horizon 2026", type:"Ordonnance", applyDate:new Date(2026,11,31), devices:["IoT","Smartphones","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854", summary:"Transposition FR Data Act."}
 ];
 
-// ─────────────────────────────────────────────────────────────
-// Agenda
-// ─────────────────────────────────────────────────────────────
 var AGENDA = [
   {date:"02/08/2026", label:"AI Act — IA embarquee (haut risque)", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
   {date:"11/09/2026", label:"CRA — Declaration vulnerabilites (Art. 64)", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
@@ -53,9 +50,7 @@ var AGENDA = [
   {date:"Horizon 2027", label:"ESPR Wearables et SmartGlasses — attendu", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1781"}
 ];
 
-// ─────────────────────────────────────────────────────────────
 // Etat UI
-// ─────────────────────────────────────────────────────────────
 var currentTab='accueil';
 var scanLoading=false;
 var lastScan=fmtDate(new Date());
@@ -65,9 +60,7 @@ var openCards={};
 var veilleFilter='tous';
 var prefs={red_normes:true,cra:true,espr:true,data_act:true,ai_act:true,empco:true,fr_transpo:true,rien_nouveau:true,rappel_j60:true,rappel_j30:true};
 
-// ─────────────────────────────────────────────────────────────
 // Utils
-// ─────────────────────────────────────────────────────────────
 function fmtDate(d){var p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());}
 function addDays(d,n){return new Date(d.getTime()+n*86400000);}
 function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -88,13 +81,50 @@ function computeDataFiltre(){
 }
 var DATA_FILTRE=computeDataFiltre();
 
-// ─────────────────────────────────────────────────────────────
-// Badge dynamique (correction clé)
-// ─────────────────────────────────────────────────────────────
+// --- Seen IDs management ---
+function loadSeenIds(){
+  try{
+    var raw=localStorage.getItem(ALERT_SEEN_KEY);
+    return new Set(raw?JSON.parse(raw):[]);
+  }catch(e){
+    console.warn('[Badge] loadSeenIds error', e);
+    return new Set();
+  }
+}
+function saveSeenIds(setObj){
+  try{
+    localStorage.setItem(ALERT_SEEN_KEY, JSON.stringify(Array.from(setObj)));
+  }catch(e){
+    console.warn('[Badge] saveSeenIds error', e);
+  }
+}
+function getCurrentIds(items){
+  return new Set((items||[]).map(function(x){return x.id;}).filter(Boolean));
+}
+
+/**
+ * Calcule le nombre de "nouveaux" depuis le dernier état connu.
+ * Si aucun nouvel ID entre deux scans => 0.
+ */
+function computeNewlyDetectedCount(items){
+  var seen = loadSeenIds();
+  var current = getCurrentIds(items);
+
+  var count = 0;
+  current.forEach(function(id){
+    if(!seen.has(id)) count++;
+  });
+
+  newlyDetectedCount = count;
+  saveSeenIds(current);
+
+  console.log('[Badge] nouveaux depuis dernier état =', newlyDetectedCount);
+}
+
 function updateAlertBadges(){
-  var count=(DATA||[]).filter(function(item){return !!item.isNew;}).length;
   var bell=document.getElementById('bell-count');
   var nav=document.getElementById('nav-badge');
+  var count=newlyDetectedCount;
 
   if(bell){
     bell.textContent=String(count);
@@ -104,12 +134,8 @@ function updateAlertBadges(){
     nav.textContent=String(count);
     nav.style.display=count>0?'flex':'none';
   }
-  console.log('[Badge] nouveautés =',count);
 }
 
-// ─────────────────────────────────────────────────────────────
-// Navigation
-// ─────────────────────────────────────────────────────────────
 function setTab(tab){
   currentTab=tab;
   ['accueil','veille','alertes'].forEach(function(t){
@@ -118,6 +144,7 @@ function setTab(tab){
     if(panel) panel.classList.toggle('hidden',t!==tab);
     if(btn) btn.classList.toggle('active',t===tab);
   });
+
   if(tab==='alertes'){
     var badge=document.getElementById('nav-badge');
     var bell=document.getElementById('bell-count');
@@ -128,33 +155,29 @@ function setTab(tab){
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Scan manuel UI
-// ─────────────────────────────────────────────────────────────
 function handleScan(){
   if(scanLoading) return;
   scanLoading=true;
-  console.log('[Scan] start');
   var btn=document.getElementById('scan-btn');
   if(btn){btn.disabled=true;btn.textContent='Scan en cours...';}
+  console.log('[Scan] start');
 
   setTimeout(function(){
     var d=new Date();
     lastScan=fmtDate(d);
     nextScan=fmtDate(addDays(d,7));
     scanLog=scanLog.concat([{date:lastScan,hasNew:false}]).slice(-20);
+
     scanLoading=false;
     renderAccueil();
     renderAlertes();
     updateAlertBadges();
+
     if(btn){btn.disabled=false;btn.textContent='Scan';}
     console.log('[Scan] done',lastScan);
   },1000);
 }
 
-// ─────────────────────────────────────────────────────────────
-// Cards
-// ─────────────────────────────────────────────────────────────
 function toggleCard(id){
   openCards[id]=!openCards[id];
   var box=document.getElementById('summary-'+id);
@@ -170,13 +193,14 @@ function togglePref(key){
   if(sw){
     sw.classList.toggle('switch-on',prefs[key]);
     sw.classList.toggle('switch-off',!prefs[key]);
-    var k=sw.querySelector('.switch-knob'); if(k) k.style.left=prefs[key]?'23px':'3px';
+    var k=sw.querySelector('.switch-knob');
+    if(k) k.style.left=prefs[key]?'23px':'3px';
   }
 }
 function setVeilleFilter(f){veilleFilter=f;renderVeille();}
 
 function renderAccueilCards(){
-  var now=new Date(),html='';
+  var now=new Date(), html='';
   var withDates=AGENDA.filter(function(e){return /^\d{2}\/\d{2}\/\d{4}$/.test(e.date);})
     .map(function(e){var p=e.date.split('/');return {item:e,ts:new Date(p[2],p[1]-1,p[0]).getTime()};})
     .filter(function(e){return e.ts>=DATE_FILTRE.getTime();})
@@ -186,7 +210,11 @@ function renderAccueilCards(){
     var next=withDates[0];
     var days=Math.ceil((next.ts-now.getTime())/86400000);
     var c=days<=0?['#4ade80','#0d2a18','#1a5a30']:days<=30?['#e04f5f','#2a0d12','#5a1a22']:days<=90?['#f59e0b','#2a1a00','#5a3a00']:['#38bdf8','#0d2030','#1a4060'];
-    html+='<div class="card mb10" style="background:'+c[1]+';border:1px solid '+c[2]+';border-left:3px solid '+c[0]+'"><p class="fw7 fs11 mb4" style="color:'+c[0]+';letter-spacing:0.08em">⏰ PROCHAINE ÉCHÉANCE — '+(days<=0?'En vigueur':'J-'+days)+'</p><p class="fs13 fw7 t-text mb4">'+esc(next.item.label)+'</p><p class="fs11 t-muted">'+esc(next.item.flags)+' · '+esc(next.item.date)+'</p></div>';
+
+    html+='<div class="card mb10" style="background:'+c[1]+';border:1px solid '+c[2]+';border-left:3px solid '+c[0]+'">'
+      +'<p class="fw7 fs11 mb4" style="color:'+c[0]+';letter-spacing:0.08em">⏰ PROCHAINE ÉCHÉANCE — '+(days<=0?'En vigueur':'J-'+days)+'</p>'
+      +'<p class="fs13 fw7 t-text mb4">'+esc(next.item.label)+'</p>'
+      +'<p class="fs11 t-muted">'+esc(next.item.flags)+' · '+esc(next.item.date)+'</p></div>';
   }
 
   var fr=DATA_FILTRE.filter(function(d){return d.cat==='fr'&&d.isNew;});
@@ -196,7 +224,9 @@ function renderAccueilCards(){
       +'</div>';
   }
 
-  html+='<div class="card card-green mb16"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p><p class="fs11" style="color:#86efac;margin-top:3px">Sources : EUR-Lex · Legifrance · JORF · ETSI</p></div>';
+  html+='<div class="card card-green mb16"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p>'
+    +'<p class="fs11" style="color:#86efac;margin-top:3px">Sources : EUR-Lex · Legifrance · JORF · ETSI</p></div>';
+
   return html;
 }
 
@@ -207,10 +237,18 @@ function renderCard(reg){
   var newChip=reg.isNew?'<span class="chip chip-new">Nouveau</span>':'';
   var catChip='<span class="chip chip-'+reg.cat+'">'+flag+' '+esc(reg.tag)+'</span>';
   var devices=(reg.devices||[]).map(function(d){return '<span class="dtag">'+esc(d)+'</span>';}).join('');
-  var linkBtn=reg.link?'<a href="'+reg.link+'" target="_blank" rel="noopener" class="eur-link" style="background:'+acc+'">'+(reg.cat==='fr'?'Legifrance':'EUR-Lex')+' &rarr;</a>'
-                    :'<span style="display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;background:#2a2f4a;color:#7a7f9a;margin-top:10px">Texte non encore publie</span>';
+  var linkBtn=reg.link
+    ? '<a href="'+reg.link+'" target="_blank" rel="noopener" class="eur-link" style="background:'+acc+'">'+(reg.cat==='fr'?'Legifrance':'EUR-Lex')+' &rarr;</a>'
+    : '<span style="display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;background:#2a2f4a;color:#7a7f9a;margin-top:10px">Texte non encore publie</span>';
 
-  return '<div class="card-reg card-reg-'+reg.cat+'"><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'+newChip+catChip+'<span style="margin-left:auto;font-size:11px;color:#7a7f9a">'+esc(reg.date||'')+'</span></div><p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">'+esc(reg.title||'')+'</p><p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">'+esc(reg.ref||'')+' — '+esc(reg.type||'')+'</p><div style="display:flex;flex-wrap:wrap;margin-bottom:10px">'+devices+'</div><div class="date-pill" style="margin-bottom:10px"><span>Application :</span><span style="font-size:11px;font-weight:700;color:#a78bfa">'+esc(reg.apply||'À confirmer')+'</span></div><button class="summary-toggle" onclick="toggleCard(\''+reg.id+'\')" style="color:'+acc+'"><i id="arrow-'+reg.id+'" class="arrow" style="transform:'+(isOpen?'rotate(90deg)':'rotate(0deg)')+'">&#9658;</i><span id="lbl-'+reg.id+'">'+(isOpen?'Masquer':'Lire en clair')+'</span></button><div id="summary-'+reg.id+'" class="summary-box'+(isOpen?'':' hidden')+'"><p style="font-size:12px;color:#c0c4d8;line-height:1.75;margin-bottom:10px">'+esc(reg.summary||'')+'</p>'+linkBtn+'</div></div>';
+  return '<div class="card-reg card-reg-'+reg.cat+'"><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'
+    +newChip+catChip+'<span style="margin-left:auto;font-size:11px;color:#7a7f9a">'+esc(reg.date||'')+'</span></div>'
+    +'<p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">'+esc(reg.title||'')+'</p>'
+    +'<p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">'+esc(reg.ref||'')+' — '+esc(reg.type||'')+'</p>'
+    +'<div style="display:flex;flex-wrap:wrap;margin-bottom:10px">'+devices+'</div>'
+    +'<div class="date-pill" style="margin-bottom:10px"><span>Application :</span><span style="font-size:11px;font-weight:700;color:#a78bfa">'+esc(reg.apply||'À confirmer')+'</span></div>'
+    +'<button class="summary-toggle" onclick="toggleCard(\''+reg.id+'\')" style="color:'+acc+'"><i id="arrow-'+reg.id+'" class="arrow" style="transform:'+(isOpen?'rotate(90deg)':'rotate(0deg)')+'">&#9658;</i><span id="lbl-'+reg.id+'">'+(isOpen?'Masquer':'Lire en clair')+'</span></button>'
+    +'<div id="summary-'+reg.id+'" class="summary-box'+(isOpen?'':' hidden')+'"><p style="font-size:12px;color:#c0c4d8;line-height:1.75;margin-bottom:10px">'+esc(reg.summary||'')+'</p>'+linkBtn+'</div></div>';
 }
 
 function renderAccueil(){
@@ -234,13 +272,15 @@ function renderVeille(){
   var groups=[{key:'eu_red',label:'TEXTES RED (2014/53/UE)',color:'#4a7dff'},{key:'eu_related',label:'REGLEMENTATIONS CONNEXES',color:'#38bdf8'},{key:'fr',label:'TRANSPOSITIONS DROIT FRANCAIS',color:'#e04f5f'}];
   var shown=veilleFilter==='tous'?groups:groups.filter(function(g){return g.key===veilleFilter;});
   var filterBtns=filters.map(function(f){return '<button class="filter-btn '+(veilleFilter===f.key?'active':'')+'" onclick="setVeilleFilter(\''+f.key+'\')">'+f.label+'</button>';}).join('');
+
   var groupsHtml=shown.map(function(g){
     var cards=DATA_FILTRE.filter(function(r){return r.cat===g.key;}).map(renderCard).join('');
     var empty=cards===''?'<p class="fs12 t-muted" style="padding:12px 0">Aucun texte dans cette catégorie après le 01/06/2026</p>':cards;
     return '<p class="section-label" style="color:'+g.color+'">'+g.label+'</p>'+empty;
   }).join('');
 
-  document.getElementById('tab-veille').innerHTML='<div style="padding:14px 16px 90px"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+filterBtns+'</div><p class="fs10 t-muted" style="margin-bottom:12px;font-style:italic">'+DATA_FILTRE.length+' textes — échéances après 01/06/2026</p>'+groupsHtml+'</div>';
+  document.getElementById('tab-veille').innerHTML=
+    '<div style="padding:14px 16px 90px"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+filterBtns+'</div><p class="fs10 t-muted" style="margin-bottom:12px;font-style:italic">'+DATA_FILTRE.length+' textes — échéances après 01/06/2026</p>'+groupsHtml+'</div>';
 }
 
 function renderAlertes(){
@@ -273,9 +313,6 @@ function renderAlertes(){
     '<div style="padding:14px 16px 90px"><div class="card-plain mb16"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><p class="fw7 fs12 t-text" style="margin:0">Statut scraping</p><span style="font-size:11px;font-weight:800;color:#a78bfa;background:#1a0d2a;border:1px solid #a78bfa44;border-radius:6px;padding:3px 10px">v'+APP_VERSION+'</span></div><p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted" style="margin-bottom:2px">Prochain scan : <span class="t-warn">'+nextScan+'</span></p><p class="fs11 t-muted mb8">Frequence : 7 jours · Sources : EUR-Lex · Legifrance · JORF · ETSI</p>'+logHtml+'</div><p class="section-label t-muted">NOTIFICATIONS ACTIVES</p>'+switchRows+'</div>';
 }
 
-// ─────────────────────────────────────────────────────────────
-// Intégration dynamique data.json + scan-meta.json
-// ─────────────────────────────────────────────────────────────
 function normalizeDynamicItem(d){
   var i=Object.assign({},d);
   i.id=i.id||('dyn-'+Math.random().toString(36).slice(2));
@@ -303,14 +340,12 @@ function normalizeDynamicItem(d){
 function rebuildFromDynamic(dynamicItems){
   var ids=DATA.map(function(d){return d.id;});
   var newOnly=(dynamicItems||[]).map(normalizeDynamicItem).filter(function(d){return !ids.includes(d.id);});
-
   if(newOnly.length){
     console.log('[Data] nouveaux chargés:',newOnly.length);
     DATA=newOnly.concat(DATA);
   } else {
-    console.log('[Data] aucun nouveau id');
+    console.log('[Data] aucun nouvel ID');
   }
-
   DATA_FILTRE=computeDataFiltre();
 }
 
@@ -323,10 +358,7 @@ function applyScanMeta(meta){
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded',function(){
+document.addEventListener('DOMContentLoaded', function(){
   console.log('[App] RED Monitor v'+APP_VERSION);
 
   var bellBtn=document.getElementById('bell-btn');
@@ -339,24 +371,41 @@ document.addEventListener('DOMContentLoaded',function(){
   if(navVeille) navVeille.addEventListener('click',function(){setTab('veille');});
   if(navAlertes) navAlertes.addEventListener('click',function(){setTab('alertes');});
 
+  // Rendu initial
   renderAccueil();
   renderVeille();
   renderAlertes();
+
+  // Initialisation baseline "vu" si absente -> évite gros chiffre permanent
+  var hasBaseline = !!localStorage.getItem(ALERT_SEEN_KEY);
+  if(!hasBaseline){
+    saveSeenIds(getCurrentIds(DATA));
+    newlyDetectedCount = 0;
+    console.log('[Badge] baseline initialisée');
+  } else {
+    computeNewlyDetectedCount(DATA);
+  }
   updateAlertBadges();
 
+  // Chargement dynamique
   Promise.allSettled([
     fetch('scan-meta.json?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok) throw new Error('scan-meta HTTP '+r.status); return r.json();}),
     fetch('data.json?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok) throw new Error('data HTTP '+r.status); return r.json();})
   ]).then(function(res){
     var meta=res[0].status==='fulfilled'?res[0].value:null;
     var dyn=res[1].status==='fulfilled'?res[1].value:[];
+
     if(meta) applyScanMeta(meta);
     if(Array.isArray(dyn)&&dyn.length) rebuildFromDynamic(dyn);
+
+    // Calcul badge sur état final
+    computeNewlyDetectedCount(DATA);
 
     renderAccueil();
     renderVeille();
     renderAlertes();
     updateAlertBadges();
+
     console.log('[App] rendu final OK');
   }).catch(function(e){
     console.warn('[App] chargement dynamique partiel:',e.message);
