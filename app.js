@@ -1,6 +1,7 @@
 /* ============================================================
-   RED Monitor — app.js — v4.0
-   Filtre agenda : uniquement échéances >= 01/06/2026
+   RED Monitor — app.js — v4.0.1
+   Compatible moteur dynamique v4.0 (data.json + scan-meta.json)
+   Conserve UI historique
    ============================================================ */
 
 var APP_VERSION = '4.0';
@@ -8,7 +9,7 @@ var APP_VERSION = '4.0';
 // ─── DATE DE RÉFÉRENCE DU FILTRE ─────────────────────────────────────────────
 var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
 
-// ─── DONNÉES RÉGLEMENTAIRES ───────────────────────────────────────────────────
+// ─── DONNÉES RÉGLEMENTAIRES STATIQUES ────────────────────────────────────────
 var DATA = [
   {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false,
    ref:"Directive 2014/53/UE — RED",
@@ -164,14 +165,7 @@ var DATA = [
    summary:"Le Data Act (UE) 2023/2854 est directement applicable depuis le 12/09/2025. La France doit publier une ordonnance de transposition. La CNIL sera l'autorite nationale de controle."}
 ];
 
-// ─── FILTRE GLOBAL — uniquement échéances après 01/06/2026 ───────────────────
-var DATA_FILTRE = DATA.filter(function(d) {
-  if (!d.applyDate) return false;
-  return d.applyDate >= DATE_FILTRE;
-});
-
-// ─── AGENDA — uniquement échéances après 01/06/2026 ──────────────────────────
-// ✅ Les entrées 2025 sont supprimées — déjà en vigueur
+// ─── AGENDA ───────────────────────────────────────────────────────────────────
 var AGENDA = [
   {date:"02/08/2026", label:"AI Act — IA embarquee (haut risque)",                        flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689"},
   {date:"11/09/2026", label:"CRA — Declaration vulnerabilites (Art. 64)",                 flags:"EU",    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
@@ -198,24 +192,65 @@ var prefs = {
 };
 
 // ─── UTILITAIRES ──────────────────────────────────────────────────────────────
-
 function fmtDate(d) {
   var p = function(n) { return String(n).padStart(2,'0'); };
   return p(d.getDate()) + '/' + p(d.getMonth()+1) + '/' + d.getFullYear()
        + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
-
 function addDays(d, n) { return new Date(d.getTime() + n * 86400000); }
-
 function esc(s) {
   if (!s) return '';
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+function parseFRDateStrict(str) {
+  if (!str) return null;
+  var m = String(str).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return null;
+  var dd = Number(m[1]), mm = Number(m[2]), yyyy = Number(m[3]);
+  var d = new Date(yyyy, mm - 1, dd);
+  if (d.getFullYear() !== yyyy || d.getMonth() !== mm - 1 || d.getDate() !== dd) return null;
+  return d;
+}
+function parseApplyToDate(apply) {
+  if (!apply) return null;
+  var txt = String(apply);
+
+  // Cas standard "JJ/MM/AAAA"
+  var direct = parseFRDateStrict(txt);
+  if (direct) return direct;
+
+  // Cas intervalle "01/08/2025 au 10/12/2027" => prend la 1ère date
+  var mRange = txt.match(/(\d{2}\/\d{2}\/\d{4}).*(\d{2}\/\d{2}\/\d{4})/);
+  if (mRange) {
+    return parseFRDateStrict(mRange[1]);
+  }
+
+  // Cas Horizon 2027-2028
+  var mH = txt.match(/Horizon\s+(\d{4})(?:-(\d{4}))?/i);
+  if (mH) {
+    return new Date(Number(mH[1]), 6, 1); // 1er juillet année horizon
+  }
+
+  // Cas "Attendu 2026" / "En cours Parlement 2026"
+  var mY = txt.match(/(20\d{2})/);
+  if (mY) {
+    return new Date(Number(mY[1]), 11, 31); // fin d'année
+  }
+
+  return null;
+}
+function computeDataFiltre() {
+  return DATA.filter(function(d) {
+    var dt = d.applyDate instanceof Date ? d.applyDate : parseApplyToDate(d.apply);
+    if (!dt) return false;
+    return dt.getTime() >= DATE_FILTRE.getTime();
+  });
+}
+var DATA_FILTRE = computeDataFiltre();
 
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
-
 function setTab(tab) {
   currentTab = tab;
   ['accueil','veille','alertes'].forEach(function(t) {
@@ -232,8 +267,7 @@ function setTab(tab) {
   }
 }
 
-// ─── SCAN ─────────────────────────────────────────────────────────────────────
-
+// ─── SCAN (UI local uniquement) ──────────────────────────────────────────────
 function handleScan() {
   if (scanLoading) return;
   scanLoading = true;
@@ -251,11 +285,10 @@ function handleScan() {
     renderAccueil();
     renderAlertes();
     if (btn) { btn.disabled = false; btn.textContent = 'Scan'; }
-  }, 1800);
+  }, 1000);
 }
 
 // ─── CARTES ───────────────────────────────────────────────────────────────────
-
 function toggleCard(id) {
   openCards[id] = !openCards[id];
   var box   = document.getElementById('summary-' + id);
@@ -267,7 +300,6 @@ function toggleCard(id) {
 }
 
 // ─── PRÉFÉRENCES ──────────────────────────────────────────────────────────────
-
 function togglePref(key) {
   prefs[key] = !prefs[key];
   var sw = document.getElementById('sw-' + key);
@@ -281,217 +313,138 @@ function togglePref(key) {
 }
 
 // ─── FILTRE VEILLE ────────────────────────────────────────────────────────────
-
 function setVeilleFilter(f) {
   veilleFilter = f;
   console.log('[Veille] Filtre →', f);
   renderVeille();
 }
 
-// ─── CARTES RÉSUMÉ ACCUEIL — dynamiques ──────────────────────────────────────
-
+// ─── ACCUEIL CARDS ────────────────────────────────────────────────────────────
 function renderAccueilCards() {
   var now  = new Date();
   var html = '';
 
-  // ── Échéances futures triées — uniquement après DATE_FILTRE
   var withDates = AGENDA.filter(function(e) {
     return /^\d{2}\/\d{2}\/\d{4}$/.test(e.date);
   }).map(function(e) {
     var parts = e.date.split('/');
-    return {
-      item : e,
-      ts   : new Date(parts[2], parts[1]-1, parts[0]).getTime()
-    };
+    return { item:e, ts:new Date(parts[2], parts[1]-1, parts[0]).getTime() };
   }).filter(function(e) {
     return e.ts >= DATE_FILTRE.getTime();
-  }).sort(function(a, b) {
-    return a.ts - b.ts;
-  });
+  }).sort(function(a,b){ return a.ts - b.ts; });
 
-  // ── Carte 1 — Prochaine échéance la plus urgente
   if (withDates.length > 0) {
     var next     = withDates[0];
     var daysLeft = Math.ceil((next.ts - now.getTime()) / 86400000);
     var urgColor, urgBg, urgBorder;
 
-    if (daysLeft <= 0) {
-      urgColor = '#4ade80'; urgBg = '#0d2a18'; urgBorder = '#1a5a30';
-    } else if (daysLeft <= 30) {
-      urgColor = '#e04f5f'; urgBg = '#2a0d12'; urgBorder = '#5a1a22';
-    } else if (daysLeft <= 90) {
-      urgColor = '#f59e0b'; urgBg = '#2a1a00'; urgBorder = '#5a3a00';
-    } else {
-      urgColor = '#38bdf8'; urgBg = '#0d2030'; urgBorder = '#1a4060';
-    }
+    if (daysLeft <= 0)      { urgColor='#4ade80'; urgBg='#0d2a18'; urgBorder='#1a5a30'; }
+    else if (daysLeft <=30) { urgColor='#e04f5f'; urgBg='#2a0d12'; urgBorder='#5a1a22'; }
+    else if (daysLeft <=90) { urgColor='#f59e0b'; urgBg='#2a1a00'; urgBorder='#5a3a00'; }
+    else                    { urgColor='#38bdf8'; urgBg='#0d2030'; urgBorder='#1a4060'; }
 
     var daysLabel = daysLeft <= 0 ? 'En vigueur' : 'J-' + daysLeft;
 
-    html += '<div class="card mb10" style="background:' + urgBg + ';'
-      + 'border:1px solid ' + urgBorder + ';border-left:3px solid ' + urgColor + '">'
-      + '<p class="fw7 fs11 mb4" style="color:' + urgColor + ';letter-spacing:0.08em">'
-      + '⏰ PROCHAINE ÉCHÉANCE — ' + daysLabel + '</p>'
+    html += '<div class="card mb10" style="background:' + urgBg + ';border:1px solid ' + urgBorder + ';border-left:3px solid ' + urgColor + '">'
+      + '<p class="fw7 fs11 mb4" style="color:' + urgColor + ';letter-spacing:0.08em">⏰ PROCHAINE ÉCHÉANCE — ' + daysLabel + '</p>'
       + '<p class="fs13 fw7 t-text mb4">' + esc(next.item.label) + '</p>'
       + '<p class="fs11 t-muted">' + esc(next.item.flags) + ' · ' + esc(next.item.date) + '</p>'
       + '</div>';
 
-    // ── Carte 2 — Les 3 échéances suivantes
     if (withDates.length > 1) {
-      html += '<div class="card-plain mb12">'
-        + '<p class="section-label t-muted" style="margin-bottom:8px">ÉCHÉANCES SUIVANTES</p>'
-        + withDates.slice(1, 4).map(function(e) {
+      html += '<div class="card-plain mb12"><p class="section-label t-muted" style="margin-bottom:8px">ÉCHÉANCES SUIVANTES</p>'
+        + withDates.slice(1,4).map(function(e){
             var dl      = Math.ceil((e.ts - now.getTime()) / 86400000);
             var dlLabel = dl <= 0 ? 'En vigueur' : 'J-' + dl;
             var dlColor = dl <= 30 ? '#e04f5f' : dl <= 90 ? '#f59e0b' : '#a78bfa';
-            return '<div style="display:flex;justify-content:space-between;'
-              + 'align-items:center;padding:7px 0;border-bottom:1px solid #2a2f4a">'
-              + '<div style="flex:1;min-width:0;margin-right:8px">'
-              + '<p class="fs12 t-text" style="margin:0;line-height:1.3">' + esc(e.item.label) + '</p>'
-              + '<p class="fs10 t-muted" style="margin:2px 0 0">'
-              + esc(e.item.flags) + ' · ' + esc(e.item.date) + '</p>'
-              + '</div>'
-              + '<span style="font-size:10px;font-weight:800;color:' + dlColor + ';'
-              + 'background:#1a0d2a;border:1px solid ' + dlColor + '44;border-radius:6px;'
-              + 'padding:3px 8px;white-space:nowrap;flex-shrink:0">' + dlLabel + '</span>'
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2f4a">'
+              + '<div style="flex:1;min-width:0;margin-right:8px"><p class="fs12 t-text" style="margin:0;line-height:1.3">' + esc(e.item.label) + '</p>'
+              + '<p class="fs10 t-muted" style="margin:2px 0 0">' + esc(e.item.flags) + ' · ' + esc(e.item.date) + '</p></div>'
+              + '<span style="font-size:10px;font-weight:800;color:' + dlColor + ';background:#1a0d2a;border:1px solid ' + dlColor + '44;border-radius:6px;padding:3px 8px;white-space:nowrap;flex-shrink:0">' + dlLabel + '</span>'
               + '</div>';
           }).join('')
         + '</div>';
     }
   }
 
-  // ── Carte 3 — Textes FR en cours d'adoption
-  var frEnCours = DATA_FILTRE.filter(function(d) {
-    return d.cat === 'fr' && d.isNew;
-  });
+  var frEnCours = DATA_FILTRE.filter(function(d){ return d.cat === 'fr' && d.isNew; });
   if (frEnCours.length > 0) {
-    html += '<div class="card card-fr mb12">'
-      + '<p class="fw7 fs12 t-fr mb6">'
-      + '🇫🇷 ' + frEnCours.length + ' texte(s) FR en cours d\'adoption</p>'
-      + frEnCours.map(function(d) {
-          return '<p class="fs11" style="color:#fca5a5;margin-top:3px;line-height:1.4">'
-            + '· ' + esc(d.ref) + ' — ' + esc(d.apply) + '</p>';
+    html += '<div class="card card-fr mb12"><p class="fw7 fs12 t-fr mb6">🇫🇷 ' + frEnCours.length + ' texte(s) FR en cours d\'adoption</p>'
+      + frEnCours.map(function(d){
+          return '<p class="fs11" style="color:#fca5a5;margin-top:3px;line-height:1.4">· ' + esc(d.ref) + ' — ' + esc(d.apply) + '</p>';
         }).join('')
       + '</div>';
   }
 
-  // ── Carte 4 — Compteur textes surveillés
-  html += '<div class="card card-green mb16">'
-    + '<p class="fw7 fs12 t-green">'
-    + DATA_FILTRE.length + ' textes surveillés — échéances après 01/06/2026</p>'
-    + '<p class="fs11" style="color:#86efac;margin-top:3px">'
-    + 'Sources : EUR-Lex · Legifrance · JORF · ETSI</p>'
-    + '</div>';
+  html += '<div class="card card-green mb16"><p class="fw7 fs12 t-green">' + DATA_FILTRE.length + ' textes surveillés — échéances après 01/06/2026</p>'
+    + '<p class="fs11" style="color:#86efac;margin-top:3px">Sources : EUR-Lex · Legifrance · JORF · ETSI</p></div>';
 
   return html;
 }
 
-// ─── RENDU CARTE ──────────────────────────────────────────────────────────────
-
+// ─── CARD RENDER ──────────────────────────────────────────────────────────────
 function renderCard(reg) {
-  var acc      = reg.cat === 'eu_red' ? '#4a7dff' : reg.cat === 'fr' ? '#e04f5f' : '#38bdf8';
-  var flag     = reg.cat === 'eu_red' ? 'EU' : reg.cat === 'fr' ? 'FR' : 'EU';
-  var linkLabel= reg.cat === 'fr' ? 'Legifrance' : 'EUR-Lex';
-  var isOpen   = openCards[reg.id] || false;
+  var acc       = reg.cat === 'eu_red' ? '#4a7dff' : reg.cat === 'fr' ? '#e04f5f' : '#38bdf8';
+  var flag      = reg.cat === 'eu_red' ? 'EU' : reg.cat === 'fr' ? 'FR' : 'EU';
+  var linkLabel = reg.cat === 'fr' ? 'Legifrance' : 'EUR-Lex';
+  var isOpen    = openCards[reg.id] || false;
 
-  var newChip   = reg.isNew ? '<span class="chip chip-new">Nouveau</span>' : '';
-  var catChip   = '<span class="chip chip-' + reg.cat + '">' + flag + ' ' + esc(reg.tag) + '</span>';
-  var deviceTags = reg.devices.map(function(d) {
-    return '<span class="dtag">' + esc(d) + '</span>';
-  }).join('');
-  var linkBtn = reg.link
-    ? '<a href="' + reg.link + '" target="_blank" rel="noopener" class="eur-link" style="background:' + acc + '">'
-      + linkLabel + ' &rarr;</a>'
-    : '<span style="display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;'
-      + 'border-radius:6px;background:#2a2f4a;color:#7a7f9a;margin-top:10px">Texte non encore publie</span>';
+  var newChip    = reg.isNew ? '<span class="chip chip-new">Nouveau</span>' : '';
+  var catChip    = '<span class="chip chip-' + reg.cat + '">' + flag + ' ' + esc(reg.tag) + '</span>';
+  var deviceTags = (reg.devices || []).map(function(d){ return '<span class="dtag">' + esc(d) + '</span>'; }).join('');
+  var linkBtn    = reg.link
+    ? '<a href="' + reg.link + '" target="_blank" rel="noopener" class="eur-link" style="background:' + acc + '">' + linkLabel + ' &rarr;</a>'
+    : '<span style="display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;background:#2a2f4a;color:#7a7f9a;margin-top:10px">Texte non encore publie</span>';
 
   return '<div class="card-reg card-reg-' + reg.cat + '">'
     + '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'
-    + newChip + catChip
-    + '<span style="margin-left:auto;font-size:11px;color:#7a7f9a">' + esc(reg.date) + '</span>'
-    + '</div>'
-    + '<p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">'
-    + esc(reg.title) + '</p>'
-    + '<p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">'
-    + esc(reg.ref) + ' — ' + esc(reg.type) + '</p>'
+    + newChip + catChip + '<span style="margin-left:auto;font-size:11px;color:#7a7f9a">' + esc(reg.date || '') + '</span></div>'
+    + '<p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">' + esc(reg.title || '') + '</p>'
+    + '<p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">' + esc(reg.ref || '') + ' — ' + esc(reg.type || '') + '</p>'
     + '<div style="display:flex;flex-wrap:wrap;margin-bottom:10px">' + deviceTags + '</div>'
-    + '<div class="date-pill" style="margin-bottom:10px">'
-    + '<span>Application :</span>'
-    + '<span style="font-size:11px;font-weight:700;color:#a78bfa">' + esc(reg.apply) + '</span>'
-    + '</div>'
+    + '<div class="date-pill" style="margin-bottom:10px"><span>Application :</span><span style="font-size:11px;font-weight:700;color:#a78bfa">' + esc(reg.apply || 'À confirmer') + '</span></div>'
     + '<button class="summary-toggle" onclick="toggleCard(\'' + reg.id + '\')" style="color:' + acc + '">'
-    + '<i id="arrow-' + reg.id + '" class="arrow" style="transform:'
-    + (isOpen ? 'rotate(90deg)' : 'rotate(0deg)') + '">&#9658;</i>'
-    + '<span id="lbl-' + reg.id + '">' + (isOpen ? 'Masquer' : 'Lire en clair') + '</span>'
-    + '</button>'
+    + '<i id="arrow-' + reg.id + '" class="arrow" style="transform:' + (isOpen ? 'rotate(90deg)' : 'rotate(0deg)') + '">&#9658;</i>'
+    + '<span id="lbl-' + reg.id + '">' + (isOpen ? 'Masquer' : 'Lire en clair') + '</span></button>'
     + '<div id="summary-' + reg.id + '" class="summary-box' + (isOpen ? '' : ' hidden') + '">'
-    + '<p style="font-size:12px;color:#c0c4d8;line-height:1.75;margin-bottom:10px">'
-    + esc(reg.summary) + '</p>'
-    + linkBtn
-    + '</div>'
-    + '</div>';
+    + '<p style="font-size:12px;color:#c0c4d8;line-height:1.75;margin-bottom:10px">' + esc(reg.summary || '') + '</p>'
+    + linkBtn + '</div></div>';
 }
 
 // ─── RENDU ACCUEIL ────────────────────────────────────────────────────────────
-
 function renderAccueil() {
   console.log('[Render] Accueil v' + APP_VERSION);
 
-  // ✅ Agenda filtré — uniquement dates >= DATE_FILTRE
   var agendaRows = AGENDA.filter(function(e) {
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(e.date)) return true; // garde "Horizon..."
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(e.date)) return true;
     var parts = e.date.split('/');
     var ts    = new Date(parts[2], parts[1]-1, parts[0]).getTime();
     return ts >= DATE_FILTRE.getTime();
   }).map(function(e) {
     return '<a href="' + e.link + '" target="_blank" rel="noopener" style="text-decoration:none">'
-      + '<div class="agenda-row">'
-      + '<div class="agenda-date">'
+      + '<div class="agenda-row"><div class="agenda-date">'
       + '<p style="font-size:12px;font-weight:800;color:#a78bfa;margin:0">' + esc(e.date.slice(0,5)) + '</p>'
-      + '<p style="font-size:10px;color:#a78bfa;margin:0">' + esc(e.date.slice(6)) + '</p>'
-      + '</div>'
-      + '<div style="flex:1">'
-      + '<p style="font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.4;margin:0">'
-      + esc(e.flags) + ' ' + esc(e.label) + '</p>'
-      + '<p style="font-size:10px;color:#4a7dff;margin-top:2px">Voir le texte</p>'
-      + '</div>'
-      + '</div></a>';
+      + '<p style="font-size:10px;color:#a78bfa;margin:0">' + esc(e.date.slice(6)) + '</p></div>'
+      + '<div style="flex:1"><p style="font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.4;margin:0">'
+      + esc(e.flags) + ' ' + esc(e.label) + '</p><p style="font-size:10px;color:#4a7dff;margin-top:2px">Voir le texte</p></div></div></a>';
   }).join('');
 
   document.getElementById('tab-accueil').innerHTML =
     '<div style="padding:14px 16px 90px">'
-
-    // ── Badge version + date scan
-    + '<div style="display:flex;justify-content:flex-end;margin-bottom:8px">'
-    + '<span style="font-size:10px;font-weight:700;color:#7a7f9a;'
-    + 'background:#1a1e35;border:1px solid #2a2f4a;border-radius:6px;'
-    + 'padding:3px 10px;letter-spacing:0.05em">'
-    + 'v' + APP_VERSION + ' — ' + lastScan.slice(0,10)
-    + '</span>'
-    + '</div>'
-
-    // ── Cartes dynamiques
+    + '<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><span style="font-size:10px;font-weight:700;color:#7a7f9a;background:#1a1e35;border:1px solid #2a2f4a;border-radius:6px;padding:3px 10px;letter-spacing:0.05em">'
+    + 'v' + APP_VERSION + ' — ' + lastScan.slice(0,10) + '</span></div>'
     + renderAccueilCards()
-
-    // ── Bloc scan
     + '<div class="card-plain mb16" style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
-    + '<div style="flex:1;min-width:0">'
-    + '<p class="fw7 fs13 t-text mb6">Scraping hebdomadaire</p>'
+    + '<div style="flex:1;min-width:0"><p class="fw7 fs13 t-text mb6">Scraping hebdomadaire</p>'
     + '<p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">' + lastScan + '</span></p>'
     + '<p class="fs11 t-muted mb4">Prochain scan : <span class="t-warn">' + nextScan + '</span></p>'
-    + '<p class="fs10 t-muted">EUR-Lex · Legifrance · JORF · ETSI</p>'
-    + '</div>'
-    + '<button id="scan-btn" class="scan-btn" onclick="handleScan()">'
-    + (scanLoading ? 'En cours...' : 'Scan') + '</button>'
-    + '</div>'
-
-    // ── Calendrier filtré
+    + '<p class="fs10 t-muted">EUR-Lex · Legifrance · JORF · ETSI</p></div>'
+    + '<button id="scan-btn" class="scan-btn" onclick="handleScan()">' + (scanLoading ? 'En cours...' : 'Scan') + '</button></div>'
     + '<p class="section-label t-muted">CALENDRIER DES ÉCHÉANCES — après 01/06/2026</p>'
-    + agendaRows
-    + '</div>';
+    + agendaRows + '</div>';
 }
 
 // ─── RENDU VEILLE ─────────────────────────────────────────────────────────────
-
 function renderVeille() {
   console.log('[Render] Veille — filtre :', veilleFilter);
 
@@ -507,23 +460,16 @@ function renderVeille() {
     { key:'fr',         label:'TRANSPOSITIONS DROIT FRANCAIS', color:'#e04f5f' }
   ];
 
-  var shown = veilleFilter === 'tous'
-    ? groups
-    : groups.filter(function(g) { return g.key === veilleFilter; });
+  var shown = veilleFilter === 'tous' ? groups : groups.filter(function(g){ return g.key === veilleFilter; });
 
-  var filterBtns = filters.map(function(f) {
-    return '<button class="filter-btn ' + (veilleFilter === f.key ? 'active' : '')
-      + '" onclick="setVeilleFilter(\'' + f.key + '\')">' + f.label + '</button>';
+  var filterBtns = filters.map(function(f){
+    return '<button class="filter-btn ' + (veilleFilter === f.key ? 'active' : '') + '" onclick="setVeilleFilter(\'' + f.key + '\')">' + f.label + '</button>';
   }).join('');
 
-  // ✅ DATA_FILTRE — uniquement échéances après 01/06/2026
-  var groupsHtml = shown.map(function(g) {
-    var cards = DATA_FILTRE
-      .filter(function(r) { return r.cat === g.key; })
-      .map(renderCard).join('');
+  var groupsHtml = shown.map(function(g){
+    var cards = DATA_FILTRE.filter(function(r){ return r.cat === g.key; }).map(renderCard).join('');
     var empty = cards === ''
-      ? '<p class="fs12 t-muted" style="padding:12px 0">'
-        + 'Aucun texte dans cette catégorie après le 01/06/2026</p>'
+      ? '<p class="fs12 t-muted" style="padding:12px 0">Aucun texte dans cette catégorie après le 01/06/2026</p>'
       : cards;
     return '<p class="section-label" style="color:' + g.color + '">' + g.label + '</p>' + empty;
   }).join('');
@@ -531,14 +477,11 @@ function renderVeille() {
   document.getElementById('tab-veille').innerHTML =
     '<div style="padding:14px 16px 90px">'
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">' + filterBtns + '</div>'
-    + '<p class="fs10 t-muted" style="margin-bottom:12px;font-style:italic">'
-    + DATA_FILTRE.length + ' textes — échéances après 01/06/2026</p>'
-    + groupsHtml
-    + '</div>';
+    + '<p class="fs10 t-muted" style="margin-bottom:12px;font-style:italic">' + DATA_FILTRE.length + ' textes — échéances après 01/06/2026</p>'
+    + groupsHtml + '</div>';
 }
 
 // ─── RENDU ALERTES ────────────────────────────────────────────────────────────
-
 function renderAlertes() {
   console.log('[Render] Alertes');
 
@@ -557,7 +500,7 @@ function renderAlertes() {
 
   var logHtml = '';
   if (scanLog.length > 0) {
-    var logItems = scanLog.slice().reverse().slice(0,5).map(function(l) {
+    var logItems = scanLog.slice().reverse().slice(0,5).map(function(l){
       return '<p class="' + (l.hasNew ? 'log-new' : 'log-ok') + '">'
         + (l.hasNew ? '🆕 Nouveaux textes detectes' : '✅ Aucune modification')
         + ' — ' + l.date + '</p>';
@@ -565,45 +508,93 @@ function renderAlertes() {
     logHtml = '<div style="border-top:1px solid #2a2f4a;padding-top:8px">' + logItems + '</div>';
   }
 
-  var switchRows = rows.map(function(r) {
-    return '<div class="toggle-row">'
-      + '<div class="toggle-left">'
-      + '<span style="font-size:20px">' + r.icon + '</span>'
-      + '<span class="fs13 t-text">' + r.label + '</span>'
-      + '</div>'
-      + '<button id="sw-' + r.key + '" class="switch '
-      + (prefs[r.key] ? 'switch-on' : 'switch-off')
-      + '" onclick="togglePref(\'' + r.key + '\')">'
-      + '<span class="switch-knob" style="left:' + (prefs[r.key] ? '23px' : '3px') + '"></span>'
-      + '</button>'
-      + '</div>';
+  var switchRows = rows.map(function(r){
+    return '<div class="toggle-row"><div class="toggle-left"><span style="font-size:20px">' + r.icon + '</span>'
+      + '<span class="fs13 t-text">' + r.label + '</span></div>'
+      + '<button id="sw-' + r.key + '" class="switch ' + (prefs[r.key] ? 'switch-on' : 'switch-off') + '" onclick="togglePref(\'' + r.key + '\')">'
+      + '<span class="switch-knob" style="left:' + (prefs[r.key] ? '23px' : '3px') + '"></span></button></div>';
   }).join('');
 
   document.getElementById('tab-alertes').innerHTML =
     '<div style="padding:14px 16px 90px">'
-    + '<div class="card-plain mb16">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+    + '<div class="card-plain mb16"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
     + '<p class="fw7 fs12 t-text" style="margin:0">Statut scraping</p>'
-    + '<span style="font-size:11px;font-weight:800;color:#a78bfa;'
-    + 'background:#1a0d2a;border:1px solid #a78bfa44;border-radius:6px;'
-    + 'padding:3px 10px">v' + APP_VERSION + '</span>'
-    + '</div>'
+    + '<span style="font-size:11px;font-weight:800;color:#a78bfa;background:#1a0d2a;border:1px solid #a78bfa44;border-radius:6px;padding:3px 10px">v' + APP_VERSION + '</span></div>'
     + '<p class="fs11 t-muted" style="margin-bottom:2px">Dernier scan : <span class="t-green">' + lastScan + '</span></p>'
     + '<p class="fs11 t-muted" style="margin-bottom:2px">Prochain scan : <span class="t-warn">' + nextScan + '</span></p>'
     + '<p class="fs11 t-muted mb8">Frequence : 7 jours · Sources : EUR-Lex · Legifrance · JORF · ETSI</p>'
-    + logHtml
-    + '</div>'
+    + logHtml + '</div>'
     + '<p class="section-label t-muted">NOTIFICATIONS ACTIVES</p>'
-    + switchRows
-    + '</div>';
+    + switchRows + '</div>';
+}
+
+// ─── CHARGEMENT DYNAMIQUE (v4.0) ─────────────────────────────────────────────
+function normalizeDynamicItem(d) {
+  var item = Object.assign({}, d);
+
+  // champs minimaux
+  item.id    = item.id || ('dyn-' + Math.random().toString(36).slice(2));
+  item.title = item.title || item.ref || 'Texte détecté';
+  item.ref   = item.ref || item.title;
+  item.type  = item.type || (item.cat === 'fr' ? 'Texte national' : 'Acte UE');
+  item.tag   = item.tag || (item.cat === 'fr' ? 'Transposition FR' : 'Normes RED');
+  item.date  = item.date || '—';
+  item.apply = item.apply || 'À confirmer — voir texte officiel';
+  item.summary = item.summary || 'Texte détecté automatiquement.';
+  item.devices = Array.isArray(item.devices) ? item.devices : ['Smartphones','IoT','Wearables'];
+  item.isNew = !!item.isNew;
+
+  // catégorie
+  if (!item.cat) {
+    var t = (item.title + ' ' + item.type).toLowerCase();
+    if (/(france|jorf|decret|arrete|ordonnance|national)/.test(t)) item.cat = 'fr';
+    else if (/(etsi|norme)/.test(t)) item.cat = 'eu_red';
+    else item.cat = 'eu_related';
+  }
+
+  // applyDate calculé à partir de apply si absent
+  if (!(item.applyDate instanceof Date)) {
+    var parsed = parseApplyToDate(item.apply);
+    item.applyDate = parsed || null;
+  }
+
+  return item;
+}
+
+function rebuildFromDynamic(dynamicItems) {
+  var staticIds = DATA.map(function(d){ return d.id; });
+  var newOnly = (dynamicItems || [])
+    .map(normalizeDynamicItem)
+    .filter(function(d){ return !staticIds.includes(d.id); });
+
+  if (newOnly.length > 0) {
+    console.log('[Data]', newOnly.length, 'nouveau(x) texte(s) dynamique(s) ajouté(s)');
+    DATA = newOnly.concat(DATA);
+  } else {
+    console.log('[Data] Aucun nouveau texte dynamique à fusionner');
+  }
+
+  DATA_FILTRE = computeDataFiltre();
+}
+
+function applyScanMeta(meta) {
+  if (!meta || !meta.lastScan) return;
+  try {
+    var d = new Date(meta.lastScan);
+    if (!isNaN(d.getTime())) {
+      lastScan = fmtDate(d);
+      nextScan = fmtDate(addDays(d, 7));
+    }
+  } catch(e) {
+    console.warn('[Meta] lastScan invalide');
+  }
 }
 
 // ─── INITIALISATION ───────────────────────────────────────────────────────────
-
 document.addEventListener('DOMContentLoaded', function() {
   console.log('[App] DOM prêt — RED Monitor v' + APP_VERSION);
   console.log('[App] Filtre : échéances après', DATE_FILTRE.toLocaleDateString('fr-FR'));
-  console.log('[App] Textes filtrés :', DATA_FILTRE.length, '/', DATA.length);
+  console.log('[App] Textes filtrés init :', DATA_FILTRE.length, '/', DATA.length);
 
   var bellBtn    = document.getElementById('bell-btn');
   var navAccueil = document.getElementById('nav-accueil');
@@ -611,15 +602,15 @@ document.addEventListener('DOMContentLoaded', function() {
   var navAlertes = document.getElementById('nav-alertes');
   var tabAccueil = document.getElementById('tab-accueil');
 
-  if (!bellBtn || !navAccueil || !tabAccueil) {
-    console.error('[App] ❌ Éléments DOM manquants — vérifie index.html');
+  if (!tabAccueil) {
+    console.error('[App] ❌ #tab-accueil manquant — vérifie index.html');
     return;
   }
 
-  bellBtn   .addEventListener('click', function() { setTab('alertes'); });
-  navAccueil.addEventListener('click', function() { setTab('accueil'); });
-  navVeille .addEventListener('click', function() { setTab('veille');  });
-  navAlertes.addEventListener('click', function() { setTab('alertes'); });
+  if (bellBtn)     bellBtn.addEventListener('click', function(){ setTab('alertes'); });
+  if (navAccueil)  navAccueil.addEventListener('click', function(){ setTab('accueil'); });
+  if (navVeille)   navVeille.addEventListener('click', function(){ setTab('veille'); });
+  if (navAlertes)  navAlertes.addEventListener('click', function(){ setTab('alertes'); });
 
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission().then(function(result) {
@@ -627,43 +618,45 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // 1) rendu initial statique
   renderAccueil();
   renderVeille();
   renderAlertes();
-
   console.log('[App] ✅ Rendu initial terminé');
 
-  fetch('data.json?v=' + Date.now())
-    .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
+  // 2) charge meta + data dynamique
+  Promise.allSettled([
+    fetch('scan-meta.json?v=' + Date.now(), { cache:'no-store' }).then(function(r){
+      if (!r.ok) throw new Error('scan-meta HTTP ' + r.status);
+      return r.json();
+    }),
+    fetch('data.json?v=' + Date.now(), { cache:'no-store' }).then(function(r){
+      if (!r.ok) throw new Error('data HTTP ' + r.status);
       return r.json();
     })
-    .catch(function(err) {
-      console.warn('[Data] data.json non disponible :', err.message);
-      return [];
-    })
-    .then(function(dynamicItems) {
-      if (!dynamicItems || dynamicItems.length === 0) {
-        console.log('[Data] Aucune donnée dynamique — données statiques utilisées');
-        return;
-      }
-      var staticIds = DATA.map(function(d) { return d.id; });
-      var newOnly   = dynamicItems.filter(function(d) {
-        return !staticIds.includes(d.id);
-      });
-      if (newOnly.length > 0) {
-        console.log('[Data]', newOnly.length, 'nouveau(x) texte(s) chargé(s)');
-        DATA = newOnly.concat(DATA);
-        // Recalcule le filtre après chargement dynamique
-        DATA_FILTRE = DATA.filter(function(d) {
-          if (!d.applyDate) return false;
-          return d.applyDate >= DATE_FILTRE;
-        });
-        renderAccueil();
-        renderVeille();
-        renderAlertes();
-      } else {
-        console.log('[Data] Aucun nouveau texte dans data.json');
-      }
-    });
+  ]).then(function(results){
+    var meta = results[0].status === 'fulfilled' ? results[0].value : null;
+    var dyn  = results[1].status === 'fulfilled' ? results[1].value : [];
+
+    if (results[0].status !== 'fulfilled') {
+      console.warn('[Meta] scan-meta indisponible');
+    } else {
+      console.log('[Meta] scan-meta chargé');
+      applyScanMeta(meta);
+    }
+
+    if (!Array.isArray(dyn) || dyn.length === 0) {
+      console.log('[Data] Aucune donnée dynamique — statique conservé');
+    } else {
+      console.log('[Data] data.json chargé :', dyn.length, 'item(s)');
+      rebuildFromDynamic(dyn);
+    }
+
+    renderAccueil();
+    renderVeille();
+    renderAlertes();
+    console.log('[App] ✅ Rendu post-dynamique terminé');
+  }).catch(function(err){
+    console.warn('[App] Chargement dynamique partiel :', err.message);
+  });
 });
