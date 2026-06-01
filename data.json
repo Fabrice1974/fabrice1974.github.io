@@ -1,1 +1,182 @@
-[]
+[
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053",
+    "cat": "eu_red",
+    "tag": "Normes RED",
+    "isNew": true,
+    "ref": "Acte (UE) 32014L0053",
+    "title": "Directive RED — CELEX 32014L0053",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  },
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R2065",
+    "cat": "eu_red",
+    "tag": "Normes RED",
+    "isNew": true,
+    "ref": "Acte (UE) 32022R2065",
+    "title": "DSA — CELEX 32022R2065",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R2065",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  },
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R1925",
+    "cat": "eu_red",
+    "tag": "Normes RED",
+    "isNew": true,
+    "ref": "Acte (UE) 32022R1925",
+    "title": "DMA — CELEX 32022R1925",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R1925",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  },
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
+    "cat": "eu_related",
+    "tag": "Données / IoT",
+    "isNew": true,
+    "ref": "Acte (UE) 32023R2854",
+    "title": "Data Act — CELEX 32023R2854",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  },
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
+    "cat": "eu_related",
+    "tag": "Intelligence Artificielle",
+    "isNew": true,
+    "ref": "Acte (UE) 32024R1689",
+    "title": "AI Act — CELEX 32024R1689",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  },
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
+    "cat": "eu_related",
+    "tag": "Cybersécurité",
+    "isNew": true,
+    "ref": "Acte (UE) 32024R2847",
+    "title": "CRA Cyber Resilience — CELEX 32024R2847",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  },
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
+    "cat": "eu_related",
+    "tag": "Greenwashing",
+    "isNew": true,
+    "ref": "Acte (UE) 32024L0825",
+    "title": "EmpCo Greenwashing — CELEX 32024L0825",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  },
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32009L0125",
+    "cat": "eu_related",
+    "tag": "Écoconception",
+    "isNew": true,
+    "ref": "Acte (UE) 32009L0125",
+    "title": "Ecoconception — CELEX 32009L0125",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32009L0125",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  },
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
+    "cat": "eu_related",
+    "tag": "Batteries",
+    "isNew": true,
+    "ref": "Acte (UE) 32023R1542",
+    "title": "Batteries — CELEX 32023R1542",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  },
+  {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0414",
+    "cat": "eu_related",
+    "tag": "Écoconception",
+    "isNew": true,
+    "ref": "Acte (UE) 32022R0414",
+    "title": "Ecoconception phones — CELEX 32022R0414",
+    "date": "01/01/2023",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0414",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+  }
+]
