@@ -1,10 +1,9 @@
 /**
- * RED Monitor — scrape.mjs — v3.1
- * Corrections :
- * - CUTOFF date de publication (pas d'application)
- * - URL JORF RSS corrigée
- * - User-Agent ajouté pour EUR-Lex
- * - Logs détaillés pour debug
+ * RED Monitor — scrape.mjs — v3.2
+ * Sources :
+ * - EUR-Lex API REST (remplace SPARQL trop lent)
+ * - Légifrance API OAuth2 PISTE (remplace RSS bloqué)
+ * - OneSignal push notifications
  */
 
 import fetch from 'node-fetch';
@@ -12,15 +11,15 @@ import fs from 'fs';
 
 const ONESIGNAL_APP_ID  = process.env.ONESIGNAL_APP_ID;
 const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
-
-// ✅ Date de PUBLICATION (pas d'application)
-// On capture tous les textes publiés depuis 2023
-// qui seront applicables en 2026+
-const CUTOFF_PUBLICATION = '2023-01-01';
+const LF_CLIENT_ID      = process.env.LEGIFRANCE_CLIENT_ID;
+const LF_CLIENT_SECRET  = process.env.LEGIFRANCE_CLIENT_SECRET;
 
 const KNOWN_IDS_FILE = 'known-ids.json';
 const DATA_FILE      = 'data.json';
 const SITE_URL       = 'https://fabrice1974.github.io/';
+
+// ✅ Date de publication des textes (pas leur date d'application)
+const CUTOFF_DATE = '2023-01-01';
 
 /* ── Helpers fichiers ── */
 function loadJSON(path, fallback) {
@@ -40,7 +39,7 @@ function categorize(title) {
   if (/data act|portabilit|2023\/2854/.test(t))                  return {cat:'eu_related', tag:'Données / IoT'};
   if (/intelligence artificielle|ai act|2024\/1689/.test(t))     return {cat:'eu_related', tag:'Intelligence Artificielle'};
   if (/garantie|durabilit|label/.test(t))                        return {cat:'eu_related', tag:'Garantie / Durabilité'};
-  if (/jorf|légifrance|décret|ordonnance|loi\s/.test(t))         return {cat:'fr',         tag:'Transposition FR'};
+  if (/décret|ordonnance|loi\s|arrêté|jorf/.test(t))             return {cat:'fr',         tag:'Transposition FR'};
   return                                                                 {cat:'eu_red',      tag:'Normes RED'};
 }
 
@@ -72,121 +71,213 @@ function buildItem(raw) {
   };
 }
 
-/* ── EUR-Lex SPARQL ── */
+/* ── EUR-Lex API REST ── */
+// ✅ Remplace SPARQL (trop lent / timeout)
+// Recherches ciblées par mots-clés via l'API REST
 async function fetchEurLex() {
-  // ✅ Filtre sur date de publication >= 2023
-  // ✅ Mots-clés élargis pour capturer plus de textes pertinents
-  const query = `
-    PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-    SELECT DISTINCT ?work ?title ?date WHERE {
-      ?work cdm:work_date_document ?date .
-      ?work cdm:work_title ?title .
-      FILTER(?date >= "${CUTOFF_PUBLICATION}"^^xsd:date)
-      FILTER(lang(?title) = "fr")
-      FILTER(regex(?title,
-        "radio.lectrique|.quipements radio|directive RED|2014/53|harmonisée|DECT|RLAN|wearable|IoT|cyber.résilience|écoconception|greenwashing|Data Act|intelligence artificielle|réparabilité|durabilité|batterie|smartphone|tablette",
-        "i"))
-    }
-    ORDER BY DESC(?date) LIMIT 50
-  `;
+  const results = [];
 
-  const url = 'https://publications.europa.eu/webapi/rdf/sparql?'
-    + new URLSearchParams({
-        query,
-        format: 'application/sparql-results+json'
-      });
-
-  try {
-    console.log('[EUR-Lex] Requête SPARQL...');
-    const res = await fetch(url, {
-      headers: {
-        'Accept':     'application/sparql-results+json',
-        // ✅ User-Agent requis par EUR-Lex
-        'User-Agent': 'RED-Monitor/3.1 (veille-reglementaire; contact: github.com/Fabrice1974)'
-      },
-      // ✅ Timeout 30s
-      signal: AbortSignal.timeout(30000)
-    });
-
-    if (!res.ok) {
-      console.warn('[EUR-Lex] HTTP', res.status, res.statusText);
-      return [];
-    }
-
-    const json = await res.json();
-    const results = json.results?.bindings || [];
-    console.log('[EUR-Lex] Résultats bruts :', results.length);
-
-    return results.map(b => ({
-      id:    b.work?.value  || '',
-      title: b.title?.value || '',
-      date:  b.date?.value  || ''
-    })).filter(r => r.id && r.title);
-
-  } catch (e) {
-    console.warn('[EUR-Lex] Erreur :', e.message);
-    return [];
-  }
-}
-
-/* ── JORF RSS ── */
-async function fetchJORF() {
-  const items = [];
-
-  // ✅ URLs RSS Legifrance qui fonctionnent vraiment
-  const RSS_URLS = [
-    'https://www.legifrance.gouv.fr/rss/jorf.xml',
-    'https://www.legifrance.gouv.fr/rss/loda.xml'
+  // Mots-clés ciblés — une requête par thème
+  const searches = [
+    { q: 'cyber resilience act equipements radio',      label: 'CRA'          },
+    { q: 'ecoconception smartphones tablettes',         label: 'ESPR phones'  },
+    { q: 'greenwashing allegations environnementales',  label: 'EmpCo'        },
+    { q: 'data act portabilite IoT',                    label: 'Data Act'     },
+    { q: 'intelligence artificielle embarquee radio',   label: 'AI Act'       },
+    { q: 'batterie remplacable smartphones',            label: 'Batteries'    },
+    { q: 'equipements radioelectriques directive RED',  label: 'RED'          },
+    { q: 'normes harmonisees radio ETSI',               label: 'Normes RED'   }
   ];
 
-  const KEYWORDS = /radio|RED\b|équipement|cyber|écoconception|greenwashing|IoT|wearable|smartphone|tablette|réparabilité|batterie|durabilité/i;
-
-  for (const url of RSS_URLS) {
+  for (const search of searches) {
     try {
-      console.log('[JORF] Fetch :', url);
+      console.log('[EUR-Lex] Recherche :', search.label);
+
+      // API REST EUR-Lex — endpoint de recherche
+      const url = 'https://eur-lex.europa.eu/search.html'
+        + '?scope=EURLEX'
+        + '&type=quick'
+        + '&lang=fr'
+        + '&DD_YEAR_FROM=2023'
+        + '&DD_YEAR_TO=2027'
+        + '&text=' + encodeURIComponent(search.q)
+        + '&FM_CODED=R,L,D'
+        + '&format=json';
+
       const res = await fetch(url, {
-        headers: { 'User-Agent': 'RED-Monitor/3.1' },
-        signal:  AbortSignal.timeout(15000)
+        headers: {
+          'Accept':     'application/json, text/html',
+          'User-Agent': 'RED-Monitor/3.2 (veille-reglementaire; github.com/Fabrice1974)'
+        },
+        signal: AbortSignal.timeout(25000)
       });
 
       if (!res.ok) {
-        console.warn('[JORF] HTTP', res.status, 'pour', url);
+        console.warn('[EUR-Lex]', search.label, '→ HTTP', res.status);
         continue;
       }
 
+      // EUR-Lex retourne du HTML ou JSON selon Accept
       const text = await res.text();
-      console.log('[JORF] Réponse reçue —', text.length, 'chars');
 
-      // Parse RSS
-      const titles = [...text.matchAll(/<title><!$$CDATA\[([^$$]+)\]\]><\/title>/g)].map(m => m[1]);
-      const links  = [...text.matchAll(/<link>([^<]+)<\/link>/g)].map(m => m[1].trim());
-      const dates  = [...text.matchAll(/<pubDate>([^<]+)<\/pubDate>/g)].map(m => m[1]);
+      // Parse les références CELEX dans la réponse
+      const celexMatches = [...text.matchAll(/CELEX[:%3A]+([0-9][0-9A-Z]+)/gi)];
+      const titleMatches = [...text.matchAll(/<title[^>]*>([^<]{20,200})<\/title>/gi)];
 
-      console.log('[JORF] Titres trouvés :', titles.length - 1);
+      console.log('[EUR-Lex]', search.label, '→', celexMatches.length, 'refs CELEX');
 
-      // i=1 pour sauter le titre du flux RSS lui-même
-      for (let i = 1; i < titles.length; i++) {
-        const t = titles[i] || '';
-        if (KEYWORDS.test(t)) {
-          items.push({
-            id:    links[i] || ('jorf-' + i + '-' + Date.now()),
-            title: t,
-            date:  dates[i-1]
-              ? new Date(dates[i-1]).toISOString().slice(0,10)
-              : new Date().toISOString().slice(0,10)
-          });
-          console.log('[JORF] Match :', t.slice(0,80));
-        }
+      // Dédoublonne les CELEX trouvés
+      const seen = new Set();
+      for (let i = 0; i < celexMatches.length; i++) {
+        const celex = celexMatches[i][1];
+        if (seen.has(celex)) continue;
+        seen.add(celex);
+
+        const id    = 'https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:' + celex;
+        const title = titleMatches[i]?.[ 1]?.trim()
+          || search.label + ' — ' + celex;
+
+        results.push({ id, title, date: CUTOFF_DATE });
       }
 
     } catch (e) {
-      console.warn('[JORF] Erreur sur', url, ':', e.message);
+      console.warn('[EUR-Lex]', search.label, '→ Erreur :', e.message);
     }
+
+    // Pause entre requêtes pour ne pas surcharger EUR-Lex
+    await new Promise(r => setTimeout(r, 1000));
   }
 
-  console.log('[JORF] Total items pertinents :', items.length);
-  return items;
+  console.log('[EUR-Lex] Total résultats :', results.length);
+  return results;
+}
+
+/* ── Légifrance API OAuth2 PISTE ── */
+// ✅ Remplace RSS bloqué (HTTP 403)
+async function fetchLegifrance() {
+  if (!LF_CLIENT_ID || !LF_CLIENT_SECRET) {
+    console.warn('[Légifrance] Credentials manquants — skip');
+    return [];
+  }
+
+  try {
+    // ── Étape 1 — Token OAuth2
+    console.log('[Légifrance] Authentification OAuth2...');
+    const tokenRes = await fetch(
+      'https://oauth.piste.gouv.fr/api/oauth/token',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type:    'client_credentials',
+          client_id:     LF_CLIENT_ID,
+          client_secret: LF_CLIENT_SECRET,
+          scope:         'openid'
+        }),
+        signal: AbortSignal.timeout(15000)
+      }
+    );
+
+    if (!tokenRes.ok) {
+      const err = await tokenRes.text();
+      console.warn('[Légifrance] Token HTTP', tokenRes.status, ':', err.slice(0,200));
+      return [];
+    }
+
+    const tokenData = await tokenRes.json();
+    const token     = tokenData.access_token;
+
+    if (!token) {
+      console.warn('[Légifrance] Pas de token dans la réponse');
+      return [];
+    }
+    console.log('[Légifrance] ✅ Token obtenu');
+
+    // ── Étape 2 — Recherche dans le JORF
+    const keywords = [
+      'radio équipement cyber écoconception smartphone',
+      'batterie réparabilité durabilité IoT wearable',
+      'greenwashing allégation environnementale',
+      'transposition directive européenne équipements'
+    ];
+
+    const items = [];
+
+    for (const kw of keywords) {
+      console.log('[Légifrance] Recherche :', kw.slice(0,40));
+
+      const searchRes = await fetch(
+        'https://api.piste.gouv.fr/dila/legifrance/lf-engine-app/search',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            recherche: {
+              champs: [{
+                typeChamp:  'TITLE',
+                criteres: [{
+                  typeRecherche: 'UN_DES_MOTS',
+                  valeur:        kw,
+                  operateur:     'ET'
+                }],
+                operateur: 'ET'
+              }],
+              filtres: [{
+                facette:     'DATE_SIGNATURE',
+                valeurDebut: CUTOFF_DATE,
+                valeurFin:   new Date().toISOString().slice(0,10)
+              }],
+              pageNumber:     1,
+              pageSize:       20,
+              sort:           'PERTINENCE',
+              typePagination: 'DEFAUT'
+            },
+            fond: 'JORF'
+          }),
+          signal: AbortSignal.timeout(20000)
+        }
+      );
+
+      if (!searchRes.ok) {
+        console.warn('[Légifrance] Search HTTP', searchRes.status);
+        continue;
+      }
+
+      const data    = await searchRes.json();
+      const results = data.results || [];
+      console.log('[Légifrance]', kw.slice(0,30), '→', results.length, 'résultats');
+
+      for (const item of results) {
+        const id    = item.id || item.cid || '';
+        const title = item.titre || item.titreComplet || '';
+        const date  = item.dateSignature
+          ? new Date(item.dateSignature).toISOString().slice(0,10)
+          : '';
+
+        if (id && title) {
+          items.push({
+            id:    'legifrance-' + id,
+            title,
+            date
+          });
+          console.log('[Légifrance] ✅ Match :', title.slice(0,60));
+        }
+      }
+
+      // Pause entre requêtes
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    console.log('[Légifrance] Total items :', items.length);
+    return items;
+
+  } catch (e) {
+    console.warn('[Légifrance] Erreur :', e.message);
+    return [];
+  }
 }
 
 /* ── OneSignal ── */
@@ -197,13 +288,13 @@ async function sendNotification(heading, message) {
   }
 
   const payload = {
-    app_id:             ONESIGNAL_APP_ID,
-    included_segments:  ['Total Subscriptions'],
-    headings:           { fr: heading, en: heading },
-    contents:           { fr: message, en: message },
-    url:                SITE_URL,
-    chrome_web_icon:    SITE_URL + 'icons/icon-192.png',
-    ttl:                604800
+    app_id:            ONESIGNAL_APP_ID,
+    included_segments: ['Total Subscriptions'],
+    headings:          { fr: heading, en: heading },
+    contents:          { fr: message, en: message },
+    url:               SITE_URL,
+    chrome_web_icon:   SITE_URL + 'icons/icon-192.png',
+    ttl:               604800
   };
 
   try {
@@ -224,16 +315,22 @@ async function sendNotification(heading, message) {
 
 /* ── MAIN ── */
 async function main() {
-  console.log('=== RED Monitor — Scan du', new Date().toISOString(), '===');
+  console.log('=== RED Monitor v3.2 — Scan du', new Date().toISOString(), '===');
 
   const knownIds    = loadJSON(KNOWN_IDS_FILE, []);
   const currentData = loadJSON(DATA_FILE, []);
   console.log('[Main] IDs connus :', knownIds.length, '| Textes en base :', currentData.length);
 
-  // Scraping parallèle
-  const [eurLexRaw, jorFRaw] = await Promise.all([fetchEurLex(), fetchJORF()]);
-  const allRaw = [...eurLexRaw, ...jorFRaw];
-  console.log('[Main] Bruts — EUR-Lex :', eurLexRaw.length, '| JORF :', jorFRaw.length, '| Total :', allRaw.length);
+  // ✅ Scraping parallèle EUR-Lex + Légifrance
+  const [eurLexRaw, lfRaw] = await Promise.all([
+    fetchEurLex(),
+    fetchLegifrance()
+  ]);
+
+  const allRaw = [...eurLexRaw, ...lfRaw];
+  console.log('[Main] Bruts — EUR-Lex :', eurLexRaw.length,
+              '| Légifrance :', lfRaw.length,
+              '| Total :', allRaw.length);
 
   // Nouveautés uniquement
   const newRaw = allRaw.filter(r => r.id && !knownIds.includes(r.id));
@@ -250,7 +347,7 @@ async function main() {
     saveJSON(DATA_FILE, updatedData);
     console.log('[Main] data.json mis à jour — total :', updatedData.length, 'textes');
 
-    // Notifications — max 3 individuelles
+    // Notifications — max 3 individuelles + 1 groupée
     for (const item of newItems.slice(0, 3)) {
       const shortTitle = item.title.length > 80
         ? item.title.slice(0, 80) + '...'
