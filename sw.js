@@ -1,112 +1,131 @@
 /* ============================================================
-   sw.js — RED Monitor v4.0
-   Service Worker dédié — Stratégie Network First
-   Séparé de OneSignal qui gère uniquement les push notifs
+   sw.js — RED Monitor v4.0.1
+   Service Worker dédié — Network First
+   Compatible data.json + scan-meta.json + OneSignal
    ============================================================ */
 
-const CACHE_VERSION = 'red-monitor-v4.0';
+const CACHE_VERSION = 'red-monitor-v4.0.1';
 const CACHE_NAME    = CACHE_VERSION;
 
-// Fichiers mis en cache au premier chargement
+// Assets statiques
 const STATIC_ASSETS = [
   './',
   './index.html',
   './app.js',
   './manifest.json',
-  './data.json'
+  './data.json',
+  './scan-meta.json'
 ];
 
-// ─── INSTALLATION ────────────────────────────────────────────
-self.addEventListener('install', function(event) {
-  console.log('[SW] Install — version :', CACHE_VERSION);
+// Helpers
+function isOneSignalRequest(url) {
+  return /onesignal/i.test(url);
+}
+function isChromeExt(url) {
+  return url.startsWith('chrome-extension://');
+}
+function isHttpGet(req) {
+  return req && req.method === 'GET';
+}
+function stripSearch(urlString) {
+  const u = new URL(urlString);
+  u.search = '';
+  return u.toString();
+}
+function isNavigationRequest(request) {
+  return request.mode === 'navigate' ||
+    (request.headers.get('accept') || '').includes('text/html');
+}
+
+// ─── INSTALL ─────────────────────────────────────────────────
+self.addEventListener('install', (event) => {
+  console.log('[SW] Install ->', CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('[SW] Mise en cache initiale des assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(function() {
-        console.log('[SW] skipWaiting — activation immédiate');
-        return self.skipWaiting();
-      })
-      .catch(function(err) {
-        console.error('[SW] Erreur installation :', err);
-      })
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
+      .catch((err) => console.error('[SW] Install error:', err))
   );
 });
 
-// ─── ACTIVATION ──────────────────────────────────────────────
-self.addEventListener('activate', function(event) {
-  console.log('[SW] Activate — nettoyage anciens caches');
+// ─── ACTIVATE ────────────────────────────────────────────────
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activate -> cleanup old caches');
   event.waitUntil(
     caches.keys()
-      .then(function(cacheNames) {
-        return Promise.all(
-          cacheNames
-            .filter(function(name) {
-              // Supprime tous les caches obsolètes sauf le courant
-              return name !== CACHE_NAME;
-            })
-            .map(function(name) {
-              console.log('[SW] Suppression cache obsolète :', name);
-              return caches.delete(name);
-            })
-        );
-      })
-      .then(function() {
-        console.log('[SW] clients.claim — contrôle immédiat');
-        return self.clients.claim();
-      })
+      .then((names) =>
+        Promise.all(
+          names
+            .filter((name) => name !== CACHE_NAME)
+            .map((name) => caches.delete(name))
+        )
+      )
+      .then(() => self.clients.claim())
   );
 });
 
-// ─── FETCH : Network First ────────────────────────────────────
-// Tente toujours le réseau → si offline, fallback cache
-self.addEventListener('fetch', function(event) {
+// ─── FETCH (Network First) ───────────────────────────────────
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  const url = req.url;
 
-  // Ignore les requêtes non-GET
-  if (event.request.method !== 'GET') return;
-
-  // Ignore les extensions Chrome
-  if (event.request.url.startsWith('chrome-extension://')) return;
-
-  // ⚠️ Laisse OneSignal gérer ses propres requêtes
-  if (event.request.url.includes('onesignal')) return;
+  if (!isHttpGet(req)) return;
+  if (isChromeExt(url)) return;
+  if (isOneSignalRequest(url)) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then(function(networkResponse) {
-        // Réseau OK → met à jour le cache avec la version fraîche
+    fetch(req)
+      .then((networkResponse) => {
+        // Réseau OK -> update cache (si 200)
         if (networkResponse && networkResponse.status === 200) {
-          var responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, responseClone);
-            console.log('[SW] Cache mis à jour :', event.request.url);
+          const responseClone = networkResponse.clone();
+
+          // clé cache normalisée sans query-string (évite multi-entrées ?v=timestamp)
+          const normalizedKey = stripSearch(url);
+
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(normalizedKey, responseClone);
+          }).catch((e) => {
+            console.warn('[SW] cache.put failed:', e.message);
           });
         }
         return networkResponse;
       })
-      .catch(function() {
-        // Réseau KO → fallback sur le cache local
-        console.log('[SW] Offline — fallback cache :', event.request.url);
-        return caches.match(event.request)
-          .then(function(cached) {
-            if (cached) return cached;
-            // Aucun cache disponible → page d'erreur minimale
-            return new Response(
-              '<h2 style="font-family:sans-serif;color:#e04f5f;padding:20px">'
-              + '⚠️ RED Monitor hors ligne — reconnecte-toi pour accéder aux données.</h2>',
-              { headers: { 'Content-Type': 'text/html' } }
-            );
-          });
+      .catch(async () => {
+        // Offline fallback cache
+        const normalizedKey = stripSearch(url);
+
+        // 1) tentative clé normalisée
+        const cachedNormalized = await caches.match(normalizedKey);
+        if (cachedNormalized) return cachedNormalized;
+
+        // 2) tentative requête brute
+        const cachedRaw = await caches.match(req);
+        if (cachedRaw) return cachedRaw;
+
+        // 3) navigation -> fallback index
+        if (isNavigationRequest(req)) {
+          const cachedIndex = await caches.match('./index.html') || await caches.match('index.html');
+          if (cachedIndex) return cachedIndex;
+        }
+
+        // 4) fallback ultime
+        return new Response(
+          '<!doctype html><html lang="fr"><meta charset="utf-8"><title>Offline</title>' +
+          '<body style="font-family:Arial,sans-serif;padding:20px">' +
+          '<h2 style="color:#c62828">⚠️ RED Monitor hors ligne</h2>' +
+          '<p>Reconnecte-toi pour accéder aux dernières données.</p>' +
+          '</body></html>',
+          { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+        );
       })
   );
 });
 
-// ─── MESSAGE : force refresh depuis app.js ───────────────────
-self.addEventListener('message', function(event) {
+// ─── MESSAGE ─────────────────────────────────────────────────
+self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('[SW] SKIP_WAITING reçu — activation forcée');
+    console.log('[SW] SKIP_WAITING received');
     self.skipWaiting();
   }
 });
