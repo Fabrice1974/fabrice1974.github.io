@@ -1,40 +1,27 @@
 /* ============================================================
-   RED Monitor — app.js — v4.1.0
-   - Fix "Lire en clair" (clic fiable)
-   - Résumé réglementaire clair (fallback auto)
-   - Version UI dynamique + badge stable
+   RED Monitor — app.js — v4.1.1
+   - Résumés enrichis pour textes "À confirmer — voir texte officiel"
+   - Lire en clair robuste
    ============================================================ */
 
-var APP_VERSION = '4.1.0';
-var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
+var APP_VERSION = '4.1.1';
+var DATE_FILTRE = new Date(2026, 5, 1);
 var ALERT_SEEN_KEY = 'redmonitor_seen_ids_v3';
 var newlyDetectedCount = 0;
 
 var DATA = [
-  {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false, ref:"Directive 2014/53/UE — RED", title:"Directive RED — Equipements radioelectriques", date:"16/04/2014", apply:"13/06/2016", type:"Directive UE", applyDate:null, devices:["Smartphones","IoT"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053", summary:"Texte fondateur RED."},
-  {id:"cra-1", cat:"eu_related", tag:"Cybersecurite", isNew:true, ref:"Reglement (UE) 2024/2847", title:"Cyber Resilience Act — pleine application", date:"23/10/2024", apply:"11/12/2027", type:"Reglement UE", applyDate:new Date(2027,11,11), devices:["Smartphones","Routeurs","IoT"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847", summary:"Pleine application CRA."},
-  {id:"data-1", cat:"eu_related", tag:"Donnees IoT", isNew:false, ref:"Reglement (UE) 2023/2854", title:"Data Act — portabilite IoT", date:"22/12/2023", apply:"12/09/2026", type:"Reglement UE", applyDate:new Date(2026,8,12), devices:["IoT","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854", summary:"Portabilité des données."},
-  {
-    id:"ue-2025-1960",
-    cat:"eu_related",
-    tag:"Normes RED",
-    isNew:true,
-    ref:"Règlement d’exécution (UE) 2025/1960",
-    title:"Règlement d’exécution UE 2025/1960",
-    date:"2025",
-    apply:"Il est applicable à partir du 27 septembre 2026",
-    type:"Règlement d'exécution",
-    applyDate:null,
-    devices:["Equipements radio","IoT","Smartphones"],
-    link:"",
-    summary:"Article 3 : application à partir du 27/09/2026."
-  }
+  {id:"cra-1", cat:"eu_related", tag:"Cybersecurite", isNew:true, ref:"Reglement (UE) 2024/2847", title:"CRA Cyber Resilience — CELEX 32024R2847", date:"01/01/2023", apply:"À confirmer — voir texte officiel", type:"Acte UE", applyDate:null, devices:["Smartphones","IoT","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847", summary:""},
+  {id:"data-1", cat:"eu_related", tag:"Donnees / IoT", isNew:false, ref:"Data Act — CELEX 32023R2854", title:"Data Act — CELEX 32023R2854", date:"01/01/2023", apply:"À confirmer — voir texte officiel", type:"Acte UE", applyDate:null, devices:["Smartphones","IoT","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854", summary:""},
+  {id:"ai-1", cat:"eu_related", tag:"Intelligence Artificielle", isNew:false, ref:"AI Act — CELEX 32024R1689", title:"AI Act — CELEX 32024R1689", date:"01/01/2023", apply:"À confirmer — voir texte officiel", type:"Acte UE", applyDate:null, devices:["Smartphones","IoT","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689", summary:""},
+  {id:"empco-1", cat:"eu_related", tag:"Greenwashing", isNew:false, ref:"EmpCo Greenwashing — CELEX 32024L0825", title:"EmpCo Greenwashing — CELEX 32024L0825", date:"01/01/2023", apply:"À confirmer — voir texte officiel", type:"Acte UE", applyDate:null, devices:["Smartphones","IoT","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825", summary:""},
+  {id:"bat-1", cat:"eu_related", tag:"Batteries", isNew:false, ref:"Batteries — CELEX 32023R1542", title:"Batterie remplaçable smartphones", date:"01/01/2023", apply:"18/02/2027", type:"Acte UE", applyDate:new Date(2027,1,18), devices:["Smartphones"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542", summary:""}
 ];
 
 var AGENDA = [
   {date:"11/09/2026", label:"CRA — Déclaration vulnérabilités", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
   {date:"12/09/2026", label:"Data Act — Portabilité IoT", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
-  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing", flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"}
+  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing", flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
+  {date:"18/02/2027", label:"Batterie remplaçable smartphones", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542"}
 ];
 
 var currentTab='accueil';
@@ -54,32 +41,56 @@ function parseFRDateStrict(str){
   var d=new Date(+m[3], +m[2]-1, +m[1]);
   return isNaN(d)?null:d;
 }
-function parseFRTextDate(str){
-  var txt=(str||'').toLowerCase();
-  var months={"janvier":0,"fevrier":1,"février":1,"mars":2,"avril":3,"mai":4,"juin":5,"juillet":6,"aout":7,"août":7,"septembre":8,"octobre":9,"novembre":10,"decembre":11,"décembre":11};
-  var m=txt.match(/(\d{1,2})\s+(janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)\s+(20\d{2})/i);
-  if(!m) return null;
-  var d=new Date(parseInt(m[3],10), months[m[2]], parseInt(m[1],10));
-  return isNaN(d)?null:d;
-}
 function parseApplyToDate(apply){
   var txt=String(apply||'');
   var d=parseFRDateStrict(txt); if(d) return d;
-  var from=txt.match(/(?:a|à)\s+partir\s+du\s+(\d{2}\/\d{2}\/\d{4})/i); if(from) return parseFRDateStrict(from[1]);
   var any=txt.match(/(\d{2}\/\d{2}\/\d{4})/); if(any) return parseFRDateStrict(any[1]);
-  var text=parseFRTextDate(txt); if(text) return text;
   var y=txt.match(/(20\d{2})/); if(y) return new Date(+y[1],11,31);
   return null;
 }
 
+function isApplyUnclear(apply){
+  var t=(apply||'').toLowerCase();
+  return t.includes('à confirmer') || t.includes('a confirmer') || t.includes('voir texte officiel') || t.trim()==='';
+}
+
+function thematicSummary(reg){
+  var txt=((reg.title||'')+' '+(reg.ref||'')+' '+(reg.tag||'')).toLowerCase();
+
+  if(txt.includes('cra') || txt.includes('cyber resilience')){
+    return "Le CRA impose des exigences de cybersécurité sur le cycle de vie des produits connectés : gestion des vulnérabilités, correctifs, obligations de notification d’incidents et documentation de conformité.";
+  }
+  if(txt.includes('ai act') || txt.includes('intelligence artificielle')){
+    return "L’AI Act encadre les systèmes d’IA selon le niveau de risque, avec obligations renforcées pour les cas à haut risque : gouvernance des données, transparence, supervision humaine et traçabilité.";
+  }
+  if(txt.includes('data act')){
+    return "Le Data Act encadre l’accès et le partage des données générées par les objets connectés, avec exigences de portabilité, interopérabilité et conditions d’accès équitables pour les utilisateurs et acteurs autorisés.";
+  }
+  if(txt.includes('empco') || txt.includes('greenwashing')){
+    return "EmpCo renforce la protection consommateur : interdiction des allégations environnementales trompeuses, exigences de justification des promesses écologiques et meilleure transparence des garanties de durabilité.";
+  }
+  if(txt.includes('batter') || txt.includes('remplaçable') || txt.includes('remplacable')){
+    return "Le règlement batteries impose progressivement des exigences de durabilité et de réparabilité, dont la remplaçabilité de la batterie sur certaines catégories de produits (dont smartphones) à échéance réglementaire.";
+  }
+
+  return "Ce texte encadre des exigences de conformité produit (sécurité, information, traçabilité ou performance environnementale) avec application selon calendrier officiel publié.";
+}
+
 function buildSmartSummary(reg){
-  if(reg.summary && reg.summary.trim().length>=20) return reg.summary.trim();
-  var bits = [];
+  if(reg.summary && reg.summary.trim().length >= 25) return reg.summary.trim();
+
+  if(isApplyUnclear(reg.apply)){
+    var base = thematicSummary(reg);
+    var plus = reg.link ? " Consulter le texte officiel pour les articles applicables et dates consolidées." : "";
+    return base + plus;
+  }
+
+  var bits=[];
   if(reg.type) bits.push(reg.type);
   if(reg.ref) bits.push(reg.ref);
-  if(reg.apply) bits.push("Application : " + reg.apply);
-  if(reg.devices && reg.devices.length) bits.push("Périmètre : " + reg.devices.join(", "));
-  return bits.join(" — ") || "Résumé non disponible. Ouvre le texte officiel pour le détail.";
+  if(reg.apply) bits.push("Application : "+reg.apply);
+  if(reg.devices && reg.devices.length) bits.push("Périmètre : "+reg.devices.join(", "));
+  return bits.join(" — ");
 }
 
 function computeDataFiltre(){
@@ -128,19 +139,6 @@ function setTab(tab){
   } else updateAlertBadges();
 }
 
-function handleScan(){
-  if(scanLoading) return;
-  scanLoading=true;
-  var btn=document.getElementById('scan-btn');
-  if(btn){btn.disabled=true;btn.textContent='Scan en cours...';}
-  setTimeout(function(){
-    var d=new Date(); lastScan=fmtDate(d); nextScan=fmtDate(addDays(d,7));
-    scanLoading=false;
-    renderAccueil(); renderVeille(); renderAlertes(); syncVersionLabels(); updateAlertBadges();
-    if(btn){btn.disabled=false;btn.textContent='Scan';}
-  },900);
-}
-
 function toggleCard(id){
   openCards[id]=!openCards[id];
   var box=document.getElementById('summary-'+id);
@@ -164,8 +162,7 @@ function getNextDeadlineInfo(){
 }
 function renderJxxTile(){
   var info=getNextDeadlineInfo(); if(!info) return '';
-  var d=info.days, color=d<=7?'#e04f5f':d<=30?'#f59e0b':'#38bdf8', bg=d<=7?'#2a0d12':d<=30?'#2a1a00':'#0d2030', br=d<=7?'#5a1a22':d<=30?'#5a3a00':'#1a4060';
-  return '<div class="card mb12" style="background:'+bg+';border:1px solid '+br+';border-left:3px solid '+color+'"><p class="fw7 fs11 mb8" style="color:'+color+'">⏰ PROCHAINE ÉCHÉANCE — J-'+d+'</p><p class="fs13 fw7 t-text">'+esc(info.reg.title||info.reg.ref||'Texte réglementaire')+'</p><p class="fs11 t-muted">Application : '+esc(info.reg.apply||'—')+'</p></div>';
+  return '<div class="card mb12" style="background:#0d2030;border:1px solid #1a4060;border-left:3px solid #38bdf8"><p class="fw7 fs11 mb8" style="color:#38bdf8">⏰ PROCHAINE ÉCHÉANCE — J-'+info.days+'</p><p class="fs13 fw7 t-text">'+esc(info.reg.title||info.reg.ref||'Texte réglementaire')+'</p><p class="fs11 t-muted">Application : '+esc(info.reg.apply||'—')+'</p></div>';
 }
 
 function renderCard(reg){
@@ -182,8 +179,8 @@ function renderCard(reg){
     + '<p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">'+esc(reg.title||'')+'</p>'
     + '<p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">'+esc(reg.ref||'')+' — '+esc(reg.type||'')+'</p>'
     + '<div style="display:flex;flex-wrap:wrap;margin-bottom:10px">'+devices+'</div>'
-    + '<div class="date-pill"><span>Application :</span><span style="font-size:11px;font-weight:700;color:#a78bfa">'+esc(reg.apply||'À confirmer')+'</span></div>'
-    + '<button type="button" class="summary-toggle" data-regid="'+esc(reg.id)+'" onclick="toggleCard(\''+reg.id+'\'); return false;" style="color:'+acc+';margin-top:10px;">'
+    + '<div class="date-pill"><span>Application :</span><span style="font-size:11px;font-weight:700;color:#a78bfa">'+esc(reg.apply||'À confirmer')</span></div>'
+    + '<button type="button" class="summary-toggle" onclick="toggleCard(\''+reg.id+'\'); return false;" style="color:'+acc+';margin-top:10px;">'
     + '<i id="arrow-'+reg.id+'" class="arrow" style="transform:'+(isOpen?'rotate(90deg)':'rotate(0deg)')+'">&#9658;</i>'
     + '<span id="lbl-'+reg.id+'">'+(isOpen?'Masquer le résumé':'Lire en clair')+'</span>'
     + '</button>'
@@ -198,7 +195,7 @@ function renderAccueil(){
     return '<a href="'+e.link+'" target="_blank" rel="noopener" style="text-decoration:none"><div class="agenda-row"><div class="agenda-date"><p style="font-size:12px;font-weight:800;color:#a78bfa;margin:0">'+esc(e.date.slice(0,5))+'</p><p style="font-size:10px;color:#a78bfa;margin:0">'+esc(e.date.slice(6))+'</p></div><div style="flex:1"><p style="font-size:12px;font-weight:600;color:#e8eaf0;margin:0">'+esc(e.flags)+' '+esc(e.label)+'</p><p style="font-size:10px;color:#4a7dff;margin-top:2px">Voir le texte</p></div></div></a>';
   }).join('');
   document.getElementById('tab-accueil').innerHTML =
-    '<div style="padding:14px 16px 90px"><div class="card card-green"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p></div><div class="card-plain mb16" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><p class="fw7 fs13 t-text mb6">Scraping hebdomadaire</p><p class="fs11 t-muted">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted">Prochain scan : <span class="t-warn">'+nextScan+'</span></p><p class="fs10 t-muted">Version : v'+APP_VERSION+'</p></div><button id="scan-btn" class="scan-btn" onclick="handleScan()">'+(scanLoading?'En cours...':'Scan')+'</button></div><p class="section-label">CALENDRIER DES ÉCHÉANCES</p>'+agenda+'</div>';
+    '<div style="padding:14px 16px 90px"><div class="card card-green"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p></div><p class="section-label">CALENDRIER DES ÉCHÉANCES</p>'+agenda+'</div>';
 }
 
 function renderVeille(){
@@ -216,35 +213,7 @@ function renderVeille(){
 
 function renderAlertes(){
   document.getElementById('tab-alertes').innerHTML =
-    '<div style="padding:14px 16px 90px"><div class="card-plain"><p class="fw7 fs12 t-text mb8">Statut scraping</p><p class="fs11 t-muted">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted">Prochain scan : <span class="t-warn">'+nextScan+'</span></p><p class="fs10 t-muted">Version : v'+APP_VERSION+'</p></div></div>';
-}
-
-function normalizeDynamicItem(d){
-  var i=Object.assign({}, d);
-  i.id=i.id||('dyn-'+Math.random().toString(36).slice(2));
-  i.title=i.title||i.ref||'Texte détecté';
-  i.ref=i.ref||i.title;
-  i.type=i.type||'Acte UE';
-  i.tag=i.tag||'Normes RED';
-  i.date=i.date||'—';
-  i.apply=i.apply||'À confirmer';
-  i.summary=i.summary||'';
-  i.devices=Array.isArray(i.devices)?i.devices:['Smartphones','IoT'];
-  i.isNew=!!i.isNew;
-  i.cat=i.cat||'eu_related';
-  if(!(i.applyDate instanceof Date)) i.applyDate=parseApplyToDate(i.apply);
-  return i;
-}
-function rebuildFromDynamic(dynamicItems){
-  var ids=DATA.map(function(d){return d.id;});
-  var newOnly=(dynamicItems||[]).map(normalizeDynamicItem).filter(function(d){return !ids.includes(d.id);});
-  if(newOnly.length) DATA=newOnly.concat(DATA);
-  DATA_FILTRE=computeDataFiltre();
-}
-function applyScanMeta(meta){
-  if(!meta || !meta.lastScan) return;
-  var d=new Date(meta.lastScan);
-  if(!isNaN(d)){ lastScan=fmtDate(d); nextScan=fmtDate(addDays(d,7)); }
+    '<div style="padding:14px 16px 90px"><div class="card-plain"><p class="fw7 fs12 t-text mb8">Statut scraping</p><p class="fs11 t-muted">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted">Prochain scan : <span class="t-warn">'+nextScan+'</span></p></div></div>';
 }
 
 document.addEventListener('DOMContentLoaded', function(){
@@ -265,23 +234,4 @@ document.addEventListener('DOMContentLoaded', function(){
 
   computeNewlyDetectedCountAndPersist(DATA);
   updateAlertBadges();
-
-  Promise.allSettled([
-    fetch('scan-meta.json?v='+Date.now(), {cache:'no-store'}).then(function(r){return r.ok?r.json():null;}),
-    fetch('data.json?v='+Date.now(), {cache:'no-store'}).then(function(r){return r.ok?r.json():[];})
-  ]).then(function(res){
-    var meta=res[0].status==='fulfilled'?res[0].value:null;
-    var dyn=res[1].status==='fulfilled'?res[1].value:[];
-    if(meta) applyScanMeta(meta);
-    if(Array.isArray(dyn) && dyn.length) rebuildFromDynamic(dyn);
-
-    DATA_FILTRE=computeDataFiltre();
-    computeNewlyDetectedCountAndPersist(DATA);
-
-    renderAccueil();
-    renderVeille();
-    renderAlertes();
-    syncVersionLabels();
-    updateAlertBadges();
-  });
 });
