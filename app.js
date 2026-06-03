@@ -1,7 +1,11 @@
 /* ============================================================
-   RED Monitor — app.js — v4.4.0 FULL RESTORE
+   RED Monitor — app.js — v4.4.1
+   - Full UI stable (Accueil / Veille / Alertes)
+   - Exclusions DMA/DSA/ancienne éco
+   - Accueil: lien source sous la date (EUR-LEX / JORF / ETSI)
    ============================================================ */
-var APP_VERSION='4.4.0';
+
+var APP_VERSION='4.4.1';
 var DATE_FILTRE=new Date(2026,5,1);
 var ALERT_SEEN_KEY='redmonitor_seen_ids_v3';
 var newlyDetectedCount=0;
@@ -30,6 +34,21 @@ function isExcludedReg(r){var t=textBlob(r), c=extractCelex(r);if(c&&EXCLUDED_CE
 function scoreEntry(r){var s=0;if(r.summary&&r.summary.length>60)s+=3;if(r.apply&&!/à confirmer/i.test(r.apply))s+=2;if(r.link)s+=1;return s;}
 function dedupeByCelex(items){var map={};items.forEach(function(r){var k=r.celex||r.id;if(!map[k])map[k]=r;else if(scoreEntry(r)>scoreEntry(map[k]))map[k]=r;});return Object.keys(map).map(function(k){return map[k];});}
 
+function inferSourceFromLink(link){
+  var l=(link||'').toLowerCase();
+  if(!l) return 'SOURCE';
+  if(l.indexOf('eur-lex.europa.eu')!==-1) return 'EUR-LEX';
+  if(l.indexOf('legifrance.gouv.fr')!==-1 || l.indexOf('jorf')!==-1) return 'JORF';
+  if(l.indexOf('etsi.org')!==-1) return 'ETSI';
+  return 'SOURCE';
+}
+function sourceLinkHtmlByUrl(url){
+  if(!url) return '<span style="font-size:10px;color:#7a7f9a">Source non publiée</span>';
+  var label=inferSourceFromLink(url);
+  return '<a href="'+url+'" target="_blank" rel="noopener" style="font-size:10px;color:#4a7dff;text-decoration:none;font-weight:700;">'+label+'</a>';
+}
+function sourceLinkHtmlByReg(reg){ return sourceLinkHtmlByUrl(reg&&reg.link?reg.link:''); }
+
 function normalizeDynamicItem(d){
   var i=Object.assign({},d);
   i.id=i.id||('dyn-'+Math.random().toString(36).slice(2));
@@ -47,7 +66,6 @@ function normalizeDynamicItem(d){
   i.celex=extractCelex(i);
   return i;
 }
-
 function computeDataFiltre(){
   return DATA.filter(function(r){
     if(isExcludedReg(r)) return false;
@@ -113,16 +131,25 @@ function getUpcomingRows(){
 function renderAccueil(){
   var rows=getUpcomingRows();
   var next=rows.length?rows[0]:null;
+
   var orangeCard=next?(
     '<div class="card mb12" style="background:#2a1a00;border:1px solid #5a3a00;border-left:3px solid #f59e0b">'
     +'<p class="fw7 fs11 mb8" style="color:#f59e0b;letter-spacing:.08em">⏰ PROCHAINE ÉCHÉANCE — J-'+Math.ceil((next.dt.getTime()-Date.now())/86400000)+'</p>'
     +'<p class="fs13 fw7 t-text mb6">'+esc(next.r.title)+'</p>'
-    +'<p class="fs11 t-muted">'+esc(next.r.cat==='fr'?'FR':'EU')+' · '+fmtDateOnly(next.dt)+'</p></div>'
+    +'<p class="fs11 t-muted" style="margin:0">'+esc(next.r.cat==='fr'?'FR':'EU')+' · '+fmtDateOnly(next.dt)+'</p>'
+    +'<p style="margin-top:2px">'+sourceLinkHtmlByReg(next.r)+'</p>'
+    +'</div>'
   ):'';
 
   var following=rows.slice(1,4).map(function(x){
     var j=Math.ceil((x.dt.getTime()-Date.now())/86400000);
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #2a2f4a"><div><p style="font-size:12px;font-weight:600;color:#e8eaf0;margin:0">'+esc(x.r.title)+'</p><p style="font-size:10px;color:#7a7f9a;margin:0">'+fmtDateOnly(x.dt)+'</p></div><span class="chip" style="background:#2a1140;color:#c084fc">J-'+j+'</span></div>';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #2a2f4a">'
+      +'<div>'
+      +'<p style="font-size:12px;font-weight:600;color:#e8eaf0;margin:0">'+esc(x.r.title)+'</p>'
+      +'<p style="font-size:10px;color:#7a7f9a;margin:0">'+fmtDateOnly(x.dt)+'</p>'
+      +'<p style="margin:2px 0 0 0">'+sourceLinkHtmlByReg(x.r)+'</p>'
+      +'</div>'
+      +'<span class="chip" style="background:#2a1140;color:#c084fc">J-'+j+'</span></div>';
   }).join('')||'<p class="fs11 t-muted">Pas d’échéances suivantes.</p>';
 
   var fr=DATA_FILTRE.filter(function(r){return r.cat==='fr';});
@@ -137,12 +164,14 @@ function renderAccueil(){
     +'<div class="card card-green mb12"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p><p class="fs11" style="color:#86efac;margin-top:3px">Sources : EUR-Lex · Legifrance · JORF · ETSI</p></div>'
     +'<div class="card-plain mb16" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><p class="fw7 fs13 t-text mb6">Scraping hebdomadaire</p><p class="fs11 t-muted">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted">Prochain scan : <span class="t-warn">'+nextScan+'</span></p></div><button id="scan-btn" class="scan-btn">'+(scanLoading?'En cours...':'Scan')+'</button></div>'
     +'</div>';
+
   var btn=document.getElementById('scan-btn'); if(btn) btn.onclick=handleScan;
 }
 
 /* ---------------- veille ---------------- */
 function smartSummary(r){
-  if((r.celex||'')==='32014L0053') return "Directive RED : exigences essentielles pour équipements radio (sécurité, CEM, usage du spectre), obligations de conformité CE (évaluation, dossier technique, déclaration UE) et surveillance du marché.";
+  var cx=extractCelex(r)||'';
+  if(cx==='32014L0053') return "Directive RED : exigences essentielles pour équipements radio (sécurité, CEM, usage du spectre), obligations de conformité CE (évaluation, dossier technique, déclaration UE) et surveillance du marché.";
   if(r.summary&&r.summary.trim().length>40) return r.summary.trim();
   return (r.type||'Acte UE')+' — '+(r.ref||r.title||'')+' — Application : '+(r.apply||'À confirmer');
 }
