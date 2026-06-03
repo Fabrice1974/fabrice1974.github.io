@@ -9,49 +9,9 @@
     "date": "16/04/2014",
     "apply": "13/06/2016 — En vigueur",
     "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
+    "devices": ["Smartphones", "IoT", "Wearables"],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053",
-    "summary": "Directive relative à la mise à disposition sur le marché d'équipements radioélectriques. Définit les exigences essentielles de sécurité, compatibilité électromagnétique et utilisation efficace du spectre radioélectrique. Base réglementaire de tous les équipements radio mis sur le marché UE. Actes délégués en cours pour cybersécurité (Art. 3.3 d/e/f) et chargeur universel."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R2065",
-    "cat": "eu_related",
-    "tag": "Services Numériques",
-    "isNew": true,
-    "ref": "Acte (UE) 32022R2065",
-    "title": "Règlement (UE) 2022/2065 — Digital Services Act (DSA)",
-    "date": "19/10/2022",
-    "apply": "17/02/2024 — En vigueur",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R2065",
-    "summary": "Règlement sur les services numériques. Encadre la responsabilité des plateformes en ligne, la modération de contenu et la transparence algorithmique. Impact sur les services connectés intégrés aux équipements radioélectriques (smartphones, IoT). Obligations renforcées pour les très grandes plateformes (VLOP) depuis février 2024."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R1925",
-    "cat": "eu_related",
-    "tag": "Marchés Numériques",
-    "isNew": true,
-    "ref": "Acte (UE) 32022R1925",
-    "title": "Règlement (UE) 2022/1925 — Digital Markets Act (DMA)",
-    "date": "14/09/2022",
-    "apply": "02/05/2023 — En vigueur",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R1925",
-    "summary": "Règlement sur les marchés numériques. Impose des obligations aux contrôleurs d'accès (gatekeepers). Impact direct sur l'interopérabilité des équipements connectés et l'accès aux fonctions NFC, Bluetooth et Wi-Fi des smartphones. Désignation des gatekeepers effectuée en septembre 2023."
+    "summary": "Directive relative à la mise à disposition sur le marché d'équipements radioélectriques. Définit les exigences essentielles de sécurité, compatibilité électromagnétique et utilisation efficace du spectre radioélectrique. Base réglementaire des équipements radio en UE."
   },
   {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
@@ -63,13 +23,9 @@
     "date": "13/12/2023",
     "apply": "12/09/2026 — Nouveaux produits IoT",
     "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
+    "devices": ["Smartphones", "IoT", "Wearables"],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
-    "summary": "Règlement sur les données. Établit des règles harmonisées sur l'accès équitable aux données générées par les produits connectés et services associés. Droit d'accès aux données pour les utilisateurs, portabilité des données, interopérabilité. Application aux nouveaux produits IoT mis sur le marché à partir du 12/09/2026."
+    "summary": "Règles harmonisées sur l'accès équitable aux données des produits connectés, portabilité et interopérabilité. Application aux nouveaux produits IoT à partir du 12/09/2026."
   },
   {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
@@ -81,13 +37,9 @@
     "date": "12/07/2024",
     "apply": "02/08/2026 — Systèmes IA haut risque",
     "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
+    "devices": ["Smartphones", "IoT", "Wearables"],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
-    "summary": "Règlement sur l'intelligence artificielle. Classifie les systèmes IA par niveau de risque (inacceptable, haut, limité, minimal). Impact direct sur les équipements radioélectriques intégrant de l'IA embarquée (smartphones, wearables, assistants vocaux). Application progressive : systèmes haut risque au 02/08/2026, pleine application au 02/08/2027."
+    "summary": "Cadre européen de l'IA basé sur le niveau de risque. Exigences renforcées pour les systèmes à haut risque intégrés aux équipements connectés."
   },
   {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
@@ -99,13 +51,9 @@
     "date": "23/10/2024",
     "apply": "11/09/2026 — Déclaration vulnérabilités",
     "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
+    "devices": ["Smartphones", "IoT", "Wearables"],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
-    "summary": "Règlement sur la cyber-résilience des produits comportant des éléments numériques. Impose des exigences de cybersécurité dès la conception et tout au long du cycle de vie. Obligation de déclaration des vulnérabilités activement exploitées à l'ENISA au 11/09/2026. Pleine application au 11/12/2027. Couvre smartphones, IoT, wearables et tout produit connecté."
+    "summary": "Exigences de cybersécurité sur l'ensemble du cycle de vie des produits numériques. Obligation de déclaration des vulnérabilités activement exploitées dès le 11/09/2026."
   },
   {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
@@ -117,31 +65,9 @@
     "date": "06/03/2024",
     "apply": "22/09/2026 — Transposition nationale",
     "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
+    "devices": ["Smartphones", "IoT", "Wearables"],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
-    "summary": "Directive modifiant les directives 2005/29/CE et 2011/83/UE pour responsabiliser les consommateurs pour la transition verte. Interdit les allégations environnementales trompeuses et génériques (ex: \"écologique\", \"vert\", \"neutre en carbone\" sans preuve). Renforce les informations sur la durabilité et la réparabilité. Transposition nationale requise au 27/03/2026, application au 22/09/2026."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32009L0125",
-    "cat": "eu_related",
-    "tag": "Écoconception",
-    "isNew": true,
-    "ref": "Acte (UE) 32009L0125",
-    "title": "Directive 2009/125/CE — Ecoconception (ErP)",
-    "date": "21/10/2009",
-    "apply": "En vigueur — Révision ESPR en cours",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32009L0125",
-    "summary": "Directive établissant un cadre pour la fixation d'exigences en matière d'écoconception applicables aux produits liés à l'énergie. Base réglementaire des règlements ESPR à venir pour smartphones, tablettes et wearables. En cours de révision via le règlement ESPR (Ecodesign for Sustainable Products Regulation). Règlements délégués smartphones et wearables attendus 2027-2028."
+    "summary": "Interdiction des allégations environnementales trompeuses, renforcement de l'information sur la durabilité et la réparabilité des produits."
   },
   {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
@@ -153,13 +79,9 @@
     "date": "28/07/2023",
     "apply": "18/02/2027 — Batterie remplaçable smartphones",
     "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
+    "devices": ["Smartphones", "IoT", "Wearables"],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
-    "summary": "Règlement établissant des exigences pour les batteries et les déchets de batteries. Impose la remplaçabilité des batteries par l'utilisateur dans les smartphones et appareils portables. Exigences de performance, durabilité et étiquetage. Passeport numérique batterie obligatoire. Application pour les nouveaux modèles au 18/02/2027."
+    "summary": "Exigences de performance, durabilité, traçabilité et remplaçabilité des batteries. Application pour nouveaux modèles à partir du 18/02/2027."
   },
   {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0414",
@@ -167,196 +89,26 @@
     "tag": "Écoconception",
     "isNew": true,
     "ref": "Acte (UE) 32022R0414",
-    "title": "Règlement (UE) 2022/414 — Ecoconception smartphones et tablettes",
+    "title": "Règlement (UE) 2022/414 — Écoconception smartphones et tablettes",
     "date": "30/03/2022",
-    "apply": "En vigueur — Exigences progressives 2023-2025",
+    "apply": "Exigences progressives 2023-2025 — Référentiel applicable",
     "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
+    "devices": ["Smartphones", "Wearables"],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0414",
-    "summary": "Règlement délégué fixant des exigences d'écoconception pour les smartphones, téléphones mobiles et tablettes. Couvre la durabilité (résistance aux chutes, eau, poussière), la réparabilité (disponibilité pièces détachées 5-7 ans), et les mises à jour logicielles (sécurité 5 ans minimum). Précurseur du futur règlement ESPR smartphones attendu 2027."
+    "summary": "Exigences d'écoconception sur durabilité, réparabilité, disponibilité des pièces détachées et mises à jour logicielles."
   },
   {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": false,
-    "ref": "Acte (UE) 32014L0053",
-    "title": "Directive RED — CELEX 32014L0053",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R2065",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": false,
-    "ref": "Acte (UE) 32022R2065",
-    "title": "DSA — CELEX 32022R2065",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R2065",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R1925",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": false,
-    "ref": "Acte (UE) 32022R1925",
-    "title": "DMA — CELEX 32022R1925",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R1925",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
-    "cat": "eu_related",
-    "tag": "Données / IoT",
-    "isNew": false,
-    "ref": "Acte (UE) 32023R2854",
-    "title": "Data Act — CELEX 32023R2854",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
-    "cat": "eu_related",
-    "tag": "Intelligence Artificielle",
-    "isNew": false,
-    "ref": "Acte (UE) 32024R1689",
-    "title": "AI Act — CELEX 32024R1689",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
-    "cat": "eu_related",
-    "tag": "Cybersécurité",
-    "isNew": false,
-    "ref": "Acte (UE) 32024R2847",
-    "title": "CRA Cyber Resilience — CELEX 32024R2847",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
-    "cat": "eu_related",
-    "tag": "Greenwashing",
-    "isNew": false,
-    "ref": "Acte (UE) 32024L0825",
-    "title": "EmpCo Greenwashing — CELEX 32024L0825",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32009L0125",
-    "cat": "eu_related",
-    "tag": "Écoconception",
-    "isNew": false,
-    "ref": "Acte (UE) 32009L0125",
-    "title": "Ecoconception — CELEX 32009L0125",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32009L0125",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
-    "cat": "eu_related",
-    "tag": "Batteries",
-    "isNew": false,
-    "ref": "Acte (UE) 32023R1542",
-    "title": "Batteries — CELEX 32023R1542",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0414",
-    "cat": "eu_related",
-    "tag": "Écoconception",
-    "isNew": false,
-    "ref": "Acte (UE) 32022R0414",
-    "title": "Ecoconception phones — CELEX 32022R0414",
-    "date": "01/01/2023",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0414",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 01/06/2026. Consultez le texte officiel via le lien ci-dessous."
+    "id": "fr-ddadue-empco-2026",
+    "cat": "fr",
+    "tag": "Transposition FR",
+    "isNew": true,
+    "ref": "Projet DDADUE — transposition EmpCo",
+    "title": "Transposition EmpCo en droit français",
+    "date": "2026",
+    "apply": "22/09/2026",
+    "type": "Projet de loi",
+    "devices": ["Smartphones", "IoT", "Wearables"],
+    "link": "https://www.legifrance.gouv.fr/",
+    "summary": "Transposition nationale des exigences anti-greenwashing issues de la directive (UE) 2024/825."
   }
 ]
