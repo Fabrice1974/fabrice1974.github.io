@@ -98,6 +98,20 @@
     "summary": "Exigences d'écoconception sur durabilité, réparabilité, disponibilité des pièces détachées et mises à jour logicielles."
   },
   {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R1960",
+    "cat": "eu_related",
+    "tag": "Normes RED",
+    "isNew": true,
+    "ref": "Acte (UE) 32025R1960",
+    "title": "Règlement d’exécution (UE) 2025/1960",
+    "date": "2025",
+    "apply": "Applicable à partir du 27 septembre 2026",
+    "type": "Acte UE",
+    "devices": ["Smartphones", "IoT", "Wearables"],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R1960",
+    "summary": "Article 3 : le règlement est applicable à partir du 27/09/2026. À compter de cette date, les obligations prévues par ce texte s’appliquent aux équipements concernés relevant du périmètre RED."
+  },
+  {
     "id": "fr-ddadue-empco-2026",
     "cat": "fr",
     "tag": "Transposition FR",
