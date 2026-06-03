@@ -1,34 +1,131 @@
 /* ============================================================
-   RED Monitor — app.js — v4.2.1
-   - Accueil: récapitulatif complet des textes à venir
-   - Veille: exclusion des textes déjà appliqués (< DATE_FILTRE)
-   - Parsing dates robuste (JJ/MM/AAAA + date FR texte)
+   RED Monitor — app.js — v4.2.2
+   Fix:
+   - Lire en clair cliquable pour toutes cartes
+   - Résumé explicite Directive RED
+   - Accueil + Veille + Alertes complets
    ============================================================ */
 
-var APP_VERSION = '4.2.1';
+var APP_VERSION = '4.2.2';
 var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
 var ALERT_SEEN_KEY = 'redmonitor_seen_ids_v3';
 var newlyDetectedCount = 0;
 
 // =========================
-// DATA (socle)
+// DATA
 // =========================
 var DATA = [
-  {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false, ref:"Directive 2014/53/UE — RED", title:"Directive RED — Equipements radioélectriques", date:"16/04/2014", apply:"13/06/2016", type:"Directive UE", applyDate:null, devices:["Smartphones","IoT","Routeurs"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053", summary:"Texte fondateur de conformité RED."},
-
-  {id:"cra-1", cat:"eu_related", tag:"Cybersecurite", isNew:true, ref:"Règlement (UE) 2024/2847", title:"CRA — Déclaration vulnérabilités (Art. 64)", date:"23/10/2024", apply:"11/09/2026", type:"Règlement UE", applyDate:new Date(2026,8,11), devices:["Smartphones","IoT","Routeurs"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847", summary:"Notification de vulnérabilités et incidents."},
-  {id:"data-1", cat:"eu_related", tag:"Données IoT", isNew:false, ref:"Règlement (UE) 2023/2854", title:"Data Act — Portabilité IoT", date:"22/12/2023", apply:"12/09/2026", type:"Règlement UE", applyDate:new Date(2026,8,12), devices:["IoT","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854", summary:"Portabilité et accès aux données IoT."},
-  {id:"empco-1", cat:"eu_related", tag:"Greenwashing", isNew:false, ref:"Directive (UE) 2024/825", title:"EmpCo — Anti-greenwashing + garantie durabilité", date:"06/03/2024", apply:"27/09/2026", type:"Directive", applyDate:new Date(2026,8,27), devices:["Tous appareils RED"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825", summary:"Encadrement des allégations environnementales."},
-  {id:"ue-2025-1960", cat:"eu_related", tag:"Normes RED", isNew:true, ref:"Règlement d’exécution (UE) 2025/1960", title:"Règlement d’exécution UE 2025/1960", date:"2025", apply:"Applicable à partir du 27 septembre 2026", type:"Règlement d'exécution", applyDate:null, devices:["Équipements radio","IoT"], link:"", summary:"Article 3 : application à partir du 27/09/2026."},
-
-  {id:"fr-1", cat:"fr", tag:"Transposition FR", isNew:true, ref:"Projet DDADUE — Art. 20-21", title:"Transposition EmpCo en droit français", date:"2026", apply:"27/09/2026", type:"Projet de loi", applyDate:new Date(2026,8,27), devices:["Tous appareils RED"], link:"", summary:"Texte national de transposition."}
+  {
+    id:"red-1",
+    cat:"eu_red",
+    tag:"Normes RED",
+    isNew:false,
+    ref:"Directive RED — CELEX 32014L0053",
+    title:"Directive RED — CELEX 32014L0053",
+    date:"16/04/2014",
+    apply:"13/06/2016",
+    type:"Directive UE",
+    applyDate:null,
+    devices:["Smartphones","IoT","Wearables"],
+    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053",
+    summary:"La directive RED définit les exigences essentielles applicables aux équipements radio : sécurité électrique, compatibilité électromagnétique, utilisation efficace du spectre, obligations de conformité CE, documentation technique et surveillance du marché."
+  },
+  {
+    id:"eco-1",
+    cat:"eu_related",
+    tag:"EU Écoconception",
+    isNew:true,
+    ref:"Acte (UE) 32009L0125 — Acte UE",
+    title:"Directive 2009/125/CE — Ecoconception (ErP)",
+    date:"21/10/2009",
+    apply:"En vigueur — Révision ESPR en cours",
+    type:"Acte UE",
+    applyDate:null,
+    devices:["Smartphones","IoT","Wearables"],
+    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32009L0125",
+    summary:"Cadre historique d’écoconception des produits liés à l’énergie. Progressivement remplacé/complété par ESPR selon familles de produits."
+  },
+  {
+    id:"bat-1",
+    cat:"eu_related",
+    tag:"EU Batteries",
+    isNew:true,
+    ref:"Acte (UE) 32023R1542 — Acte UE",
+    title:"Règlement (UE) 2023/1542 — Batteries et déchets de batteries",
+    date:"28/07/2023",
+    apply:"18/02/2027 — Batterie remplaçable smartphones",
+    type:"Acte UE",
+    applyDate:new Date(2027,1,18),
+    devices:["Smartphones","IoT","Wearables"],
+    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
+    summary:"Fixe des exigences de durabilité, traçabilité et fin de vie des batteries. Pour certaines catégories, batteries remplaçables à échéance."
+  },
+  {
+    id:"data-1",
+    cat:"eu_related",
+    tag:"EU Données / IoT",
+    isNew:false,
+    ref:"Acte (UE) 32023R2854 — Acte UE",
+    title:"Data Act — CELEX 32023R2854",
+    date:"01/01/2023",
+    apply:"À confirmer — voir texte officiel",
+    type:"Acte UE",
+    applyDate:null,
+    devices:["Smartphones","IoT","Wearables"],
+    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
+    summary:"Encadre l’accès, le partage et la portabilité des données générées par les objets connectés."
+  },
+  {
+    id:"ai-1",
+    cat:"eu_related",
+    tag:"EU Intelligence Artificielle",
+    isNew:false,
+    ref:"Acte (UE) 32024R1689 — Acte UE",
+    title:"AI Act — CELEX 32024R1689",
+    date:"01/01/2023",
+    apply:"À confirmer — voir texte officiel",
+    type:"Acte UE",
+    applyDate:null,
+    devices:["Smartphones","IoT","Wearables"],
+    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
+    summary:"Cadre européen de l’IA basé sur le risque, avec obligations renforcées pour les systèmes à haut risque."
+  },
+  {
+    id:"cra-2",
+    cat:"eu_related",
+    tag:"EU Cybersécurité",
+    isNew:false,
+    ref:"Acte (UE) 32024R2847 — Acte UE",
+    title:"CRA Cyber Resilience — CELEX 32024R2847",
+    date:"01/01/2023",
+    apply:"À confirmer — voir texte officiel",
+    type:"Acte UE",
+    applyDate:null,
+    devices:["Smartphones","IoT","Wearables"],
+    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
+    summary:"Exigences cybersécurité sur le cycle de vie des produits connectés (vulnérabilités, correctifs, notifications)."
+  },
+  {
+    id:"empco-1",
+    cat:"eu_related",
+    tag:"EU Greenwashing",
+    isNew:false,
+    ref:"Acte (UE) 32024L0825 — Acte UE",
+    title:"EmpCo Greenwashing — CELEX 32024L0825",
+    date:"01/01/2023",
+    apply:"À confirmer — voir texte officiel",
+    type:"Acte UE",
+    applyDate:null,
+    devices:["Smartphones","IoT","Wearables"],
+    link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
+    summary:"Interdit les allégations environnementales trompeuses et renforce l’information consommateur."
+  }
 ];
 
 var AGENDA = [
   {date:"11/09/2026", label:"CRA — Déclaration vulnérabilités (Art. 64)", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
   {date:"12/09/2026", label:"Data Act — Portabilité IoT", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
-  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing + garantie durabilité", flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
-  {date:"11/12/2027", label:"CRA — Pleine application", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"}
+  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing + garantie durabilité", flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"}
 ];
 
 // =========================
@@ -66,25 +163,11 @@ function parseApplyToDate(apply){
   var y=txt.match(/(20\d{2})/); if(y) return new Date(+y[1],11,31);
   return null;
 }
-function getApplyDate(reg){
-  return reg.applyDate instanceof Date ? reg.applyDate : parseApplyToDate(reg.apply);
-}
-
-// exclusion textes déjà appliqués + exclusion explicite DMA/DSA
-function isExcludedReg(reg){
-  var txt=((reg.title||'')+' '+(reg.ref||'')+' '+(reg.tag||'')).toLowerCase();
-  if(txt.includes('dma') || txt.includes('dsa')) return true;
-  // Ecoconception déjà appliquée (si date antérieure au filtre)
-  var dt=getApplyDate(reg);
-  if(dt && dt.getTime() < DATE_FILTRE.getTime()) return true;
-  return false;
-}
-
+function getApplyDate(reg){return reg.applyDate instanceof Date ? reg.applyDate : parseApplyToDate(reg.apply);}
 function computeDataFiltre(){
   return DATA.filter(function(d){
-    if(isExcludedReg(d)) return false;
+    // on conserve les "à confirmer" pour veille, mais on exclut les dates < filtre
     var dt=getApplyDate(d);
-    // si pas de date lisible => on garde (à confirmer) sauf exclus ci-dessus
     if(!dt) return true;
     return dt.getTime()>=DATE_FILTRE.getTime();
   });
@@ -144,11 +227,23 @@ function handleScan(){
     scanLoading=false;
     renderAccueil(); renderVeille(); renderAlertes(); syncVersionLabels(); updateAlertBadges();
     if(btn){btn.disabled=false;btn.textContent='Scan';}
-  },1000);
+  },900);
 }
+
+// FIX clé: délégation d'événement globale pour "Lire en clair"
+document.addEventListener('click', function(ev){
+  var btn = ev.target.closest('[data-action="toggle-summary"]');
+  if(!btn) return;
+  ev.preventDefault();
+  var id = btn.getAttribute('data-id');
+  if(id) toggleCard(id);
+});
+
 function toggleCard(id){
   openCards[id]=!openCards[id];
-  var box=document.getElementById('summary-'+id), ar=document.getElementById('arrow-'+id), lb=document.getElementById('lbl-'+id);
+  var box=document.getElementById('summary-'+id);
+  var ar=document.getElementById('arrow-'+id);
+  var lb=document.getElementById('lbl-'+id);
   if(box) box.classList.toggle('hidden',!openCards[id]);
   if(ar) ar.style.transform=openCards[id]?'rotate(90deg)':'rotate(0deg)';
   if(lb) lb.textContent=openCards[id]?'Masquer le résumé':'Lire en clair';
@@ -168,72 +263,31 @@ function togglePref(key){
 // =========================
 // ACCUEIL
 // =========================
+function formatDateFR(d){var p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();}
 function upcomingRegs(){
   return DATA_FILTRE
     .map(function(r){return {reg:r,dt:getApplyDate(r)};})
     .filter(function(x){return x.dt && x.dt.getTime()>=new Date().setHours(0,0,0,0);})
     .sort(function(a,b){return a.dt-b.dt;});
 }
-function formatDateFR(d){
-  var p=n=>String(n).padStart(2,'0');
-  return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();
-}
 function renderUpcomingRecap(){
   var rows=upcomingRegs().slice(0,8);
-  if(!rows.length){
-    return '<div class="card-plain mb12"><p class="fw7 fs12 t-text">Aucune échéance future détectée</p></div>';
-  }
+  if(!rows.length) return '<div class="card-plain mb12"><p class="fw7 fs12 t-text">Aucune échéance future détectée</p></div>';
   var html='<div class="card-plain mb12"><p class="section-label" style="margin-bottom:8px">RÉCAPITULATIF DES TEXTES À VENIR</p>';
   html+=rows.map(function(x){
     var j=Math.ceil((x.dt.getTime()-new Date().getTime())/86400000);
     var link=x.reg.link?'<a href="'+x.reg.link+'" target="_blank" rel="noopener" style="font-size:10px;color:#4a7dff;text-decoration:none">Voir texte</a>':'<span style="font-size:10px;color:#7a7f9a">Texte non publié</span>';
-    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #2a2f4a">'
-      +'<div style="min-width:0"><p style="font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.35;margin:0">'+esc(x.reg.title)+'</p>'
-      +'<p style="font-size:10px;color:#7a7f9a;margin-top:2px">Entrée en application : '+formatDateFR(x.dt)+' · J-'+j+'</p></div>'
-      +'<div style="white-space:nowrap;align-self:center">'+link+'</div></div>';
+    return '<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #2a2f4a"><div style="min-width:0"><p style="font-size:12px;font-weight:600;color:#e8eaf0;line-height:1.35;margin:0">'+esc(x.reg.title)+'</p><p style="font-size:10px;color:#7a7f9a;margin-top:2px">Entrée en application : '+formatDateFR(x.dt)+' · J-'+j+'</p></div><div style="white-space:nowrap;align-self:center">'+link+'</div></div>';
   }).join('');
-  html+='</div>';
-  return html;
-}
-function getNextAgendaEntry(){
-  var now=new Date();
-  var rows=AGENDA.map(function(e){
-    var p=e.date.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if(!p) return null;
-    var dt=new Date(+p[3],+p[2]-1,+p[1]);
-    return {item:e,ts:dt.getTime()};
-  }).filter(Boolean).filter(function(x){return x.ts>=now.getTime();}).sort(function(a,b){return a.ts-b.ts;});
-  return rows.length?rows[0]:null;
-}
-function renderHomeCards(){
-  var html='';
-  var next=getNextAgendaEntry();
-  if(next){
-    var days=Math.ceil((next.ts-new Date().getTime())/86400000);
-    html+='<div class="card mb12" style="background:#2a1a00;border:1px solid #5a3a00;border-left:3px solid #f59e0b">'
-      +'<p class="fw7 fs11 mb8" style="color:#f59e0b;letter-spacing:.08em">⏰ PROCHAINE ÉCHÉANCE — J-'+days+'</p>'
-      +'<p class="fs13 fw7 t-text mb6">'+esc(next.item.label)+'</p>'
-      +'<p class="fs11 t-muted">'+esc(next.item.flags)+' · '+esc(next.item.date)+'</p></div>';
-  }
-
-  var fr=DATA_FILTRE.filter(function(d){return d.cat==='fr';});
-  if(fr.length){
-    html+='<div class="card mb12" style="background:#2a0d12;border:1px solid #5a1a22;border-left:3px solid #e04f5f">'
-      +'<p class="fw7 fs12" style="color:#f87171;margin-bottom:6px">🇫🇷 '+fr.length+' texte(s) FR en cours d’adoption</p>'
-      +fr.map(function(d){return '<p class="fs11" style="color:#fca5a5;margin:2px 0">· '+esc(d.ref)+' — '+esc(d.apply)+'</p>';}).join('')
-      +'</div>';
-  }
-
-  html+='<div class="card card-green mb12"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p>'
-    +'<p class="fs11" style="color:#86efac;margin-top:3px">Sources : EUR-Lex · Legifrance · JORF · ETSI</p></div>';
-
-  return html;
+  return html+'</div>';
 }
 function renderAccueil(){
+  var fr=DATA_FILTRE.filter(function(d){return d.cat==='fr';});
   document.getElementById('tab-accueil').innerHTML =
     '<div style="padding:14px 16px 90px">'
     +'<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><span style="font-size:10px;font-weight:700;color:#7a7f9a;background:#1a1e35;border:1px solid #2a2f4a;border-radius:6px;padding:3px 10px;">v'+APP_VERSION+' — '+lastScan.slice(0,10)+'</span></div>'
-    +renderHomeCards()
+    +'<div class="card card-green mb12"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p><p class="fs11" style="color:#86efac;margin-top:3px">Sources : EUR-Lex · Legifrance · JORF · ETSI</p></div>'
+    +(fr.length?('<div class="card mb12" style="background:#2a0d12;border:1px solid #5a1a22;border-left:3px solid #e04f5f"><p class="fw7 fs12" style="color:#f87171;margin-bottom:6px">🇫🇷 '+fr.length+' texte(s) FR en cours d’adoption</p>'+fr.map(function(d){return '<p class="fs11" style="color:#fca5a5;margin:2px 0">· '+esc(d.ref)+' — '+esc(d.apply)+'</p>';}).join('')+'</div>'):'')
     +renderUpcomingRecap()
     +'<div class="card-plain mb16" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><p class="fw7 fs13 t-text mb6">Scraping hebdomadaire</p><p class="fs11 t-muted">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted">Prochain scan : <span class="t-warn">'+nextScan+'</span></p><p class="fs10 t-muted">EUR-Lex · Legifrance · JORF · ETSI</p></div><button id="scan-btn" class="scan-btn" onclick="handleScan()">'+(scanLoading?'En cours...':'Scan')+'</button></div>'
     +'</div>';
@@ -243,9 +297,13 @@ function renderAccueil(){
 // VEILLE
 // =========================
 function smartSummary(reg){
+  if(reg.id==='red-1'){
+    return "La directive RED encadre la mise sur le marché des équipements radio dans l’UE. Elle impose des exigences essentielles (sécurité des personnes, compatibilité électromagnétique, usage efficace du spectre), ainsi que les obligations de conformité CE (évaluation, documentation technique, déclaration UE de conformité, marquage).";
+  }
   if(reg.summary && reg.summary.trim().length>20) return reg.summary.trim();
   return (reg.type||'Texte')+' — '+(reg.ref||reg.title||'')+' — Application : '+(reg.apply||'À confirmer');
 }
+
 function renderCard(reg){
   var acc=reg.cat==='eu_red'?'#4a7dff':reg.cat==='fr'?'#e04f5f':'#38bdf8';
   var flag=reg.cat==='fr'?'FR':'EU';
@@ -256,16 +314,19 @@ function renderCard(reg){
     ? '<a href="'+reg.link+'" target="_blank" rel="noopener" class="eur-link" style="background:'+acc+'">'+(reg.cat==='fr'?'Legifrance':'EUR-Lex')+' &rarr;</a>'
     : '<span style="display:inline-block;font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;background:#2a2f4a;color:#7a7f9a;margin-top:10px">Texte non encore publié</span>';
 
-  return '<div class="card-reg card-reg-'+reg.cat+'">'
+  return '<div class="card-reg card-reg-'+reg.cat+'" id="card-'+reg.id+'">'
     +'<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'+chips+'<span style="margin-left:auto;font-size:11px;color:#7a7f9a">'+esc(reg.date||'—')+'</span></div>'
     +'<p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">'+esc(reg.title||'')+'</p>'
     +'<p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">'+esc(reg.ref||'')+' — '+esc(reg.type||'')+'</p>'
     +'<div style="display:flex;flex-wrap:wrap;margin-bottom:10px">'+devices+'</div>'
     +'<div class="date-pill" style="margin-bottom:10px"><span>Application :</span><span style="font-size:11px;font-weight:700;color:#a78bfa">'+esc(reg.apply||'À confirmer')+'</span></div>'
-    +'<button type="button" class="summary-toggle" onclick="toggleCard(\''+reg.id+'\');return false;" style="color:'+acc+'"><i id="arrow-'+reg.id+'" class="arrow" style="transform:'+(isOpen?'rotate(90deg)':'rotate(0deg)')+'">&#9658;</i><span id="lbl-'+reg.id+'">'+(isOpen?'Masquer le résumé':'Lire en clair')+'</span></button>'
+    +'<button type="button" data-action="toggle-summary" data-id="'+esc(reg.id)+'" class="summary-toggle" style="color:'+acc+';cursor:pointer;position:relative;z-index:2;">'
+    +'<i id="arrow-'+reg.id+'" class="arrow" style="transform:'+(isOpen?'rotate(90deg)':'rotate(0deg)')+'">&#9658;</i>'
+    +'<span id="lbl-'+reg.id+'">'+(isOpen?'Masquer le résumé':'Lire en clair')+'</span></button>'
     +'<div id="summary-'+reg.id+'" class="summary-box'+(isOpen?'':' hidden')+'"><p style="font-size:12px;color:#c0c4d8;line-height:1.75;margin-bottom:10px">'+esc(smartSummary(reg))+'</p>'+linkBtn+'</div>'
     +'</div>';
 }
+
 function renderVeille(){
   var filters=[{key:'tous',label:'Tous'},{key:'eu_red',label:'RED stricte'},{key:'eu_related',label:'Connexes EU'},{key:'fr',label:'Droit FR'}];
   var groups=[{key:'eu_red',label:'TEXTES RED (2014/53/UE)',color:'#4a7dff'},{key:'eu_related',label:'RÉGLEMENTATIONS CONNEXES',color:'#38bdf8'},{key:'fr',label:'TRANSPOSITIONS DROIT FRANÇAIS',color:'#e04f5f'}];
@@ -277,7 +338,7 @@ function renderVeille(){
   }).join('');
 
   document.getElementById('tab-veille').innerHTML =
-    '<div style="padding:14px 16px 90px"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+filterBtns+'</div><p class="fs10 t-muted" style="margin-bottom:12px;font-style:italic">'+DATA_FILTRE.length+' textes à surveiller (futurs)</p>'+groupsHtml+'</div>';
+    '<div style="padding:14px 16px 90px"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+filterBtns+'</div><p class="fs10 t-muted" style="margin-bottom:12px;font-style:italic">'+DATA_FILTRE.length+' textes à surveiller</p>'+groupsHtml+'</div>';
 }
 
 // =========================
@@ -327,7 +388,7 @@ function normalizeDynamicItem(d){
 function rebuildFromDynamic(dynamicItems){
   var ids=DATA.map(function(d){return d.id;});
   var newOnly=(dynamicItems||[]).map(normalizeDynamicItem).filter(function(d){return !ids.includes(d.id);});
-  if(newOnly.length){ DATA=newOnly.concat(DATA); }
+  if(newOnly.length){DATA=newOnly.concat(DATA);}
   DATA_FILTRE=computeDataFiltre();
 }
 function applyScanMeta(meta){
