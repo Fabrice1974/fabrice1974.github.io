@@ -1,11 +1,11 @@
 /* ============================================================
-   RED Monitor — app.js — v4.0.7
+   RED Monitor — app.js — v4.0.8
    - Rendus complets Accueil / Veille / Alertes
    - Badge alertes fiable (mark as read sur onglet Alertes)
    - Parsing dates renforcé (applicable à partir du JJ/MM/AAAA)
    ============================================================ */
 
-var APP_VERSION = '4.0';
+var APP_VERSION = '4.0.8';
 var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
 var ALERT_SEEN_KEY = 'redmonitor_seen_ids_v3';
 var newlyDetectedCount = 0;
