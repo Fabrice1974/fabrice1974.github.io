@@ -1,12 +1,11 @@
 /* ============================================================
-   RED Monitor — app.js — v4.0.9
-   - Version UI dynamique
-   - Tuile J-xx en haut de Veille
-   - Parsing dates FR texte + "applicable à partir du ..."
-   - Badge lu/non-lu stable
+   RED Monitor — app.js — v4.1.0
+   - Fix "Lire en clair" (clic fiable)
+   - Résumé réglementaire clair (fallback auto)
+   - Version UI dynamique + badge stable
    ============================================================ */
 
-var APP_VERSION = '4.0.9';
+var APP_VERSION = '4.1.0';
 var DATE_FILTRE = new Date(2026, 5, 1); // 01/06/2026
 var ALERT_SEEN_KEY = 'redmonitor_seen_ids_v3';
 var newlyDetectedCount = 0;
@@ -15,14 +14,27 @@ var DATA = [
   {id:"red-1", cat:"eu_red", tag:"Normes RED", isNew:false, ref:"Directive 2014/53/UE — RED", title:"Directive RED — Equipements radioelectriques", date:"16/04/2014", apply:"13/06/2016", type:"Directive UE", applyDate:null, devices:["Smartphones","IoT"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053", summary:"Texte fondateur RED."},
   {id:"cra-1", cat:"eu_related", tag:"Cybersecurite", isNew:true, ref:"Reglement (UE) 2024/2847", title:"Cyber Resilience Act — pleine application", date:"23/10/2024", apply:"11/12/2027", type:"Reglement UE", applyDate:new Date(2027,11,11), devices:["Smartphones","Routeurs","IoT"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847", summary:"Pleine application CRA."},
   {id:"data-1", cat:"eu_related", tag:"Donnees IoT", isNew:false, ref:"Reglement (UE) 2023/2854", title:"Data Act — portabilite IoT", date:"22/12/2023", apply:"12/09/2026", type:"Reglement UE", applyDate:new Date(2026,8,12), devices:["IoT","Wearables"], link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854", summary:"Portabilité des données."},
-  {id:"fr-1", cat:"fr", tag:"Transposition FR", isNew:true, ref:"Projet DDADUE", title:"Transposition EmpCo en droit français", date:"2026", apply:"27/09/2026", type:"Projet de loi", applyDate:new Date(2026,8,27), devices:["Tous appareils RED"], link:"", summary:"Transposition FR en cours."}
+  {
+    id:"ue-2025-1960",
+    cat:"eu_related",
+    tag:"Normes RED",
+    isNew:true,
+    ref:"Règlement d’exécution (UE) 2025/1960",
+    title:"Règlement d’exécution UE 2025/1960",
+    date:"2025",
+    apply:"Il est applicable à partir du 27 septembre 2026",
+    type:"Règlement d'exécution",
+    applyDate:null,
+    devices:["Equipements radio","IoT","Smartphones"],
+    link:"",
+    summary:"Article 3 : application à partir du 27/09/2026."
+  }
 ];
 
 var AGENDA = [
   {date:"11/09/2026", label:"CRA — Déclaration vulnérabilités", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"},
   {date:"12/09/2026", label:"Data Act — Portabilité IoT", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854"},
-  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing", flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"},
-  {date:"11/12/2027", label:"CRA — Pleine application", flags:"EU", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847"}
+  {date:"27/09/2026", label:"EmpCo — Anti-greenwashing", flags:"EU FR", link:"https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825"}
 ];
 
 var currentTab='accueil';
@@ -56,10 +68,20 @@ function parseApplyToDate(apply){
   var from=txt.match(/(?:a|à)\s+partir\s+du\s+(\d{2}\/\d{2}\/\d{4})/i); if(from) return parseFRDateStrict(from[1]);
   var any=txt.match(/(\d{2}\/\d{2}\/\d{4})/); if(any) return parseFRDateStrict(any[1]);
   var text=parseFRTextDate(txt); if(text) return text;
-  var h=txt.match(/Horizon\s+(\d{4})/i); if(h) return new Date(+h[1],6,1);
   var y=txt.match(/(20\d{2})/); if(y) return new Date(+y[1],11,31);
   return null;
 }
+
+function buildSmartSummary(reg){
+  if(reg.summary && reg.summary.trim().length>=20) return reg.summary.trim();
+  var bits = [];
+  if(reg.type) bits.push(reg.type);
+  if(reg.ref) bits.push(reg.ref);
+  if(reg.apply) bits.push("Application : " + reg.apply);
+  if(reg.devices && reg.devices.length) bits.push("Périmètre : " + reg.devices.join(", "));
+  return bits.join(" — ") || "Résumé non disponible. Ouvre le texte officiel pour le détail.";
+}
+
 function computeDataFiltre(){
   return DATA.filter(function(d){
     var dt=d.applyDate instanceof Date ? d.applyDate : parseApplyToDate(d.apply);
@@ -84,13 +106,11 @@ function updateAlertBadges(){
   if(bell){ bell.textContent=String(newlyDetectedCount); bell.style.display=newlyDetectedCount>0?'flex':'none'; }
   if(nav){ nav.textContent=String(newlyDetectedCount); nav.style.display=newlyDetectedCount>0?'flex':'none'; }
 }
-
 function syncVersionLabels(){
   var nodes=document.querySelectorAll('[data-app-version]');
   nodes.forEach(function(n){ n.textContent='v'+APP_VERSION; });
   var sub=document.getElementById('header-subtitle');
   if(sub) sub.textContent=sub.textContent.replace(/v\d+(\.\d+){0,2}/i,'v'+APP_VERSION);
-  console.log('[UI] version -> v'+APP_VERSION);
 }
 
 function setTab(tab){
@@ -120,12 +140,15 @@ function handleScan(){
     if(btn){btn.disabled=false;btn.textContent='Scan';}
   },900);
 }
+
 function toggleCard(id){
   openCards[id]=!openCards[id];
-  var box=document.getElementById('summary-'+id), ar=document.getElementById('arrow-'+id), lb=document.getElementById('lbl-'+id);
+  var box=document.getElementById('summary-'+id);
+  var ar=document.getElementById('arrow-'+id);
+  var lb=document.getElementById('lbl-'+id);
   if(box) box.classList.toggle('hidden', !openCards[id]);
   if(ar) ar.style.transform=openCards[id]?'rotate(90deg)':'rotate(0deg)';
-  if(lb) lb.textContent=openCards[id]?'Masquer':'Lire en clair';
+  if(lb) lb.textContent=openCards[id]?'Masquer le résumé':'Lire en clair';
 }
 function setVeilleFilter(f){ veilleFilter=f; renderVeille(); }
 
@@ -151,8 +174,23 @@ function renderCard(reg){
   var isOpen=!!openCards[reg.id];
   var chips=(reg.isNew?'<span class="chip chip-new">Nouveau</span>':'')+'<span class="chip chip-'+reg.cat+'">'+flag+' '+esc(reg.tag||'Texte')+'</span>';
   var devices=(reg.devices||[]).map(function(d){return '<span class="dtag">'+esc(d)+'</span>';}).join('');
-  var linkBtn=reg.link?'<a href="'+reg.link+'" target="_blank" rel="noopener" class="eur-link" style="background:'+acc+'">'+(reg.cat==='fr'?'Legifrance':'EUR-Lex')+' &rarr;</a>':'';
-  return '<div class="card-reg card-reg-'+reg.cat+'"><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'+chips+'<span style="margin-left:auto;font-size:11px;color:#7a7f9a">'+esc(reg.date||'—')+'</span></div><p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">'+esc(reg.title||'')+'</p><p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">'+esc(reg.ref||'')+' — '+esc(reg.type||'')+'</p><div style="display:flex;flex-wrap:wrap;margin-bottom:10px">'+devices+'</div><div class="date-pill"><span>Application :</span><span style="font-size:11px;font-weight:700;color:#a78bfa">'+esc(reg.apply||'À confirmer')+'</span></div><button class="summary-toggle" onclick="toggleCard(\''+reg.id+'\')" style="color:'+acc+'"><i id="arrow-'+reg.id+'" class="arrow" style="transform:'+(isOpen?'rotate(90deg)':'rotate(0deg)')+'">&#9658;</i><span id="lbl-'+reg.id+'">'+(isOpen?'Masquer':'Lire en clair')+'</span></button><div id="summary-'+reg.id+'" class="summary-box'+(isOpen?'':' hidden')+'"><p style="font-size:12px;color:#c0c4d8;line-height:1.7;margin-bottom:8px">'+esc(reg.summary||'')+'</p>'+linkBtn+'</div></div>';
+  var linkBtn=reg.link?'<a href="'+reg.link+'" target="_blank" rel="noopener" class="eur-link" style="background:'+acc+'">'+(reg.cat==='fr'?'Legifrance':'EUR-Lex')+' &rarr;</a>':'<span style="font-size:10px;color:#7a7f9a">Texte officiel non renseigné</span>';
+  var smartSummary = buildSmartSummary(reg);
+
+  return '<div class="card-reg card-reg-'+reg.cat+'">'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px">'+chips+'<span style="margin-left:auto;font-size:11px;color:#7a7f9a">'+esc(reg.date||'—')+'</span></div>'
+    + '<p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">'+esc(reg.title||'')+'</p>'
+    + '<p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">'+esc(reg.ref||'')+' — '+esc(reg.type||'')+'</p>'
+    + '<div style="display:flex;flex-wrap:wrap;margin-bottom:10px">'+devices+'</div>'
+    + '<div class="date-pill"><span>Application :</span><span style="font-size:11px;font-weight:700;color:#a78bfa">'+esc(reg.apply||'À confirmer')+'</span></div>'
+    + '<button type="button" class="summary-toggle" data-regid="'+esc(reg.id)+'" onclick="toggleCard(\''+reg.id+'\'); return false;" style="color:'+acc+';margin-top:10px;">'
+    + '<i id="arrow-'+reg.id+'" class="arrow" style="transform:'+(isOpen?'rotate(90deg)':'rotate(0deg)')+'">&#9658;</i>'
+    + '<span id="lbl-'+reg.id+'">'+(isOpen?'Masquer le résumé':'Lire en clair')+'</span>'
+    + '</button>'
+    + '<div id="summary-'+reg.id+'" class="summary-box'+(isOpen?'':' hidden')+'">'
+    + '<p style="font-size:12px;color:#c0c4d8;line-height:1.7;margin-bottom:8px">'+esc(smartSummary)+'</p>'
+    + linkBtn
+    + '</div></div>';
 }
 
 function renderAccueil(){
@@ -190,7 +228,7 @@ function normalizeDynamicItem(d){
   i.tag=i.tag||'Normes RED';
   i.date=i.date||'—';
   i.apply=i.apply||'À confirmer';
-  i.summary=i.summary||'Texte détecté automatiquement.';
+  i.summary=i.summary||'';
   i.devices=Array.isArray(i.devices)?i.devices:['Smartphones','IoT'];
   i.isNew=!!i.isNew;
   i.cat=i.cat||'eu_related';
@@ -220,8 +258,13 @@ document.addEventListener('DOMContentLoaded', function(){
   if(navV) navV.addEventListener('click', function(){setTab('veille');});
   if(navAl) navAl.addEventListener('click', function(){setTab('alertes');});
 
-  renderAccueil(); renderVeille(); renderAlertes(); syncVersionLabels();
-  computeNewlyDetectedCountAndPersist(DATA); updateAlertBadges();
+  renderAccueil();
+  renderVeille();
+  renderAlertes();
+  syncVersionLabels();
+
+  computeNewlyDetectedCountAndPersist(DATA);
+  updateAlertBadges();
 
   Promise.allSettled([
     fetch('scan-meta.json?v='+Date.now(), {cache:'no-store'}).then(function(r){return r.ok?r.json():null;}),
@@ -235,6 +278,10 @@ document.addEventListener('DOMContentLoaded', function(){
     DATA_FILTRE=computeDataFiltre();
     computeNewlyDetectedCountAndPersist(DATA);
 
-    renderAccueil(); renderVeille(); renderAlertes(); syncVersionLabels(); updateAlertBadges();
+    renderAccueil();
+    renderVeille();
+    renderAlertes();
+    syncVersionLabels();
+    updateAlertBadges();
   });
 });
