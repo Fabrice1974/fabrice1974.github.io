@@ -1,14 +1,16 @@
 /**
- * RED Monitor — scrape.mjs — v4.0
+ * RED Monitor — scrape.mjs — v4.1
  * Sources :
  *   - EUR-Lex SPARQL (détection live des nouveautés) + socle de textes de référence
  *   - data.gouv.fr API open data
  *   - Légifrance RSS via proxy allorigins
  *   - OneSignal push notifications
+ * Classement et pertinence : voir classify.mjs
  */
 
-import fetch from 'node-fetch';
 import fs from 'fs';
+import { classify, detectDevices } from './classify.mjs';
+// fetch est fourni nativement par Node 20 : pas d'import node-fetch
 
 // ── Secrets GitHub Actions ──
 const ONESIGNAL_APP_ID  = process.env.ONESIGNAL_APP_ID;
@@ -31,30 +33,7 @@ function saveJSON(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
 
-/* ── CATÉGORISATION AUTOMATIQUE ── */
 
-function categorize(title) {
-  const t = title.toLowerCase();
-  if (/cyber.r[eé]silien|cra\b|2024\/2847|2024r2847/.test(t))
-    return { cat: 'eu_related', tag: 'Cybersécurité' };
-  if (/[eé]coconception|espr|r[eé]parabilit|2023r1670|2023\/1670|2022r0414|2009l0125/.test(t))
-    return { cat: 'eu_related', tag: 'Écoconception' };
-  if (/greenwashing|empco|all[eé]gation.environ|2024l0825|2024\/825/.test(t))
-    return { cat: 'eu_related', tag: 'Greenwashing' };
-  if (/data act|portabilit|2023r2854|2023\/2854/.test(t))
-    return { cat: 'eu_related', tag: 'Données / IoT' };
-  if (/intelligence artificielle|ai act|2024r1689|2024\/1689/.test(t))
-    return { cat: 'eu_related', tag: 'Intelligence Artificielle' };
-  if (/batterie|remplaçable|2023r1542|2023\/1542/.test(t))
-    return { cat: 'eu_related', tag: 'Batteries' };
-  if (/dsa|digital services|2022r2065|2022\/2065/.test(t))
-    return { cat: 'eu_related', tag: 'Services Numériques' };
-  if (/dma|digital markets|2022r1925|2022\/1925/.test(t))
-    return { cat: 'eu_related', tag: 'Marchés Numériques' };
-  if (/d[eé]cret|ordonnance|loi\s|arr[eê]t[eé]|jorf/.test(t))
-    return { cat: 'fr',         tag: 'Transposition FR' };
-  return                        { cat: 'eu_red',     tag: 'Normes RED' };
-}
 
 /* ── CONSTRUCTION D'UN ITEM STRUCTURÉ ── */
 
