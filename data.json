@@ -1,9 +1,25 @@
 [
   {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2487",
+    "cat": "eu_related",
+    "tag": "Intelligence Artificielle",
+    "isNew": true,
+    "ref": "Acte (UE) 32026R2487",
+    "title": "Règlement d’exécution (UE) 2026/2487 de la Commission du 10 novembre 2026 portant modalités d’application du règlement (UE) 2024/1689 du Parlement européen et du Conseil en ce qui concerne la mise en place, le développement, la mise en œuvre, l’exploitation et la surveillance des bacs à sable réglementaires de l’IA",
+    "date": "10/11/2026",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Transversal"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2487",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
+  },
+  {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1670",
     "cat": "eu_related",
     "tag": "Écoconception",
-    "isNew": true,
+    "isNew": false,
     "ref": "Acte (UE) 32023R1670",
     "title": "Règlement (UE) 2023/1670 — Écoconception smartphones et tablettes",
     "date": "16/06/2023",
@@ -11,391 +27,25 @@
     "type": "Acte UE",
     "devices": [
       "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
+      "Tablettes"
     ],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1670",
     "summary": "Exigences d'écoconception pour smartphones, téléphones sans fil et tablettes : durabilité, réparabilité, mises à jour logicielles."
   },
   {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2539",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2539",
-    "title": "Décision d’exécution (UE) 2026/2539 de la Commission du 17 novembre 2026 modifiant la décision d’exécution (UE) 2024/2103 en ce qui concerne les normes harmonisées relatives aux aéronefs sans équipage à bord élaborées à l’appui du règlement délégué (UE) 2019/945",
-    "date": "17/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2539",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2537",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026R2537",
-    "title": "Règlement d’exécution (UE) 2026/2537 de la Commission du 17 novembre 2026 établissant le formulaire de communication de données standard conformément à l’article 29 de la directive (UE) 2019/1023 du Parlement européen et du Conseil",
-    "date": "17/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2537",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2540",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2540",
-    "title": "Décision d’exécution (UE) 2026/2540 de la Commission du 17 novembre 2026 relative aux normes harmonisées applicables aux appareils de réfrigération disposant d’une fonction de vente directe élaborées à l’appui du règlement délégué (UE) 2019/2018 et du règlement (UE) 2019/2024 et abrogeant la décision d’exécution (UE) 2024/2397 et la décision d’exécution (UE) 2025/533",
-    "date": "17/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2540",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2546",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2546",
-    "title": "Décision (PESC) 2026/2546 du Conseil du 16 novembre 2026 modifiant la décision (PESC) 2019/797 concernant des mesures restrictives contre les cyberattaques qui menacent l’Union ou ses États membres",
-    "date": "16/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2546",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2550",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026R2550",
-    "title": "Règlement d’exécution (UE) 2026/2550 du Conseil du 16 novembre 2026 mettant en œuvre le règlement (UE) 2019/796 concernant des mesures restrictives contre les cyberattaques qui menacent l’Union ou ses États membres",
-    "date": "16/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2550",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2545",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2545",
-    "title": "Décision d’exécution (UE) 2026/2545 de la Commission du 13 novembre 2026 modifiant la décision d’exécution 2012/119/UE en ce qui concerne les modalités pratiques de l’échange d’informations visé à l’article 13, paragraphe 3, points c) et d), de la directive 2010/75/UE du Parlement européen et du Conseil, la collecte de données, l’élaboration ou la révision des documents de référence MTD et leur assurance qualité [notifiée sous le numéro C(2026) 7990]",
-    "date": "13/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2545",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2505",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2505",
-    "title": "Décision d’exécution (UE) 2026/2505 de la Commission du 12 novembre 2026 corrigeant la décision d’exécution (UE) 2026/1971 de la Commission modifiant la décision d’exécution (UE) 2026/1279 de la Commission relative aux normes harmonisées en ce qui concerne les gants de protection pour les coiffeurs, l’habillement de protection contre la pluie et la protection des yeux et du visage à usage professionnel élaborées à l’appui du règlement (UE) 2016/425 du Parlement européen et du Conseil",
-    "date": "12/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2505",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2481",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2481",
-    "title": "Décision d’exécution (UE) 2026/2481 de la Commission du 9 novembre 2026 modifiant la décision d’exécution (UE) 2021/1195 en ce qui concerne la norme harmonisée relative à la stérilisation des produits de santé",
-    "date": "09/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2481",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2479",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2479",
-    "title": "Décision d’exécution (UE) 2026/2479 de la Commission du 9 novembre 2026 modifiant la décision d’exécution (UE) 2021/1182 en ce qui concerne les normes harmonisées relatives à la stérilisation des produits de santé, à l’investigation clinique des dispositifs médicaux pour sujets humains, aux préservatifs externes en latex de caoutchouc naturel, à l’évaluation biologique des dispositifs médicaux, aux laveurs-désinfecteurs, aux appareils électromédicaux et aux raccords de petite taille pour liquides et gaz utilisés dans le domaine de la santé",
-    "date": "09/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2479",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2480",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2480",
-    "title": "Décision d’exécution (UE) 2026/2480 de la Commission du 9 novembre 2026 modifiant la décision d’exécution (UE) 2022/1668 en ce qui concerne la norme harmonisée relative à la protection du matériel par mode de protection n",
-    "date": "09/11/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2480",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2370",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2370",
-    "title": "Décision d’exécution (UE) 2026/2370 de la Commission du 28 octobre 2026 concernant les normes harmonisées relatives aux sèche-linge domestiques à tambour élaborées à l’appui du règlement (UE) 2023/2533 et du règlement délégué (UE) 2023/2534",
-    "date": "28/10/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2370",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2403",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026R2403",
-    "title": "Règlement d’exécution (UE) 2026/2403 de la Commission du 28 octobre 2026 modifiant le règlement d’exécution (UE) 2015/2447 en ce qui concerne la réduction des garanties globales pour les opérateurs économiques agréés dans le cadre des ventes à distance et l’adaptation de certains éléments de données aux fins des frais de traitement de l’Union",
-    "date": "28/10/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2403",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2377",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2377",
-    "title": "Décision d’exécution (UE) 2026/2377 de la Commission du 28 octobre 2026 accordant des dérogations à certains États membres en ce qui concerne la transmission des données au titre du règlement (UE) no 691/2011 du Parlement européen et du Conseil relatif aux comptes économiques européens de l’environnement [notifiée sous le numéro C(2026) 7464]",
-    "date": "28/10/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2377",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2267",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2267",
-    "title": "Décision d’exécution (UE) 2026/2267 de la Commission du 13 octobre 2026 déterminant la forme des données et la liste des matières premières pertinentes à communiquer par les États membres, ainsi que la fréquence de cette communication, aux fins de la notification des données environnementales des installations industrielles au titre du règlement (UE) 2024/1244 du Parlement européen et du Conseil et abrogeant la décision d’exécution (UE) 2019/1741 de la Commission [notifiée sous le numéro C(2026) 7610]",
-    "date": "13/10/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2267",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2274",
     "cat": "eu_related",
     "tag": "Intelligence Artificielle",
-    "isNew": true,
+    "isNew": false,
     "ref": "Acte (UE) 32026D2274",
     "title": "Décision d’exécution (UE) 2026/2274 de la Commission du 12 octobre 2026 concernant les normes harmonisées relatives aux systèmes d’IA à haut risque élaborées à l’appui du règlement (UE) 2024/1689 du Parlement européen et du Conseil",
     "date": "12/10/2026",
     "apply": "À confirmer — voir texte officiel",
     "type": "Acte UE",
     "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
+      "Transversal"
     ],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2274",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2241",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026R2241",
-    "title": "Règlement d’exécution (UE) 2026/2241 de la Commission du 8 octobre 2026 modifiant le règlement d’exécution (UE) 2024/2746 établissant les modalités d’application du règlement (CE) no 1217/2009 du Conseil portant création du réseau d’information sur la durabilité des exploitations agricoles et abrogeant le règlement d’exécution (UE) 2015/220 de la Commission",
-    "date": "08/10/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2241",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2210",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026R2210",
-    "title": "Règlement d’exécution (UE) 2026/2210 de la Commission du 5 octobre 2026 modifiant le règlement d’exécution (UE) no 79/2012 en ce qui concerne les données statistiques que les États membres doivent communiquer à la Commission",
-    "date": "05/10/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026R2210",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2251",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2251",
-    "title": "Décision (UE) 2026/2251 du Conseil du 1er octobre 2026 relative à la signature de l’accord entre l’Union européenne et la République de Corée sur le transfert des données des dossiers passagers (PNR) pour la prévention et la détection des infractions terroristes et des formes graves de criminalité, ainsi que pour les enquêtes et les poursuites en la matière",
-    "date": "01/10/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2251",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2211",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2211",
-    "title": "Décision d’exécution (UE) 2026/2211 de la Commission du 1er octobre 2026 modifiant la décision d’exécution (UE) 2025/165 de la Commission en ce qui concerne les normes harmonisées relatives aux systèmes frigorifiques et pompes à chaleur, aux équipements pour GPL, aux récipients cryogéniques, ainsi qu’au soudage et au brasage fort, élaborées à l’appui de la directive 2014/68/UE du Parlement européen et du Conseil",
-    "date": "01/10/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2211",
-    "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
-  },
-  {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2360",
-    "cat": "eu_red",
-    "tag": "Normes RED",
-    "isNew": true,
-    "ref": "Acte (UE) 32026D2360",
-    "title": "Décision (UE) 2026/2360 du Conseil du 1er octobre 2026 relative à la conclusion de l’accord entre l’Union européenne et la Confédération suisse sur le transfert des données des dossiers passagers (PNR) pour la prévention et la détection des infractions terroristes et des formes graves de criminalité, ainsi que pour les enquêtes et les poursuites en la matière",
-    "date": "01/10/2026",
-    "apply": "À confirmer — voir texte officiel",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "Tablettes",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2360",
     "summary": "Nouveau texte détecté automatiquement lors du scan du 25/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
   },
   {
@@ -409,9 +59,7 @@
     "apply": "13/06/2016 — En vigueur",
     "type": "Acte UE",
     "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
+      "Transversal"
     ],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32014L0053",
     "summary": "Directive relative à la mise à disposition sur le marché d'équipements radioélectriques. Définit les exigences essentielles de sécurité, compatibilité électromagnétique et utilisation efficace du spectre radioélectrique. Base réglementaire des équipements radio en UE."
@@ -427,9 +75,7 @@
     "apply": "12/09/2026 — Nouveaux produits IoT",
     "type": "Acte UE",
     "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
+      "Transversal"
     ],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R2854",
     "summary": "Règles harmonisées sur l'accès équitable aux données des produits connectés, portabilité et interopérabilité. Application aux nouveaux produits IoT à partir du 12/09/2026."
@@ -445,9 +91,7 @@
     "apply": "02/08/2026 — Systèmes IA haut risque",
     "type": "Acte UE",
     "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
+      "Transversal"
     ],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689",
     "summary": "Cadre européen de l'IA basé sur le niveau de risque. Exigences renforcées pour les systèmes à haut risque intégrés aux équipements connectés."
@@ -463,9 +107,7 @@
     "apply": "11/09/2026 — Déclaration vulnérabilités",
     "type": "Acte UE",
     "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
+      "Transversal"
     ],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R2847",
     "summary": "Exigences de cybersécurité sur l'ensemble du cycle de vie des produits numériques. Obligation de déclaration des vulnérabilités activement exploitées dès le 11/09/2026."
@@ -481,9 +123,7 @@
     "apply": "22/09/2026 — Transposition nationale",
     "type": "Acte UE",
     "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
+      "Transversal"
     ],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024L0825",
     "summary": "Interdiction des allégations environnementales trompeuses, renforcement de l'information sur la durabilité et la réparabilité des produits."
@@ -499,9 +139,7 @@
     "apply": "18/02/2027 — Batterie remplaçable smartphones",
     "type": "Acte UE",
     "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
+      "Transversal"
     ],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1542",
     "summary": "Exigences de performance, durabilité, traçabilité et remplaçabilité des batteries. Application pour nouveaux modèles à partir du 18/02/2027."
@@ -518,33 +156,15 @@
     "type": "Acte UE",
     "devices": [
       "Smartphones",
-      "Wearables"
+      "Tablettes"
     ],
     "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32022R0414",
     "summary": "Exigences d'écoconception sur durabilité, réparabilité, disponibilité des pièces détachées et mises à jour logicielles."
   },
   {
-    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R1960",
-    "cat": "eu_related",
-    "tag": "Normes RED",
-    "isNew": false,
-    "ref": "Acte (UE) 32025R1960",
-    "title": "Règlement d’exécution (UE) 2025/1960",
-    "date": "2025",
-    "apply": "Applicable à partir du 27 septembre 2026",
-    "type": "Acte UE",
-    "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
-    ],
-    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R1960",
-    "summary": "Article 3 : le règlement est applicable à partir du 27/09/2026. À compter de cette date, les obligations prévues par ce texte s’appliquent aux équipements concernés relevant du périmètre RED."
-  },
-  {
     "id": "fr-ddadue-empco-2026",
-    "cat": "fr",
-    "tag": "Transposition FR",
+    "cat": "eu_related",
+    "tag": "Greenwashing",
     "isNew": false,
     "ref": "Projet DDADUE — transposition EmpCo",
     "title": "Transposition EmpCo en droit français",
@@ -552,9 +172,7 @@
     "apply": "22/09/2026",
     "type": "Projet de loi",
     "devices": [
-      "Smartphones",
-      "IoT",
-      "Wearables"
+      "Transversal"
     ],
     "link": "https://www.legifrance.gouv.fr/",
     "summary": "Transposition nationale des exigences anti-greenwashing issues de la directive (UE) 2024/825."
