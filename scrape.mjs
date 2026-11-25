@@ -179,8 +179,7 @@ LIMIT 500`;
   console.log('[EUR-Lex] Total :', results.length, 'textes');
   return results;
 }
-Fichier scrape.mjs complet, partie 2 sur 2
-Cette partie va de data.gouv jusqu'à la dernière ligne du fichier. Colle-la directement sous la partie 1. J'ai ajouté « tablette » aux mots-clés Légifrance, et une alerte OneSignal si une source tombe en panne, pour que tu ne reçoives plus un faux « rien de nouveau ».
+
 /* ── DATA.GOUV.FR — TEXTES NATIONAUX ── */
 
 async function fetchDataGouv() {
