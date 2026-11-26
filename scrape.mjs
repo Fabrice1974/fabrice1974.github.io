@@ -244,7 +244,6 @@ async function fetchDataGouv() {
 }
 
 /* ── LÉGIFRANCE RSS VIA PROXY ALLORIGINS ── */
-
 async function fetchLegifranceRSS() {
   const results = [];
   let failures = 0;
@@ -258,12 +257,12 @@ async function fetchLegifranceRSS() {
     try {
       console.log('[Légifrance RSS]', feed.label);
 
-      const proxyUrl = 'https://api.allorigins.win/get?url='
-        + encodeURIComponent(feed.url);
-
-      const res = await fetch(proxyUrl, {
-        headers: { 'User-Agent': 'RED-Monitor/4.0' },
-        signal:  AbortSignal.timeout(20000)
+      const res = await fetch(feed.url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; RED-Monitor/4.1; +https://fabrice1974.github.io/)',
+          'Accept': 'application/rss+xml, application/xml, text/xml'
+        },
+        signal: AbortSignal.timeout(20000)
       });
 
       if (!res.ok) {
@@ -272,8 +271,7 @@ async function fetchLegifranceRSS() {
         continue;
       }
 
-      const json  = await res.json();
-      const xml   = json.contents || '';
+      const xml   = await res.text();
       const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)];
       console.log('[Légifrance RSS]', feed.label, '→', items.length, 'items');
 
@@ -316,6 +314,7 @@ async function fetchLegifranceRSS() {
   console.log('[Légifrance RSS] Total :', results.length, 'textes');
   return { results, failures, attempts: feeds.length };
 }
+
 
 /* ── ONESIGNAL — PUSH NOTIFICATIONS ── */
 
