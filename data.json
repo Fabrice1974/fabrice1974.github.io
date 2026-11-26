@@ -1,5 +1,100 @@
 [
   {
+    "id": "legifrance-legifrance-Décision n° 2026-551 du 23 octobre 2026 ",
+    "cat": "eu_red",
+    "tag": "Normes RED",
+    "isNew": true,
+    "ref": "Décision n° 2026-551 du 23 octobre 2026 autorisant la sociét",
+    "title": "Décision n° 2026-551 du 23 octobre 2026 autorisant la société nationale de programme Radio France à exploiter un service de radio par voie hertzienne terrestre en mode numérique dénommé Mon Petit France Inter",
+    "date": "24/10/2026",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "Tablettes",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/search.html",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 26/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
+  },
+  {
+    "id": "legifrance-legifrance-Arrêté du 9 novembre 2026 portant défini",
+    "cat": "fr",
+    "tag": "Transposition FR",
+    "isNew": true,
+    "ref": "Arrêté du 9 novembre 2026 portant définition et fixant les c",
+    "title": "Arrêté du 9 novembre 2026 portant définition et fixant les conditions de délivrance du brevet de technicien supérieur « Pilotage intelligent des bâtiments <mark>connectés</mark> »",
+    "date": "22/11/2026",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Texte national",
+    "devices": [
+      "Smartphones",
+      "Tablettes",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/search.html",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 26/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
+  },
+  {
+    "id": "legifrance-legifrance-Arrêté du 9 novembre 2026 portant défini",
+    "cat": "fr",
+    "tag": "Transposition FR",
+    "isNew": true,
+    "ref": "Arrêté du 9 novembre 2026 portant définition et fixant les c",
+    "title": "Arrêté du 9 novembre 2026 portant définition et fixant les conditions de délivrance du brevet de technicien supérieur « Froid, climatisation et transition énergétique »",
+    "date": "22/11/2026",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Texte national",
+    "devices": [
+      "Smartphones",
+      "Tablettes",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/search.html",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 26/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
+  },
+  {
+    "id": "legifrance-legifrance-Arrêté du 5 octobre 2026 fixant les grou",
+    "cat": "fr",
+    "tag": "Transposition FR",
+    "isNew": true,
+    "ref": "Arrêté du 5 octobre 2026 fixant les groupements de mathémati",
+    "title": "Arrêté du 5 octobre 2026 fixant les groupements de mathématiques et de physique-chimie pour les spécialités de baccalauréat professionnel",
+    "date": "22/10/2026",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Texte national",
+    "devices": [
+      "Smartphones",
+      "Tablettes",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/search.html",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 26/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
+  },
+  {
+    "id": "legifrance-legifrance-Avis pour une conception des services nu",
+    "cat": "eu_red",
+    "tag": "Normes RED",
+    "isNew": true,
+    "ref": "Avis pour une conception des services numériques respectueus",
+    "title": "Avis pour une conception des services numériques respectueuse des droits humains (A - 2026 - 6)",
+    "date": "01/10/2026",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "Tablettes",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/search.html",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 26/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
+  },
+  {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1670",
     "cat": "eu_related",
     "tag": "Écoconception",
