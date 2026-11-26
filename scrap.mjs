@@ -98,7 +98,7 @@ function buildItem(raw) {
 async function fetchEurLex() {
   const results = [];
 
-  // ── 1. Socle : textes de référence connus (conservés) ──
+  // 1. Socle : textes de référence connus
   const baseline = [
     { celex: '32014L0053', title: 'Directive 2014/53/UE — Équipements radioélectriques (RED)', date: '2014-04-16', apply: '13/06/2016 — En vigueur', summary: 'Directive relative à la mise à disposition sur le marché d\'équipements radioélectriques. Exigences essentielles de sécurité, CEM et utilisation efficace du spectre. Actes délégués cybersécurité (Art. 3.3 d/e/f) et chargeur universel.' },
     { celex: '32023R2854', title: 'Règlement (UE) 2023/2854 — Data Act', date: '2023-12-13', apply: '12/09/2026 — Nouveaux produits IoT', summary: 'Règlement sur l\'accès équitable aux données générées par les produits connectés et services associés.' },
@@ -115,13 +115,14 @@ async function fetchEurLex() {
     });
   }
 
-  // ── 2. Détection live des nouveautés par SPARQL ──
+  // 2. Détection live des nouveautés par SPARQL
   const SPARQL_ENDPOINT = 'https://publications.europa.eu/webapi/rdf/sparql';
   const LOOKBACK_DAYS = 60;
   const since = new Date(Date.now() - LOOKBACK_DAYS * 86400000).toISOString().slice(0, 10);
 
   const query = `
 PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT DISTINCT ?celex ?title ?date WHERE {
   ?work cdm:resource_legal_id_celex ?celex .
   ?work cdm:work_date_document ?date .
@@ -134,7 +135,6 @@ SELECT DISTINCT ?celex ?title ?date WHERE {
 ORDER BY DESC(?date)
 LIMIT 500`;
 
-  // Mots-clés de ton périmètre (smartphones, tablettes, RED, connectés)
   const KEYWORDS = /radio[ée]lectri|radio equipment|2014\/53|smartphone|t[ée]l[ée]phone|tablette|ordinateur portable|[ée]quipement terminal|chargeur|usb|cyber.?(s[ée]curit[ée]|r[ée]silience|attaque)|r[ée]silience num[ée]rique|[ée]coconception|ecodesign|r[ée]parabilit|batterie|intelligence artificielle.{0,30}(produit|appareil|embarqu)|donn[ée]es.{0,20}(produit|connect|iot)|internet des objets|wearable|montre connect|lunettes connect|spectre radio|compatibilit[ée] [ée]lectromagn|normes? harmonis[ée]|durabilit[ée]|greenwashing|all[ée]gations? environnementales/i;
 
   try {
@@ -148,7 +148,7 @@ LIMIT 500`;
     });
 
     if (!res.ok) {
-      console.error('[EUR-Lex] ❌ ERREUR HTTP', res.status, '— source live indisponible, seul le socle est utilisé');
+      console.error('[EUR-Lex] ERREUR HTTP', res.status, '— source live indisponible, seul le socle est utilisé');
       return results;
     }
 
@@ -168,12 +168,12 @@ LIMIT 500`;
 
       results.push({ id, title, date });
       kept++;
-      console.log('[EUR-Lex] 🆕', celex, '—', title.slice(0, 70));
+      console.log('[EUR-Lex] NOUVEAU', celex, '—', title.slice(0, 70));
     }
     console.log('[EUR-Lex] Nouveautés pertinentes retenues :', kept);
 
   } catch (e) {
-    console.error('[EUR-Lex] ❌ ERREUR SPARQL :', e.message, '— seul le socle est utilisé');
+    console.error('[EUR-Lex] ERREUR SPARQL :', e.message, '— seul le socle est utilisé');
   }
 
   console.log('[EUR-Lex] Total :', results.length, 'textes');
