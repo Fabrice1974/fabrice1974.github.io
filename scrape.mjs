@@ -229,9 +229,15 @@ async function fetchLegifranceAPI() {
       console.log('[Légifrance API] Réponse brute (structure) :', JSON.stringify(json).slice(0, 500));
       const items = json.results || json.contenus || [];
       console.log('[Légifrance API]', terme, '→', items.length, 'résultats');
+      // Filtre de précision sur le TITRE : l'API fait une recherche plein texte
+      // (le mot cherché peut n'apparaître que dans un visa juridique, sans rapport avec le sujet réel)
+      const KEYWORDS_LF = /smartphone|t[ée]l[ée]phone (mobile|portable)|tablette (tactile|num[ée]rique)|ordinateur portable|[ée]quipements? radio[ée]lectriques?|[ée]coconception|r[ée]parabilit|batterie|chargeur universel|internet des objets|objets? connect[ée]s?|wearable|montre connect[ée]e|cyber.?(s[ée]curit[ée]|r[ée]silience)|produits? connect[ée]s|all[ée]gation environnementale|greenwashing/i;
+      const EXCLUDE_LF = /fr[ée]quence|programme radiophonique|autoris[ée a-zàâéèêëïîôûù]*exploiter|cha[iî]ne (de )?radio|voie hertzienne/i;
       for (const item of items) {
-        const titre = item.titre || item.title || (item.titles && item.titles[0] && item.titles[0].title) || terme;
-        const id = item.id || item.textCid || item.cid || ('legifrance-' + titre.slice(0, 40));
+        const titreObj = item.titles && item.titles[0];
+        const titre = (titreObj && titreObj.title) || item.titre || item.title || terme;
+        if (!KEYWORDS_LF.test(titre) || EXCLUDE_LF.test(titre)) continue;
+        const id = (titreObj && titreObj.cid) || item.id || item.textCid || item.cid || ('legifrance-' + titre.slice(0, 40));
         const datePub = item.datePublication || item.date || dateFin;
         results.push({ id: 'legifrance-' + id, title: titre, date: String(datePub).slice(0, 10) });
         console.log('[Légifrance API] OK', titre.slice(0, 60));
