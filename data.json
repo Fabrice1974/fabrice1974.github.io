@@ -1,9 +1,28 @@
 [
   {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R2052",
+    "cat": "eu_related",
+    "tag": "Écoconception",
+    "isNew": true,
+    "ref": "Acte (UE) 32025R2052",
+    "title": "Règlement (UE) 2025/2052 — Écoconception chargeurs externes et câbles USB-C",
+    "date": "13/10/2025",
+    "apply": "14/12/2028 — Conformité chargeurs et câbles USB-C",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "Tablettes",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32025R2052",
+    "summary": "Règlement établissant les exigences d'écoconception pour les alimentations externes, chargeurs sans fil, chargeurs de piles portables et câbles USB Type-C, en application de la directive 2009/125/CE. Abroge le règlement (UE) 2019/1782. Entré en vigueur le 14/12/2025, conformité obligatoire au 14/12/2028."
+  },
+  {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2611",
     "cat": "eu_red",
     "tag": "Normes RED",
-    "isNew": true,
+    "isNew": false,
     "ref": "Acte (UE) 32026D2611",
     "title": "Décision d’exécution (UE) 2026/2611 de la Commission du 26 novembre 2026 modifiant la décision d’exécution (UE) 2024/2944 en ce qui concerne les normes harmonisées élaborées, à l’appui du règlement (UE) 2016/426 du Parlement européen et du Conseil, pour les appareils de cuisson domestiques utilisant les combustibles gazeux et les robinets automatiques de sectionnement pour brûleurs à gaz et appareils à gaz",
     "date": "26/11/2026",
