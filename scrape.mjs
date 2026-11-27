@@ -1,5 +1,5 @@
 /**
- * RED Monitor — scrape.mjs — v4.2
+ * RED Monitor — scrape.mjs — v4.3
  * Sources :
  *   - EUR-Lex SPARQL (détection live des nouveautés) + socle de textes de référence
  *   - data.gouv.fr API open data
@@ -89,7 +89,8 @@ async function fetchEurLex() {
     { celex: '32024R2847', title: 'Règlement (UE) 2024/2847 — Cyber Resilience Act (CRA)', date: '2024-10-23', apply: '11/09/2026 — Déclaration vulnérabilités', summary: 'Cyber-résilience des produits comportant des éléments numériques. Déclaration des vulnérabilités au 11/09/2026, pleine application au 11/12/2027.' },
     { celex: '32024L0825', title: 'Directive (UE) 2024/825 — EmpCo Anti-greenwashing', date: '2024-03-06', apply: '22/09/2026 — Application', summary: 'Interdit les allégations environnementales trompeuses et génériques.' },
     { celex: '32023R1542', title: 'Règlement (UE) 2023/1542 — Batteries et déchets de batteries', date: '2023-07-28', apply: '18/02/2027 — Batterie remplaçable', summary: 'Exigences sur les batteries, remplaçabilité par l\'utilisateur dans les appareils portables, passeport numérique batterie.' },
-    { celex: '32023R1670', title: 'Règlement (UE) 2023/1670 — Écoconception smartphones et tablettes', date: '2023-06-16', apply: '20/06/2025 — En vigueur', summary: 'Exigences d\'écoconception pour smartphones, téléphones sans fil et tablettes : durabilité, réparabilité, mises à jour logicielles.' }
+    { celex: '32023R1670', title: 'Règlement (UE) 2023/1670 — Écoconception smartphones et tablettes', date: '2023-06-16', apply: '20/06/2025 — En vigueur', summary: 'Exigences d\'écoconception pour smartphones, téléphones sans fil et tablettes : durabilité, réparabilité, mises à jour logicielles.' },
+    { celex: '32025R2052', title: 'Règlement (UE) 2025/2052 — Écoconception chargeurs externes et câbles USB-C', date: '2025-10-13', apply: '14/12/2028 — Conformité chargeurs et câbles USB-C', summary: 'Règlement établissant les exigences d\'écoconception pour les alimentations externes, chargeurs sans fil, chargeurs de piles portables et câbles USB Type-C, en application de la directive 2009/125/CE. Abroge le règlement (UE) 2019/1782. Entré en vigueur le 14/12/2025, conformité obligatoire au 14/12/2028.' }
   ];
   for (const b of baseline) {
     results.push({ id: 'https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:' + b.celex, title: b.title, date: b.date, apply: b.apply, summary: b.summary });
@@ -119,7 +120,7 @@ LIMIT 500`;
   try {
     console.log('[EUR-Lex] Requête SPARQL depuis', since);
     const res = await fetch(SPARQL_ENDPOINT + '?query=' + encodeURIComponent(query), {
-      headers: { 'Accept': 'application/sparql-results+json', 'User-Agent': 'RED-Monitor/4.2 (github.com/Fabrice1974)' },
+      headers: { 'Accept': 'application/sparql-results+json', 'User-Agent': 'RED-Monitor/4.3 (github.com/Fabrice1974)' },
       signal: AbortSignal.timeout(60000)
     });
     if (!res.ok) {
@@ -158,7 +159,7 @@ async function fetchDataGouv() {
     try {
       console.log('[data.gouv] Recherche :', q);
       const url = 'https://www.data.gouv.fr/api/1/datasets/?q=' + encodeURIComponent(q) + '&page_size=5&sort=-created';
-      const res = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'RED-Monitor/4.2 (github.com/Fabrice1974)' }, signal: AbortSignal.timeout(15000) });
+      const res = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'RED-Monitor/4.3 (github.com/Fabrice1974)' }, signal: AbortSignal.timeout(15000) });
       if (!res.ok) { console.warn('[data.gouv]', q, '→ HTTP', res.status); failures++; continue; }
       const json  = await res.json();
       const items = json.data || [];
@@ -229,8 +230,6 @@ async function fetchLegifranceAPI() {
       console.log('[Légifrance API] Réponse brute (structure) :', JSON.stringify(json).slice(0, 500));
       const items = json.results || json.contenus || [];
       console.log('[Légifrance API]', terme, '→', items.length, 'résultats');
-      // Filtre de précision sur le TITRE : l'API fait une recherche plein texte
-      // (le mot cherché peut n'apparaître que dans un visa juridique, sans rapport avec le sujet réel)
       const KEYWORDS_LF = /smartphone|t[ée]l[ée]phone (mobile|portable)|tablette (tactile|num[ée]rique)|ordinateur portable|[ée]quipements? radio[ée]lectriques?|[ée]coconception|r[ée]parabilit|batterie|chargeur universel|internet des objets|objets? connect[ée]s?|wearable|montre connect[ée]e|cyber.?(s[ée]curit[ée]|r[ée]silience)|produits? connect[ée]s|all[ée]gation environnementale|greenwashing/i;
       const EXCLUDE_LF = /fr[ée]quence|programme radiophonique|autoris[ée a-zàâéèêëïîôûù]*exploiter|cha[iî]ne (de )?radio|voie hertzienne/i;
       for (const item of items) {
@@ -263,7 +262,7 @@ async function sendNotification(heading, message) {
 }
 
 async function main() {
-  console.log('=== RED Monitor v4.2 — Scan du', new Date().toISOString(), '===');
+  console.log('=== RED Monitor v4.3 — Scan du', new Date().toISOString(), '===');
   const knownIds    = loadJSON(KNOWN_IDS_FILE, []);
   const currentData = loadJSON(DATA_FILE, []);
   console.log('[Main] IDs connus :', knownIds.length, '| Textes en base :', currentData.length);
@@ -282,13 +281,10 @@ async function main() {
   const newRaw = allRaw.filter(r => r.id && !knownIds.includes(r.id));
   console.log('[Main] Nouveaux textes :', newRaw.length);
 
-  // data.json est toujours réécrit (anciens éléments repassés à isNew: false),
-  // même sans nouveauté cette semaine — sinon un "Nouveau" reste affiché indéfiniment
-  // si un seul scan ultérieur ne trouve rien de neuf.
   const newItems = newRaw.map(buildItem);
   const updatedData = [...newItems, ...currentData.map(i => ({ ...i, isNew: false }))];
-    saveJSON(DATA_FILE, updatedData);
-    console.log('[Main] data.json mis à jour — total :', updatedData.length, 'textes');
+  saveJSON(DATA_FILE, updatedData);
+  console.log('[Main] data.json mis à jour — total :', updatedData.length, 'textes');
 
   if (newItems.length > 0) {
     for (const item of newItems.slice(0, 3)) {
@@ -303,7 +299,7 @@ async function main() {
     console.log('[Main] Aucun nouveau texte, sources en panne :', sourcesHS.join(', '));
   } else {
     await sendNotification('✅ Scan RED terminé', 'Aucun nouveau texte réglementaire cette semaine. Votre veille est à jour.');
-    console.log('[Main] Aucun nouveau texte — data.json inchangé');
+    console.log('[Main] Aucun nouveau texte cette semaine');
   }
 
   const updatedIds = [...new Set([...knownIds, ...allRaw.map(r => r.id).filter(Boolean)])];
