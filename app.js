@@ -1,12 +1,12 @@
 /* ============================================================
-   RED Monitor — app.js — v4.4.2
+   RED Monitor — app.js — v4.4.3
    - Full UI stable (Accueil / Veille / Alertes)
    - Exclusions DMA/DSA/ancienne éco
    - Accueil: lien source sous la date (EUR-LEX / JORF / ETSI)
-   - Badge de jours : J-X si à venir, J+X si l'échéance est passée
+   - Badge de jours : J-X (plus de passé affiché comme "à venir")
    ============================================================ */
 
-var APP_VERSION='4.4.2';
+var APP_VERSION='4.4.3';
 var DATE_FILTRE=new Date(2026,5,1);
 var ALERT_SEEN_KEY='redmonitor_seen_ids_v3';
 var newlyDetectedCount=0;
@@ -126,8 +126,9 @@ document.addEventListener('click',function(e){
 
 /* ---------------- accueil ---------------- */
 function getUpcomingRows(){
+  var now=Date.now();
   return DATA_FILTRE.map(function(r){return {r:r,dt:getApplyDate(r)};})
-    .filter(function(x){return x.dt;})
+    .filter(function(x){return x.dt && x.dt.getTime()>=now;})
     .sort(function(a,b){return a.dt-b.dt;});
 }
 function renderAccueil(){
@@ -141,7 +142,9 @@ function renderAccueil(){
     +'<p class="fs11 t-muted" style="margin:0">'+esc(next.r.cat==='fr'?'FR':'EU')+' · '+fmtDateOnly(next.dt)+'</p>'
     +'<p style="margin-top:2px">'+sourceLinkHtmlByReg(next.r)+'</p>'
     +'</div>'
-  ):'';
+  ):(
+    '<div class="card-plain mb12"><p class="fs12 t-muted" style="margin:0">✅ Aucune échéance à venir pour le moment.</p></div>'
+  );
 
   var following=rows.slice(1,4).map(function(x){
     var j=Math.ceil((x.dt.getTime()-Date.now())/86400000);
