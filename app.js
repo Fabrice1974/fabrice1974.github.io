@@ -1,11 +1,12 @@
 /* ============================================================
-   RED Monitor — app.js — v4.4.1
+   RED Monitor — app.js — v4.4.2
    - Full UI stable (Accueil / Veille / Alertes)
    - Exclusions DMA/DSA/ancienne éco
    - Accueil: lien source sous la date (EUR-LEX / JORF / ETSI)
+   - Badge de jours : J-X si à venir, J+X si l'échéance est passée
    ============================================================ */
 
-var APP_VERSION='4.4.1';
+var APP_VERSION='4.4.2';
 var DATE_FILTRE=new Date(2026,5,1);
 var ALERT_SEEN_KEY='redmonitor_seen_ids_v3';
 var newlyDetectedCount=0;
@@ -23,6 +24,7 @@ var DATA_FILTRE=[];
 function fmtDate(d){var p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());}
 function addDays(d,n){return new Date(d.getTime()+n*86400000);}
 function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDday(days){ return days>=0 ? ('J-'+days) : ('J+'+Math.abs(days)); }
 function parseFRDateStrict(str){var m=String(str||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m)return null;var d=new Date(+m[3],+m[2]-1,+m[1]);return isNaN(d)?null:d;}
 function parseFRTextDate(str){var t=(str||'').toLowerCase();var M={"janvier":0,"fevrier":1,"février":1,"mars":2,"avril":3,"mai":4,"juin":5,"juillet":6,"aout":7,"août":7,"septembre":8,"octobre":9,"novembre":10,"decembre":11,"décembre":11};var m=t.match(/(\d{1,2})\s+(janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)\s+(20\d{2})/i);if(!m)return null;var d=new Date(+m[3],M[m[2]],+m[1]);return isNaN(d)?null:d;}
 function parseApplyToDate(apply){var txt=String(apply||'');var d=parseFRDateStrict(txt);if(d)return d;var from=txt.match(/(?:a|à)\s+partir\s+du\s+(\d{2}\/\d{2}\/\d{4})/i);if(from)return parseFRDateStrict(from[1]);var any=txt.match(/(\d{2}\/\d{2}\/\d{4})/);if(any)return parseFRDateStrict(any[1]);var td=parseFRTextDate(txt);if(td)return td;var y=txt.match(/(20\d{2})/);if(y)return new Date(+y[1],11,31);return null;}
@@ -134,7 +136,7 @@ function renderAccueil(){
 
   var orangeCard=next?(
     '<div class="card mb12" style="background:#2a1a00;border:1px solid #5a3a00;border-left:3px solid #f59e0b">'
-    +'<p class="fw7 fs11 mb8" style="color:#f59e0b;letter-spacing:.08em">⏰ PROCHAINE ÉCHÉANCE — J-'+Math.ceil((next.dt.getTime()-Date.now())/86400000)+'</p>'
+    +'<p class="fw7 fs11 mb8" style="color:#f59e0b;letter-spacing:.08em">⏰ PROCHAINE ÉCHÉANCE — '+fmtDday(Math.ceil((next.dt.getTime()-Date.now())/86400000))+'</p>'
     +'<p class="fs13 fw7 t-text mb6">'+esc(next.r.title)+'</p>'
     +'<p class="fs11 t-muted" style="margin:0">'+esc(next.r.cat==='fr'?'FR':'EU')+' · '+fmtDateOnly(next.dt)+'</p>'
     +'<p style="margin-top:2px">'+sourceLinkHtmlByReg(next.r)+'</p>'
@@ -149,7 +151,7 @@ function renderAccueil(){
       +'<p style="font-size:10px;color:#7a7f9a;margin:0">'+fmtDateOnly(x.dt)+'</p>'
       +'<p style="margin:2px 0 0 0">'+sourceLinkHtmlByReg(x.r)+'</p>'
       +'</div>'
-      +'<span class="chip" style="background:#2a1140;color:#c084fc">J-'+j+'</span></div>';
+      +'<span class="chip" style="background:#2a1140;color:#c084fc">'+fmtDday(j)+'</span></div>';
   }).join('')||'<p class="fs11 t-muted">Pas d’échéances suivantes.</p>';
 
   var fr=DATA_FILTRE.filter(function(r){return r.cat==='fr';});
