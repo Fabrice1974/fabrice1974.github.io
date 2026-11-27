@@ -1,269 +1,314 @@
-/* ============================================================
-   RED Monitor — app.js — v4.4.2
-   - Full UI stable (Accueil / Veille / Alertes)
-   - Exclusions DMA/DSA/ancienne éco
-   - Accueil: lien source sous la date (EUR-LEX / JORF / ETSI)
-   - Badge de jours : J-X si à venir, J+X si l'échéance est passée
-   ============================================================ */
+/**
+ * RED Monitor — scrape.mjs — v4.3
+ * Sources :
+ *   - EUR-Lex SPARQL (détection live des nouveautés) + socle de textes de référence
+ *   - data.gouv.fr API open data
+ *   - API officielle Légifrance (PISTE) — recherche JORF
+ *   - OneSignal push notifications
+ */
 
-var APP_VERSION='4.4.2';
-var DATE_FILTRE=new Date(2026,5,1);
-var ALERT_SEEN_KEY='redmonitor_seen_ids_v3';
-var newlyDetectedCount=0;
+import fetch from 'node-fetch';
+import fs from 'fs';
 
-var EXCLUDED_CELEX=['32022R1925','32022R2065','32009L0125'];
-var EXCLUDED_KEYWORDS=[' digital markets act ',' digital services act ',' dma ',' dsa '];
+const ONESIGNAL_APP_ID  = process.env.ONESIGNAL_APP_ID;
+const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
 
-var DATA=[];
-var currentTab='accueil', scanLoading=false, lastScan=fmtDate(new Date()), nextScan=fmtDate(addDays(new Date(),7));
-var openCards={}, veilleFilter='tous';
-var prefs={red_normes:true,cra:true,espr:true,data_act:true,ai_act:true,empco:true,fr_transpo:true,rien_nouveau:true,rappel_j60:true,rappel_j30:true};
-var DATA_FILTRE=[];
+const KNOWN_IDS_FILE = 'known-ids.json';
+const DATA_FILE      = 'data.json';
+const SITE_URL       = 'https://fabrice1974.github.io/';
+const CUTOFF_DATE    = '2023-01-01';
 
-/* ---------------- utils ---------------- */
-function fmtDate(d){var p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());}
-function addDays(d,n){return new Date(d.getTime()+n*86400000);}
-function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function fmtDday(days){ return days>=0 ? ('J-'+days) : ('J+'+Math.abs(days)); }
-function parseFRDateStrict(str){var m=String(str||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m)return null;var d=new Date(+m[3],+m[2]-1,+m[1]);return isNaN(d)?null:d;}
-function parseFRTextDate(str){var t=(str||'').toLowerCase();var M={"janvier":0,"fevrier":1,"février":1,"mars":2,"avril":3,"mai":4,"juin":5,"juillet":6,"aout":7,"août":7,"septembre":8,"octobre":9,"novembre":10,"decembre":11,"décembre":11};var m=t.match(/(\d{1,2})\s+(janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)\s+(20\d{2})/i);if(!m)return null;var d=new Date(+m[3],M[m[2]],+m[1]);return isNaN(d)?null:d;}
-function parseApplyToDate(apply){var txt=String(apply||'');var d=parseFRDateStrict(txt);if(d)return d;var from=txt.match(/(?:a|à)\s+partir\s+du\s+(\d{2}\/\d{2}\/\d{4})/i);if(from)return parseFRDateStrict(from[1]);var any=txt.match(/(\d{2}\/\d{2}\/\d{4})/);if(any)return parseFRDateStrict(any[1]);var td=parseFRTextDate(txt);if(td)return td;var y=txt.match(/(20\d{2})/);if(y)return new Date(+y[1],11,31);return null;}
-function getApplyDate(r){return r.applyDate instanceof Date?r.applyDate:parseApplyToDate(r.apply);}
-function fmtDateOnly(d){var p=n=>String(n).padStart(2,'0');return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear();}
-function extractCelex(r){var b=((r.id||'')+' '+(r.ref||'')+' '+(r.title||'')+' '+(r.link||'')).toUpperCase();var m=b.match(/CELEX[:\s]*([0-9A-Z]{10})/);if(m)return m[1];var m2=b.match(/\b(3\d{4}[A-Z]\d{4})\b/);return m2?m2[1]:null;}
-function textBlob(r){return (' '+(r.id||'')+' '+(r.title||'')+' '+(r.ref||'')+' '+(r.tag||'')+' '+(r.type||'')+' '+(r.link||'')+' ').toLowerCase();}
-function isExcludedReg(r){var t=textBlob(r), c=extractCelex(r);if(c&&EXCLUDED_CELEX.includes(c))return true;for(var i=0;i<EXCLUDED_KEYWORDS.length;i++)if(t.indexOf(EXCLUDED_KEYWORDS[i])!==-1)return true;return false;}
-function scoreEntry(r){var s=0;if(r.summary&&r.summary.length>60)s+=3;if(r.apply&&!/à confirmer/i.test(r.apply))s+=2;if(r.link)s+=1;return s;}
-function dedupeByCelex(items){var map={};items.forEach(function(r){var k=r.celex||r.id;if(!map[k])map[k]=r;else if(scoreEntry(r)>scoreEntry(map[k]))map[k]=r;});return Object.keys(map).map(function(k){return map[k];});}
-
-function inferSourceFromLink(link){
-  var l=(link||'').toLowerCase();
-  if(!l) return 'SOURCE';
-  if(l.indexOf('eur-lex.europa.eu')!==-1) return 'EUR-LEX';
-  if(l.indexOf('legifrance.gouv.fr')!==-1 || l.indexOf('jorf')!==-1) return 'JORF';
-  if(l.indexOf('etsi.org')!==-1) return 'ETSI';
-  return 'SOURCE';
-}
-function sourceLinkHtmlByUrl(url){
-  if(!url) return '<span style="font-size:10px;color:#7a7f9a">Source non publiée</span>';
-  var label=inferSourceFromLink(url);
-  return '<a href="'+url+'" target="_blank" rel="noopener" style="font-size:10px;color:#4a7dff;text-decoration:none;font-weight:700;">'+label+'</a>';
-}
-function sourceLinkHtmlByReg(reg){ return sourceLinkHtmlByUrl(reg&&reg.link?reg.link:''); }
-
-function normalizeDynamicItem(d){
-  var i=Object.assign({},d);
-  i.id=i.id||('dyn-'+Math.random().toString(36).slice(2));
-  i.title=i.title||i.ref||'Texte détecté';
-  i.ref=i.ref||i.title;
-  i.type=i.type||'Acte UE';
-  i.tag=i.tag||'Normes RED';
-  i.date=i.date||'—';
-  i.apply=i.apply||'À confirmer — voir texte officiel';
-  i.summary=i.summary||'';
-  i.devices=Array.isArray(i.devices)?i.devices:['Smartphones','IoT','Wearables'];
-  i.cat=i.cat||'eu_related';
-  i.isNew=!!i.isNew;
-  if(!(i.applyDate instanceof Date)) i.applyDate=parseApplyToDate(i.apply);
-  i.celex=extractCelex(i);
-  return i;
-}
-function computeDataFiltre(){
-  return DATA.filter(function(r){
-    if(isExcludedReg(r)) return false;
-    var dt=getApplyDate(r);
-    if(!dt) return true;
-    return dt.getTime()>=DATE_FILTRE.getTime();
-  });
+function loadJSON(path, fallback) {
+  try { return JSON.parse(fs.readFileSync(path, 'utf8')); }
+  catch { return fallback; }
 }
 
-/* ---------------- badge ---------------- */
-function currentIdsArray(items){return Array.from(new Set((items||[]).map(function(x){return x.id;}).filter(Boolean))).sort();}
-function loadSeenIds(){try{var raw=localStorage.getItem(ALERT_SEEN_KEY);return raw?JSON.parse(raw):null;}catch(e){return null;}}
-function saveSeenIds(ids){try{localStorage.setItem(ALERT_SEEN_KEY,JSON.stringify(ids));}catch(e){}}
-function diffCount(newArr,oldArr){var set=new Set(oldArr||[]),c=0;newArr.forEach(function(id){if(!set.has(id))c++;});return c;}
-function computeNewlyDetectedCountAndPersist(items){var cur=currentIdsArray(items),seen=loadSeenIds();if(seen===null){newlyDetectedCount=0;saveSeenIds(cur);return;}newlyDetectedCount=diffCount(cur,seen);saveSeenIds(cur);}
-function markAlertsAsRead(){newlyDetectedCount=0;saveSeenIds(currentIdsArray(DATA));updateAlertBadges();}
-function updateAlertBadges(){var bell=document.getElementById('bell-count'),nav=document.getElementById('nav-badge');if(bell){bell.textContent=String(newlyDetectedCount);bell.style.display=newlyDetectedCount>0?'flex':'none';}if(nav){nav.textContent=String(newlyDetectedCount);nav.style.display=newlyDetectedCount>0?'flex':'none';}}
-
-function syncVersionLabels(){var nodes=document.querySelectorAll('[data-app-version]');nodes.forEach(function(n){n.textContent='v'+APP_VERSION;});var sub=document.getElementById('header-subtitle');if(sub)sub.textContent=sub.textContent.replace(/v\d+(\.\d+){0,2}/i,'v'+APP_VERSION);}
-
-/* ---------------- nav ---------------- */
-function setTab(tab){
-  currentTab=tab;
-  ['accueil','veille','alertes'].forEach(function(t){
-    var panel=document.getElementById('tab-'+t),btn=document.getElementById('nav-'+t);
-    if(panel)panel.classList.toggle('hidden',t!==tab);
-    if(btn)btn.classList.toggle('active',t===tab);
-  });
-  if(tab==='alertes')markAlertsAsRead(); else updateAlertBadges();
+function saveJSON(path, data) {
+  fs.writeFileSync(path, JSON.stringify(data, null, 2));
 }
 
-/* ---------------- actions ---------------- */
-function handleScan(){
-  if(scanLoading)return;
-  scanLoading=true;
-  var btn=document.getElementById('scan-btn');
-  if(btn){btn.disabled=true;btn.textContent='Scan en cours...';}
-  setTimeout(function(){
-    var d=new Date();lastScan=fmtDate(d);nextScan=fmtDate(addDays(d,7));scanLoading=false;
-    renderAccueil();renderVeille();renderAlertes();syncVersionLabels();updateAlertBadges();
-  },900);
-}
-function toggleCard(id){
-  openCards[id]=!openCards[id];
-  var b=document.getElementById('summary-'+id),a=document.getElementById('arrow-'+id),l=document.getElementById('lbl-'+id);
-  if(b)b.classList.toggle('hidden',!openCards[id]);
-  if(a)a.style.transform=openCards[id]?'rotate(90deg)':'rotate(0deg)';
-  if(l)l.textContent=openCards[id]?'Masquer le résumé':'Lire en clair';
-}
-document.addEventListener('click',function(e){
-  var t=e.target.closest('[data-action="toggle-summary"]');
-  if(!t)return;
-  e.preventDefault();
-  toggleCard(t.getAttribute('data-id'));
-});
-
-/* ---------------- accueil ---------------- */
-function getUpcomingRows(){
-  return DATA_FILTRE.map(function(r){return {r:r,dt:getApplyDate(r)};})
-    .filter(function(x){return x.dt;})
-    .sort(function(a,b){return a.dt-b.dt;});
-}
-function renderAccueil(){
-  var rows=getUpcomingRows();
-  var next=rows.length?rows[0]:null;
-
-  var orangeCard=next?(
-    '<div class="card mb12" style="background:#2a1a00;border:1px solid #5a3a00;border-left:3px solid #f59e0b">'
-    +'<p class="fw7 fs11 mb8" style="color:#f59e0b;letter-spacing:.08em">⏰ PROCHAINE ÉCHÉANCE — '+fmtDday(Math.ceil((next.dt.getTime()-Date.now())/86400000))+'</p>'
-    +'<p class="fs13 fw7 t-text mb6">'+esc(next.r.title)+'</p>'
-    +'<p class="fs11 t-muted" style="margin:0">'+esc(next.r.cat==='fr'?'FR':'EU')+' · '+fmtDateOnly(next.dt)+'</p>'
-    +'<p style="margin-top:2px">'+sourceLinkHtmlByReg(next.r)+'</p>'
-    +'</div>'
-  ):'';
-
-  var following=rows.slice(1,4).map(function(x){
-    var j=Math.ceil((x.dt.getTime()-Date.now())/86400000);
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #2a2f4a">'
-      +'<div>'
-      +'<p style="font-size:12px;font-weight:600;color:#e8eaf0;margin:0">'+esc(x.r.title)+'</p>'
-      +'<p style="font-size:10px;color:#7a7f9a;margin:0">'+fmtDateOnly(x.dt)+'</p>'
-      +'<p style="margin:2px 0 0 0">'+sourceLinkHtmlByReg(x.r)+'</p>'
-      +'</div>'
-      +'<span class="chip" style="background:#2a1140;color:#c084fc">'+fmtDday(j)+'</span></div>';
-  }).join('')||'<p class="fs11 t-muted">Pas d’échéances suivantes.</p>';
-
-  var fr=DATA_FILTRE.filter(function(r){return r.cat==='fr';});
-  var frCard=fr.length?('<div class="card mb12" style="background:#2a0d12;border:1px solid #5a1a22;border-left:3px solid #e04f5f"><p class="fw7 fs12" style="color:#f87171;margin-bottom:6px">🇫🇷 '+fr.length+' texte(s) FR en cours d’adoption</p>'+fr.slice(0,2).map(function(r){return '<p class="fs11" style="color:#fca5a5;margin:2px 0">· '+esc(r.ref||r.title)+' — '+esc(r.apply||'—')+'</p>';}).join('')+'</div>'):'';
-
-  document.getElementById('tab-accueil').innerHTML=
-    '<div style="padding:14px 16px 90px">'
-    +'<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><span style="font-size:10px;font-weight:700;color:#7a7f9a;background:#1a1e35;border:1px solid #2a2f4a;border-radius:6px;padding:3px 10px;">v'+APP_VERSION+' — '+lastScan.slice(0,10)+'</span></div>'
-    +orangeCard
-    +'<div class="card-plain mb12"><p class="section-label">ÉCHÉANCES SUIVANTES</p>'+following+'</div>'
-    +frCard
-    +'<div class="card card-green mb12"><p class="fw7 fs12 t-green">'+DATA_FILTRE.length+' textes surveillés — échéances après 01/06/2026</p><p class="fs11" style="color:#86efac;margin-top:3px">Sources : EUR-Lex · Legifrance · JORF · ETSI</p></div>'
-    +'<div class="card-plain mb16" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><p class="fw7 fs13 t-text mb6">Scraping hebdomadaire</p><p class="fs11 t-muted">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted">Prochain scan : <span class="t-warn">'+nextScan+'</span></p></div><button id="scan-btn" class="scan-btn">'+(scanLoading?'En cours...':'Scan')+'</button></div>'
-    +'</div>';
-
-  var btn=document.getElementById('scan-btn'); if(btn) btn.onclick=handleScan;
+function categorize(title) {
+  const t = title.toLowerCase();
+  if (/cyber.r[eé]silien|cra\b|2024\/2847|2024r2847/.test(t))
+    return { cat: 'eu_related', tag: 'Cybersécurité' };
+  if (/[eé]coconception|espr|r[eé]parabilit|2023r1670|2023\/1670|2022r0414|2009l0125/.test(t))
+    return { cat: 'eu_related', tag: 'Écoconception' };
+  if (/greenwashing|empco|all[eé]gation.environ|2024l0825|2024\/825/.test(t))
+    return { cat: 'eu_related', tag: 'Greenwashing' };
+  if (/data act|portabilit|2023r2854|2023\/2854/.test(t))
+    return { cat: 'eu_related', tag: 'Données / IoT' };
+  if (/intelligence artificielle|ai act|2024r1689|2024\/1689/.test(t))
+    return { cat: 'eu_related', tag: 'Intelligence Artificielle' };
+  if (/batterie|remplaçable|2023r1542|2023\/1542/.test(t))
+    return { cat: 'eu_related', tag: 'Batteries' };
+  if (/dsa|digital services|2022r2065|2022\/2065/.test(t))
+    return { cat: 'eu_related', tag: 'Services Numériques' };
+  if (/dma|digital markets|2022r1925|2022\/1925/.test(t))
+    return { cat: 'eu_related', tag: 'Marchés Numériques' };
+  if (/d[eé]cret|ordonnance|loi\s|arr[eê]t[eé]|jorf/.test(t))
+    return { cat: 'fr',         tag: 'Transposition FR' };
+  return                        { cat: 'eu_red',     tag: 'Normes RED' };
 }
 
-/* ---------------- veille ---------------- */
-function smartSummary(r){
-  var cx=extractCelex(r)||'';
-  if(cx==='32014L0053') return "Directive RED : exigences essentielles pour équipements radio (sécurité, CEM, usage du spectre), obligations de conformité CE (évaluation, dossier technique, déclaration UE) et surveillance du marché.";
-  if(r.summary&&r.summary.trim().length>40) return r.summary.trim();
-  return (r.type||'Acte UE')+' — '+(r.ref||r.title||'')+' — Application : '+(r.apply||'À confirmer');
-}
-function renderCard(r){
-  var acc=r.cat==='eu_red'?'#4a7dff':(r.cat==='fr'?'#e04f5f':'#38bdf8');
-  var flag=r.cat==='fr'?'FR':'EU';
-  var isOpen=!!openCards[r.id];
-  var chips=(r.isNew?'<span class="chip chip-new">Nouveau</span>':'')+'<span class="chip chip-'+r.cat+'">'+flag+' '+esc(r.tag||'Texte')+'</span>';
-  var dev=(r.devices||[]).map(function(d){return '<span class="dtag">'+esc(d)+'</span>';}).join('');
-  var link=r.link?'<a href="'+r.link+'" target="_blank" rel="noopener" class="eur-link" style="background:'+acc+'">'+(r.cat==='fr'?'Legifrance':'EUR-Lex')+' &rarr;</a>':'<span style="font-size:10px;color:#7a7f9a">Texte non publié</span>';
-
-  return '<div class="card-reg card-reg-'+r.cat+'">'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">'+chips+'<span style="margin-left:auto;font-size:11px;color:#7a7f9a">'+esc(r.date||'—')+'</span></div>'
-    +'<p style="font-size:14px;font-weight:700;color:#e8eaf0;line-height:1.4;margin-bottom:4px">'+esc(r.title||'')+'</p>'
-    +'<p style="font-size:10px;color:#7a7f9a;margin-bottom:8px">'+esc(r.ref||'')+' — '+esc(r.type||'')+'</p>'
-    +'<div style="display:flex;flex-wrap:wrap;margin-bottom:10px">'+dev+'</div>'
-    +'<div class="date-pill"><span>Application :</span><span style="font-size:11px;font-weight:700;color:#a78bfa">'+esc(r.apply||'À confirmer')+'</span></div>'
-    +'<button type="button" data-action="toggle-summary" data-id="'+esc(r.id)+'" class="summary-toggle" style="color:'+acc+';margin-top:8px"><i id="arrow-'+r.id+'" class="arrow" style="transform:'+(isOpen?'rotate(90deg)':'rotate(0deg)')+'">&#9658;</i><span id="lbl-'+r.id+'">'+(isOpen?'Masquer le résumé':'Lire en clair')+'</span></button>'
-    +'<div id="summary-'+r.id+'" class="summary-box'+(isOpen?'':' hidden')+'"><p style="font-size:12px;color:#c0c4d8;line-height:1.7;margin-bottom:8px">'+esc(smartSummary(r))+'</p>'+link+'</div>'
-    +'</div>';
-}
-function renderVeille(){
-  var filters=[{key:'tous',label:'Tous'},{key:'eu_red',label:'RED stricte'},{key:'eu_related',label:'Connexes EU'},{key:'fr',label:'Droit FR'}];
-  var groups=[{key:'eu_red',label:'TEXTES RED (2014/53/UE)',color:'#4a7dff'},{key:'eu_related',label:'RÉGLEMENTATIONS CONNEXES',color:'#38bdf8'},{key:'fr',label:'TRANSPOSITIONS DROIT FRANÇAIS',color:'#e04f5f'}];
-  var shown=veilleFilter==='tous'?groups:groups.filter(function(g){return g.key===veilleFilter;});
-  var btns=filters.map(function(f){return '<button class="filter-btn '+(veilleFilter===f.key?'active':'')+'" data-filter="'+f.key+'">'+f.label+'</button>';}).join('');
-  var content=shown.map(function(g){
-    var cards=DATA_FILTRE.filter(function(r){return r.cat===g.key;}).map(renderCard).join('');
-    return '<p class="section-label" style="color:'+g.color+'">'+g.label+'</p>'+(cards||'<p class="fs12 t-muted">Aucun texte</p>');
-  }).join('');
-  document.getElementById('tab-veille').innerHTML='<div style="padding:14px 16px 90px"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+btns+'</div><p class="fs10 t-muted" style="margin-bottom:12px">'+DATA_FILTRE.length+' textes (DMA/DSA exclus)</p>'+content+'</div>';
-  document.querySelectorAll('[data-filter]').forEach(function(b){b.onclick=function(){veilleFilter=b.getAttribute('data-filter');renderVeille();};});
+function buildItem(raw) {
+  const { cat, tag } = categorize(raw.title);
+  const celex = raw.id.match(/CELEX[:/]([0-9A-Z]+)/i)?.[1] || '';
+  const link = celex
+    ? 'https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:' + celex
+    : (raw.id.startsWith('http') ? raw.id : 'https://eur-lex.europa.eu/search.html');
+  const dateStr   = raw.date ? raw.date.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  const [y, m, d] = dateStr.split('-');
+  const summary = raw.summary
+    || 'Nouveau texte détecté automatiquement lors du scan du '
+    + new Date().toLocaleDateString('fr-FR')
+    + '. Consultez le texte officiel via le lien ci-dessous '
+    + 'pour connaître le champ d\'application exact '
+    + 'et la date d\'entrée en vigueur.';
+  return {
+    id:      raw.id,
+    cat,
+    tag,
+    isNew:   true,
+    ref:     celex ? 'Acte (UE) ' + celex : raw.title.slice(0, 60),
+    title:   raw.title,
+    date:    (d || '??') + '/' + (m || '??') + '/' + (y || '????'),
+    apply:   raw.apply || 'À confirmer — voir texte officiel',
+    type:    cat === 'fr' ? 'Texte national' : 'Acte UE',
+    devices: ['Smartphones', 'Tablettes', 'IoT', 'Wearables'],
+    link,
+    summary
+  };
 }
 
-/* ---------------- alertes ---------------- */
-function togglePref(key){
-  prefs[key]=!prefs[key];
-  var sw=document.getElementById('sw-'+key);
-  if(sw){
-    var on=prefs[key];
-    sw.style.background=on?'#4a7dff':'#2a2f4a';
-    var k=sw.querySelector('.switch-knob');
-    if(k) k.style.left=on?'23px':'3px';
-  }
-}
-function renderAlertes(){
-  var rows=[
-    {key:'red_normes',icon:'📐',label:'Nouvelles normes harmonisées RED'},
-    {key:'cra',icon:'🛡️',label:'Cyber Resilience Act (CRA)'},
-    {key:'espr',icon:'♻️',label:'Écoconception ESPR'},
-    {key:'data_act',icon:'💾',label:'Data Act IoT'},
-    {key:'ai_act',icon:'🤖',label:'AI Act IA embarquée'},
-    {key:'empco',icon:'🌿',label:'Greenwashing EmpCo'},
-    {key:'fr_transpo',icon:'🇫🇷',label:'Transpositions droit français'},
-    {key:'rien_nouveau',icon:'✅',label:'Confirmation scan (même si rien de nouveau)'},
-    {key:'rappel_j60',icon:'📅',label:'Rappels échéances à J-60'},
-    {key:'rappel_j30',icon:'⏰',label:'Rappels échéances à J-30'}
+async function fetchEurLex() {
+  const results = [];
+  const baseline = [
+    { celex: '32014L0053', title: 'Directive 2014/53/UE — Équipements radioélectriques (RED)', date: '2014-04-16', apply: '13/06/2016 — En vigueur', summary: 'Directive relative à la mise à disposition sur le marché d\'équipements radioélectriques. Exigences essentielles de sécurité, CEM et utilisation efficace du spectre. Actes délégués cybersécurité (Art. 3.3 d/e/f) et chargeur universel.' },
+    { celex: '32023R2854', title: 'Règlement (UE) 2023/2854 — Data Act', date: '2023-12-13', apply: '12/09/2026 — Nouveaux produits IoT', summary: 'Règlement sur l\'accès équitable aux données générées par les produits connectés et services associés.' },
+    { celex: '32024R1689', title: 'Règlement (UE) 2024/1689 — AI Act', date: '2024-07-12', apply: '02/08/2026 — Systèmes IA haut risque', summary: 'Règlement sur l\'intelligence artificielle, classification par niveau de risque.' },
+    { celex: '32024R2847', title: 'Règlement (UE) 2024/2847 — Cyber Resilience Act (CRA)', date: '2024-10-23', apply: '11/09/2026 — Déclaration vulnérabilités', summary: 'Cyber-résilience des produits comportant des éléments numériques. Déclaration des vulnérabilités au 11/09/2026, pleine application au 11/12/2027.' },
+    { celex: '32024L0825', title: 'Directive (UE) 2024/825 — EmpCo Anti-greenwashing', date: '2024-03-06', apply: '22/09/2026 — Application', summary: 'Interdit les allégations environnementales trompeuses et génériques.' },
+    { celex: '32023R1542', title: 'Règlement (UE) 2023/1542 — Batteries et déchets de batteries', date: '2023-07-28', apply: '18/02/2027 — Batterie remplaçable', summary: 'Exigences sur les batteries, remplaçabilité par l\'utilisateur dans les appareils portables, passeport numérique batterie.' },
+    { celex: '32023R1670', title: 'Règlement (UE) 2023/1670 — Écoconception smartphones et tablettes', date: '2023-06-16', apply: '20/06/2025 — En vigueur', summary: 'Exigences d\'écoconception pour smartphones, téléphones sans fil et tablettes : durabilité, réparabilité, mises à jour logicielles.' },
+    { celex: '32025R2052', title: 'Règlement (UE) 2025/2052 — Écoconception chargeurs externes et câbles USB-C', date: '2025-10-13', apply: '14/12/2028 — Conformité chargeurs et câbles USB-C', summary: 'Règlement établissant les exigences d\'écoconception pour les alimentations externes, chargeurs sans fil, chargeurs de piles portables et câbles USB Type-C, en application de la directive 2009/125/CE. Abroge le règlement (UE) 2019/1782. Entré en vigueur le 14/12/2025, conformité obligatoire au 14/12/2028.' }
   ];
-  var html=rows.map(function(r){
-    var on=prefs[r.key]!==false;
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #2a2f4a"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:20px">'+r.icon+'</span><span class="fs13 t-text">'+r.label+'</span></div><button id="sw-'+r.key+'" data-sw="'+r.key+'" style="width:46px;height:26px;border-radius:13px;border:none;position:relative;cursor:pointer;background:'+(on?'#4a7dff':'#2a2f4a')+'"><span class="switch-knob" style="position:absolute;top:3px;left:'+(on?'23px':'3px')+';width:20px;height:20px;background:#fff;border-radius:50%"></span></button></div>';
-  }).join('');
-  document.getElementById('tab-alertes').innerHTML='<div style="padding:14px 16px 90px"><div class="card-plain mb12"><p class="fw7 fs12 t-text">Statut scraping</p><p class="fs11 t-muted">Dernier scan : <span class="t-green">'+lastScan+'</span></p><p class="fs11 t-muted">Prochain scan : <span class="t-warn">'+nextScan+'</span></p><p class="fs10 t-muted">Version : v'+APP_VERSION+'</p></div><p class="section-label">NOTIFICATIONS ACTIVES</p>'+html+'</div>';
-  document.querySelectorAll('[data-sw]').forEach(function(b){b.onclick=function(){togglePref(b.getAttribute('data-sw'));};});
+  for (const b of baseline) {
+    results.push({ id: 'https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:' + b.celex, title: b.title, date: b.date, apply: b.apply, summary: b.summary });
+  }
+
+  const SPARQL_ENDPOINT = 'https://publications.europa.eu/webapi/rdf/sparql';
+  const LOOKBACK_DAYS = 60;
+  const since = new Date(Date.now() - LOOKBACK_DAYS * 86400000).toISOString().slice(0, 10);
+
+  const query = `
+PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT DISTINCT ?celex ?title ?date WHERE {
+  ?work cdm:resource_legal_id_celex ?celex .
+  ?work cdm:work_date_document ?date .
+  ?exp cdm:expression_belongs_to_work ?work ;
+       cdm:expression_uses_language <http://publications.europa.eu/resource/authority/language/FRA> ;
+       cdm:expression_title ?title .
+  FILTER (?date >= "${since}"^^xsd:date)
+  FILTER (REGEX(STR(?celex), "^3[0-9]{4}[RLD][0-9]{4}$"))
+}
+ORDER BY DESC(?date)
+LIMIT 500`;
+
+  const KEYWORDS = /radio[ée]lectri|radio equipment|2014\/53|smartphone|t[ée]l[ée]phone|tablette|ordinateur portable|[ée]quipement terminal|chargeur|usb|cyber.?(s[ée]curit[ée]|r[ée]silience|attaque)|r[ée]silience num[ée]rique|[ée]coconception|ecodesign|r[ée]parabilit|batterie|intelligence artificielle.{0,30}(produit|appareil|embarqu)|donn[ée]es.{0,20}(produit|connect|iot)|internet des objets|wearable|montre connect|lunettes connect|spectre radio|compatibilit[ée] [ée]lectromagn|durabilit[ée]|greenwashing|all[ée]gations? environnementales/i;
+
+  try {
+    console.log('[EUR-Lex] Requête SPARQL depuis', since);
+    const res = await fetch(SPARQL_ENDPOINT + '?query=' + encodeURIComponent(query), {
+      headers: { 'Accept': 'application/sparql-results+json', 'User-Agent': 'RED-Monitor/4.3 (github.com/Fabrice1974)' },
+      signal: AbortSignal.timeout(60000)
+    });
+    if (!res.ok) {
+      console.error('[EUR-Lex] ERREUR HTTP', res.status, '— source live indisponible, seul le socle est utilisé');
+      return results;
+    }
+    const json = await res.json();
+    const rows = (json.results && json.results.bindings) || [];
+    console.log('[EUR-Lex] Actes reçus :', rows.length);
+    let kept = 0;
+    for (const row of rows) {
+      const celex = row.celex.value;
+      const title = row.title.value;
+      const date = row.date.value.slice(0, 10);
+      if (!KEYWORDS.test(title)) continue;
+      const id = 'https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:' + celex;
+      if (results.some(r => r.id === id)) continue;
+      results.push({ id, title, date });
+      kept++;
+      console.log('[EUR-Lex] NOUVEAU', celex, '—', title.slice(0, 70));
+    }
+    console.log('[EUR-Lex] Nouveautés pertinentes retenues :', kept);
+  } catch (e) {
+    console.error('[EUR-Lex] ERREUR SPARQL :', e.message, '— seul le socle est utilisé');
+  }
+
+  console.log('[EUR-Lex] Total :', results.length, 'textes');
+  return results;
 }
 
-/* ---------------- load ---------------- */
-function rebuildFromDynamic(items){
-  DATA=dedupeByCelex((items||[]).map(normalizeDynamicItem));
-  DATA_FILTRE=computeDataFiltre();
+async function fetchDataGouv() {
+  const results = [];
+  let failures = 0;
+  const searches = ['équipements radioélectriques', 'cybersécurité produits connectés', 'écoconception smartphones tablettes', 'batterie réparabilité', 'greenwashing allégation environnementale'];
+  for (const q of searches) {
+    try {
+      console.log('[data.gouv] Recherche :', q);
+      const url = 'https://www.data.gouv.fr/api/1/datasets/?q=' + encodeURIComponent(q) + '&page_size=5&sort=-created';
+      const res = await fetch(url, { headers: { 'Accept': 'application/json', 'User-Agent': 'RED-Monitor/4.3 (github.com/Fabrice1974)' }, signal: AbortSignal.timeout(15000) });
+      if (!res.ok) { console.warn('[data.gouv]', q, '→ HTTP', res.status); failures++; continue; }
+      const json  = await res.json();
+      const items = json.data || [];
+      console.log('[data.gouv]', q, '→', items.length, 'résultats');
+      for (const item of items) {
+        const created = item.created_at?.slice(0, 10) || '';
+        if (created < CUTOFF_DATE) continue;
+        results.push({ id: 'datagouv-' + item.id, title: item.title || q, date: created });
+        console.log('[data.gouv] OK', (item.title || '').slice(0, 60));
+      }
+    } catch (e) { console.warn('[data.gouv]', q, '→ Erreur :', e.message); failures++; }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  console.log('[data.gouv] Total :', results.length, 'textes');
+  return { results, failures, attempts: searches.length };
 }
 
-/* ---------------- init ---------------- */
-document.addEventListener('DOMContentLoaded',function(){
-  var navA=document.getElementById('nav-accueil'), navV=document.getElementById('nav-veille'), navAl=document.getElementById('nav-alertes'), bell=document.getElementById('bell-btn');
-  if(navA)navA.onclick=function(){setTab('accueil');};
-  if(navV)navV.onclick=function(){setTab('veille');};
-  if(navAl)navAl.onclick=function(){setTab('alertes');};
-  if(bell)bell.onclick=function(){setTab('alertes');};
-
-  Promise.allSettled([
-    fetch('scan-meta.json?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}),
-    fetch('data.json?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():[];})
-  ]).then(function(res){
-    var meta=res[0].status==='fulfilled'?res[0].value:null;
-    var dyn=res[1].status==='fulfilled'?res[1].value:[];
-    if(meta&&meta.lastScan){var d=new Date(meta.lastScan);if(!isNaN(d)){lastScan=fmtDate(d);nextScan=fmtDate(addDays(d,7));}}
-    rebuildFromDynamic(Array.isArray(dyn)?dyn:[]);
-    computeNewlyDetectedCountAndPersist(DATA);
-    renderAccueil();renderVeille();renderAlertes();syncVersionLabels();updateAlertBadges();setTab('accueil');
-    console.log('[v'+APP_VERSION+'] total=',DATA.length,'filtered=',DATA_FILTRE.length);
+async function getPisteToken() {
+  const clientId = process.env.LEGIFRANCE_CLIENT_ID;
+  const clientSecret = process.env.LEGIFRANCE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) { console.warn('[Légifrance API] Secrets LEGIFRANCE_CLIENT_ID/SECRET absents'); return null; }
+  const res = await fetch('https://oauth.piste.gouv.fr/api/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret, scope: 'openid' }),
+    signal: AbortSignal.timeout(15000)
   });
+  if (!res.ok) { console.error('[Légifrance API] Échec obtention token — HTTP', res.status, await res.text().catch(() => '')); return null; }
+  const json = await res.json();
+  console.log('[Légifrance API] Token obtenu, expire dans', json.expires_in, 's');
+  return json.access_token;
+}
+
+async function fetchLegifranceAPI() {
+  const results = [];
+  let failures = 0;
+  const token = await getPisteToken();
+  if (!token) { console.error('[Légifrance API] Pas de token — source indisponible'); return { results, failures: 1, attempts: 1 }; }
+
+  const SEARCH_TERMS = ['équipements radioélectriques', 'cybersécurité produits connectés', 'écoconception smartphones', 'écoconception tablettes', 'batterie réparabilité', 'allégation environnementale'];
+  const LOOKBACK_DAYS = 60;
+  const dateDebut = new Date(Date.now() - LOOKBACK_DAYS * 86400000).toISOString().slice(0, 10);
+  const dateFin   = new Date().toISOString().slice(0, 10);
+
+  for (const terme of SEARCH_TERMS) {
+    try {
+      console.log('[Légifrance API] Recherche :', terme);
+      const body = {
+        fond: 'JORF',
+        recherche: {
+          champs: [{ typeChamp: 'ALL', criteres: [{ typeRecherche: 'TOUS_LES_MOTS_DANS_UN_CHAMP', valeur: terme, operateur: 'ET' }], operateur: 'ET' }],
+          filtres: [{ facette: 'DATE_PUBLICATION', dates: { start: dateDebut, end: dateFin } }],
+          pageNumber: 1, pageSize: 10, operateur: 'ET', sort: 'PUBLICATION_DATE_DESC', typePagination: 'DEFAUT'
+        }
+      };
+      const res = await fetch('https://api.piste.gouv.fr/dila/legifrance/lf-engine-app/search', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(20000)
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        console.warn('[Légifrance API]', terme, '→ HTTP', res.status, errText.slice(0, 300));
+        failures++; continue;
+      }
+      const json = await res.json();
+      console.log('[Légifrance API] Réponse brute (structure) :', JSON.stringify(json).slice(0, 500));
+      const items = json.results || json.contenus || [];
+      console.log('[Légifrance API]', terme, '→', items.length, 'résultats');
+      const KEYWORDS_LF = /smartphone|t[ée]l[ée]phone (mobile|portable)|tablette (tactile|num[ée]rique)|ordinateur portable|[ée]quipements? radio[ée]lectriques?|[ée]coconception|r[ée]parabilit|batterie|chargeur universel|internet des objets|objets? connect[ée]s?|wearable|montre connect[ée]e|cyber.?(s[ée]curit[ée]|r[ée]silience)|produits? connect[ée]s|all[ée]gation environnementale|greenwashing/i;
+      const EXCLUDE_LF = /fr[ée]quence|programme radiophonique|autoris[ée a-zàâéèêëïîôûù]*exploiter|cha[iî]ne (de )?radio|voie hertzienne/i;
+      for (const item of items) {
+        const titreObj = item.titles && item.titles[0];
+        const titre = (titreObj && titreObj.title) || item.titre || item.title || terme;
+        if (!KEYWORDS_LF.test(titre) || EXCLUDE_LF.test(titre)) continue;
+        const id = (titreObj && titreObj.cid) || item.id || item.textCid || item.cid || ('legifrance-' + titre.slice(0, 40));
+        const datePub = item.datePublication || item.date || dateFin;
+        results.push({ id: 'legifrance-' + id, title: titre, date: String(datePub).slice(0, 10) });
+        console.log('[Légifrance API] OK', titre.slice(0, 60));
+      }
+    } catch (e) { console.warn('[Légifrance API]', terme, '→ Erreur :', e.message); failures++; }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  console.log('[Légifrance API] Total :', results.length, 'textes');
+  return { results, failures, attempts: SEARCH_TERMS.length };
+}
+
+async function sendNotification(heading, message) {
+  if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) { console.log('[OneSignal] Simulation :', heading, '|', message); return; }
+  try {
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + ONESIGNAL_API_KEY },
+      body: JSON.stringify({ app_id: ONESIGNAL_APP_ID, included_segments: ['Total Subscriptions'], headings: { fr: heading, en: heading }, contents: { fr: message, en: message }, url: SITE_URL, chrome_web_icon: SITE_URL + 'icons/icon-192.png', ttl: 604800 })
+    });
+    const json = await res.json();
+    console.log('[OneSignal] Envoyé :', json.id || JSON.stringify(json.errors));
+  } catch (e) { console.error('[OneSignal] Erreur :', e.message); }
+}
+
+async function main() {
+  console.log('=== RED Monitor v4.3 — Scan du', new Date().toISOString(), '===');
+  const knownIds    = loadJSON(KNOWN_IDS_FILE, []);
+  const currentData = loadJSON(DATA_FILE, []);
+  console.log('[Main] IDs connus :', knownIds.length, '| Textes en base :', currentData.length);
+
+  const [eurLexRaw, dg, lf] = await Promise.all([fetchEurLex(), fetchDataGouv(), fetchLegifranceAPI()]);
+  const dataGouvRaw = dg.results;
+  const lfRaw        = lf.results;
+
+  const allRaw = [...eurLexRaw, ...dataGouvRaw, ...lfRaw];
+  console.log('[Main] Bruts —', 'EUR-Lex :', eurLexRaw.length, '| data.gouv :', dataGouvRaw.length, '| Légifrance API :', lfRaw.length, '| Total :', allRaw.length);
+
+  const sourcesHS = [];
+  if (dg.failures >= dg.attempts) sourcesHS.push('data.gouv');
+  if (lf.failures >= lf.attempts) sourcesHS.push('Légifrance');
+
+  const newRaw = allRaw.filter(r => r.id && !knownIds.includes(r.id));
+  console.log('[Main] Nouveaux textes :', newRaw.length);
+
+  const newItems = newRaw.map(buildItem);
+  const updatedData = [...newItems, ...currentData.map(i => ({ ...i, isNew: false }))];
+  saveJSON(DATA_FILE, updatedData);
+  console.log('[Main] data.json mis à jour — total :', updatedData.length, 'textes');
+
+  if (newItems.length > 0) {
+    for (const item of newItems.slice(0, 3)) {
+      const shortTitle = item.title.length > 80 ? item.title.slice(0, 80) + '...' : item.title;
+      await sendNotification('🆕 Nouveau texte RED', shortTitle);
+    }
+    if (newItems.length > 3) {
+      await sendNotification('🆕 ' + (newItems.length - 3) + ' autres nouveaux textes', 'Ouvrez RED Monitor pour voir toutes les nouvelles réglementations détectées.');
+    }
+  } else if (sourcesHS.length > 0) {
+    await sendNotification('⚠️ Scan RED incomplet', 'Source(s) indisponible(s) : ' + sourcesHS.join(', ') + '. Aucun nouveau texte trouvé, mais la veille n\'est pas complète.');
+    console.log('[Main] Aucun nouveau texte, sources en panne :', sourcesHS.join(', '));
+  } else {
+    await sendNotification('✅ Scan RED terminé', 'Aucun nouveau texte réglementaire cette semaine. Votre veille est à jour.');
+    console.log('[Main] Aucun nouveau texte cette semaine');
+  }
+
+  const updatedIds = [...new Set([...knownIds, ...allRaw.map(r => r.id).filter(Boolean)])];
+  saveJSON(KNOWN_IDS_FILE, updatedIds);
+  saveJSON('scan-meta.json', { lastScan: new Date().toISOString() });
+  console.log('=== Scan terminé — IDs connus :', updatedIds.length, '===');
+}
+
+main().catch(e => {
+  console.error('ERREUR FATALE :', e);
+  process.exit(1);
 });
