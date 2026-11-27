@@ -229,8 +229,6 @@ async function fetchLegifranceAPI() {
       console.log('[Légifrance API] Réponse brute (structure) :', JSON.stringify(json).slice(0, 500));
       const items = json.results || json.contenus || [];
       console.log('[Légifrance API]', terme, '→', items.length, 'résultats');
-      // Filtre de précision sur le TITRE : l'API fait une recherche plein texte
-      // (le mot cherché peut n'apparaître que dans un visa juridique, sans rapport avec le sujet réel)
       const KEYWORDS_LF = /smartphone|t[ée]l[ée]phone (mobile|portable)|tablette (tactile|num[ée]rique)|ordinateur portable|[ée]quipements? radio[ée]lectriques?|[ée]coconception|r[ée]parabilit|batterie|chargeur universel|internet des objets|objets? connect[ée]s?|wearable|montre connect[ée]e|cyber.?(s[ée]curit[ée]|r[ée]silience)|produits? connect[ée]s|all[ée]gation environnementale|greenwashing/i;
       const EXCLUDE_LF = /fr[ée]quence|programme radiophonique|autoris[ée a-zàâéèêëïîôûù]*exploiter|cha[iî]ne (de )?radio|voie hertzienne/i;
       for (const item of items) {
@@ -282,11 +280,15 @@ async function main() {
   const newRaw = allRaw.filter(r => r.id && !knownIds.includes(r.id));
   console.log('[Main] Nouveaux textes :', newRaw.length);
 
-  if (newRaw.length > 0) {
-    const newItems = newRaw.map(buildItem);
-    const updatedData = [...newItems, ...currentData.map(i => ({ ...i, isNew: false }))];
-    saveJSON(DATA_FILE, updatedData);
-    console.log('[Main] data.json mis à jour — total :', updatedData.length, 'textes');
+  // data.json est toujours réécrit (anciens éléments repassés à isNew: false),
+  // même sans nouveauté cette semaine — sinon un "Nouveau" reste affiché indéfiniment
+  // si un seul scan ultérieur ne trouve rien de neuf.
+  const newItems = newRaw.map(buildItem);
+  const updatedData = [...newItems, ...currentData.map(i => ({ ...i, isNew: false }))];
+  saveJSON(DATA_FILE, updatedData);
+  console.log('[Main] data.json mis à jour — total :', updatedData.length, 'textes');
+
+  if (newItems.length > 0) {
     for (const item of newItems.slice(0, 3)) {
       const shortTitle = item.title.length > 80 ? item.title.slice(0, 80) + '...' : item.title;
       await sendNotification('🆕 Nouveau texte RED', shortTitle);
@@ -299,7 +301,7 @@ async function main() {
     console.log('[Main] Aucun nouveau texte, sources en panne :', sourcesHS.join(', '));
   } else {
     await sendNotification('✅ Scan RED terminé', 'Aucun nouveau texte réglementaire cette semaine. Votre veille est à jour.');
-    console.log('[Main] Aucun nouveau texte — data.json inchangé');
+    console.log('[Main] Aucun nouveau texte cette semaine');
   }
 
   const updatedIds = [...new Set([...knownIds, ...allRaw.map(r => r.id).filter(Boolean)])];
