@@ -1,5 +1,24 @@
 [
   {
+    "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2611",
+    "cat": "eu_red",
+    "tag": "Normes RED",
+    "isNew": true,
+    "ref": "Acte (UE) 32026D2611",
+    "title": "Décision d’exécution (UE) 2026/2611 de la Commission du 26 novembre 2026 modifiant la décision d’exécution (UE) 2024/2944 en ce qui concerne les normes harmonisées élaborées, à l’appui du règlement (UE) 2016/426 du Parlement européen et du Conseil, pour les appareils de cuisson domestiques utilisant les combustibles gazeux et les robinets automatiques de sectionnement pour brûleurs à gaz et appareils à gaz",
+    "date": "26/11/2026",
+    "apply": "À confirmer — voir texte officiel",
+    "type": "Acte UE",
+    "devices": [
+      "Smartphones",
+      "Tablettes",
+      "IoT",
+      "Wearables"
+    ],
+    "link": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32026D2611",
+    "summary": "Nouveau texte détecté automatiquement lors du scan du 27/11/2026. Consultez le texte officiel via le lien ci-dessous pour connaître le champ d'application exact et la date d'entrée en vigueur."
+  },
+  {
     "id": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32023R1670",
     "cat": "eu_related",
     "tag": "Écoconception",
