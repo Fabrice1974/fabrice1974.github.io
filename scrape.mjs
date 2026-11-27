@@ -114,7 +114,7 @@ SELECT DISTINCT ?celex ?title ?date WHERE {
 ORDER BY DESC(?date)
 LIMIT 500`;
 
-  const KEYWORDS = /radio[ée]lectri|radio equipment|2014\/53|smartphone|t[ée]l[ée]phone|tablette|ordinateur portable|[ée]quipement terminal|chargeur|usb|cyber.?(s[ée]curit[ée]|r[ée]silience|attaque)|r[ée]silience num[ée]rique|[ée]coconception|ecodesign|r[ée]parabilit|batterie|intelligence artificielle.{0,30}(produit|appareil|embarqu)|donn[ée]es.{0,20}(produit|connect|iot)|internet des objets|wearable|montre connect|lunettes connect|spectre radio|compatibilit[ée] [ée]lectromagn|normes? harmonis[ée]|durabilit[ée]|greenwashing|all[ée]gations? environnementales/i;
+  const KEYWORDS = /radio[ée]lectri|radio equipment|2014\/53|smartphone|t[ée]l[ée]phone|tablette|ordinateur portable|[ée]quipement terminal|chargeur|usb|cyber.?(s[ée]curit[ée]|r[ée]silience|attaque)|r[ée]silience num[ée]rique|[ée]coconception|ecodesign|r[ée]parabilit|batterie|intelligence artificielle.{0,30}(produit|appareil|embarqu)|donn[ée]es.{0,20}(produit|connect|iot)|internet des objets|wearable|montre connect|lunettes connect|spectre radio|compatibilit[ée] [ée]lectromagn|durabilit[ée]|greenwashing|all[ée]gations? environnementales/i;
 
   try {
     console.log('[EUR-Lex] Requête SPARQL depuis', since);
@@ -229,6 +229,8 @@ async function fetchLegifranceAPI() {
       console.log('[Légifrance API] Réponse brute (structure) :', JSON.stringify(json).slice(0, 500));
       const items = json.results || json.contenus || [];
       console.log('[Légifrance API]', terme, '→', items.length, 'résultats');
+      // Filtre de précision sur le TITRE : l'API fait une recherche plein texte
+      // (le mot cherché peut n'apparaître que dans un visa juridique, sans rapport avec le sujet réel)
       const KEYWORDS_LF = /smartphone|t[ée]l[ée]phone (mobile|portable)|tablette (tactile|num[ée]rique)|ordinateur portable|[ée]quipements? radio[ée]lectriques?|[ée]coconception|r[ée]parabilit|batterie|chargeur universel|internet des objets|objets? connect[ée]s?|wearable|montre connect[ée]e|cyber.?(s[ée]curit[ée]|r[ée]silience)|produits? connect[ée]s|all[ée]gation environnementale|greenwashing/i;
       const EXCLUDE_LF = /fr[ée]quence|programme radiophonique|autoris[ée a-zàâéèêëïîôûù]*exploiter|cha[iî]ne (de )?radio|voie hertzienne/i;
       for (const item of items) {
@@ -285,8 +287,8 @@ async function main() {
   // si un seul scan ultérieur ne trouve rien de neuf.
   const newItems = newRaw.map(buildItem);
   const updatedData = [...newItems, ...currentData.map(i => ({ ...i, isNew: false }))];
-  saveJSON(DATA_FILE, updatedData);
-  console.log('[Main] data.json mis à jour — total :', updatedData.length, 'textes');
+    saveJSON(DATA_FILE, updatedData);
+    console.log('[Main] data.json mis à jour — total :', updatedData.length, 'textes');
 
   if (newItems.length > 0) {
     for (const item of newItems.slice(0, 3)) {
@@ -301,7 +303,7 @@ async function main() {
     console.log('[Main] Aucun nouveau texte, sources en panne :', sourcesHS.join(', '));
   } else {
     await sendNotification('✅ Scan RED terminé', 'Aucun nouveau texte réglementaire cette semaine. Votre veille est à jour.');
-    console.log('[Main] Aucun nouveau texte cette semaine');
+    console.log('[Main] Aucun nouveau texte — data.json inchangé');
   }
 
   const updatedIds = [...new Set([...knownIds, ...allRaw.map(r => r.id).filter(Boolean)])];
